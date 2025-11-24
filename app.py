@@ -269,3 +269,234 @@ def button_handler(update: Update, context: CallbackContext) -> None:
         elif query.data == 'payment_ton':
             ton_text = """
 **💎 תשלום ב-TON**
+UQCr743gEr_nqV_0SBkSp3CtYS_15R3LDLBvLmKeEv7XdGvp
+
+**📝 חשוב:** אחרי ההעברה, שלח אלינו את אישור התשלום באמצעות הכפתור '✅ שלחתי תשלום'
+"""
+            query.edit_message_text(
+                ton_text,
+                reply_markup=get_payment_keyboard(),
+                parse_mode='Markdown'
+            )
+
+        elif query.data == 'payment_sent':
+            payment_sent_text = """
+**✅ אישור תשלום**
+
+מצוין! שלח אלינו עכשיו את **אישור התשלום** כ:
+
+📸 **צילום מסך** של ההעברה
+📝 **או** פרטי ההעברה בטקסט
+
+**🚀 אחרי האימות** (עד 24 שעות) נשלח לך את הקישור להצטרפות לקהילה!
+            """
+            query.edit_message_text(
+                payment_sent_text,
+                reply_markup=get_payment_keyboard(),
+                parse_mode='Markdown'
+            )
+            context.user_data['waiting_for_payment'] = True
+
+        elif query.data in ['contact_business', 'contact_investment', 'contact_support', 'contact_other']:
+            contact_types = {
+                'contact_business': '💼 עסקים ושותפויות',
+                'contact_investment': '🚀 השקעה בפרויקט', 
+                'contact_support': '🤔 תמיכה טכנית',
+                'contact_other': '💬 כל נושא אחר'
+            }
+            
+            context.user_data['contact_type'] = contact_types[query.data]
+            contact_info_text = f"""
+**📞 צור קשר - {contact_types[query.data]}**
+
+**👤 פרטי התקשרות:**
+**אוסיף אונגר**: 058-4203384
+**צביקה קאופמן**: 054-6671882
+
+**💬 אנא כתוב את הודעתך:**
+(נא לתאר בקצרה את פנייתך)
+            """
+            query.edit_message_text(
+                contact_info_text,
+                parse_mode='Markdown'
+            )
+            return TYPING_CONTACT
+
+        elif query.data == 'back_to_main':
+            start(update, context)
+
+    except Exception as e:
+        logger.error(f"Error in button handler: {e}")
+        query.edit_message_text("❌ אירעה שגיאה. אנא נסה שוב.")
+
+def handle_contact_message(update: Update, context: CallbackContext) -> int:
+    """מטפל בהודעת קשר מהמשתמש"""
+    try:
+        user = update.effective_user
+        user_message = update.message.text
+        
+        # שליחת בקשת הקשר לקבוצת הניהול
+        send_contact_request(
+            chat_id=update.effective_chat.id,
+            user_name=f"{user.first_name} {user.last_name or ''}",
+            contact_type=context.user_data.get('contact_type', 'לא צוין'),
+            message=user_message
+        )
+        
+        # הודעת תודה למשתמש
+        update.message.reply_text(
+            "✅ **תודה רבה!** ההודעה שלך נשלחה למייסדים.\n\n"
+            "📞 ניצור איתך קשר בהקדם האפשרי.",
+            reply_markup=get_main_keyboard()
+        )
+        
+        # ניקוי ה-state
+        context.user_data.clear()
+        return ConversationHandler.END
+        
+    except Exception as e:
+        logger.error(f"Error in handle_contact_message: {e}")
+        update.message.reply_text("❌ אירעה שגיאה בשליחת ההודעה. אנא נסה שוב.")
+        return ConversationHandler.END
+
+def handle_payment_proof(update: Update, context: CallbackContext) -> None:
+    """מטפל בשליחת אישור תשלום מהמשתמש"""
+    try:
+        user = update.effective_user
+        chat_id = update.effective_chat.id
+
+        # בדיקה אם המשתמש שלח תמונה (צילום מסך)
+        if update.message.photo:
+            photo_file = update.message.photo[-1].get_file()
+            try:
+                bot.send_photo(
+                    chat_id=ADMIN_GROUP_LINK.replace('https://t.me/', ''), 
+                    photo=photo_file.file_id, 
+                    caption=f"📸 אישור תשלום מהמשתמש: {user.first_name} (ID: {chat_id})"
+                )
+                update.message.reply_text(
+                    "✅ **תודה רבה!** אישור התשלום התקבל ונשלח לאימות.\n\n"
+                    "🚀 **נחזור אליך עם קישור ההצטרפות תוך 24 שעות!**",
+                    reply_markup=get_main_keyboard()
+                )
+            except Exception as e:
+                logger.error(f"שגיאה בשליחת התמונה לקבוצת הניהול: {e}")
+                update.message.reply_text("❌ אירעה שגיאה בשליחת האישור. אנא נסה שוב מאוחר יותר.")
+
+        # בדיקה אם המשתמש שלח טקסט (תמלול ההעברה)
+        elif update.message.text and not update.message.text.startswith('/'):
+            proof_text = update.message.text
+            # שליחת אישור תשלום לקבוצת הניהול
+            payment_message = f"✅ **אישור תשלום חדש!**\n👤 ממשתמש: {user.first_name}\n🆔 ID: {chat_id}\n📝 פרטים: {proof_text}"
+            bot.send_message(
+                chat_id=ADMIN_GROUP_LINK.replace('https://t.me/', ''), 
+                text=payment_message, 
+                parse_mode='Markdown'
+            )
+            update.message.reply_text(
+                "✅ **תודה רבה!** פרטי האישור התקבלו ונשלחו לאימות.\n\n"
+                "🚀 **נחזור אליך עם קישור ההצטרפות תוך 24 שעות!**",
+                reply_markup=get_main_keyboard()
+            )
+
+        else:
+            # אם זו פקודה או סוג תוכן אחר
+            pass
+            
+    except Exception as e:
+        logger.error(f"Error in handle_payment_proof: {e}")
+        update.message.reply_text("❌ אירעה שגיאה בעיבוד האישור. אנא נסה שוב.")
+
+def cancel(update: Update, context: CallbackContext) -> int:
+    """מבטל את שיחת צור קשר"""
+    update.message.reply_text(
+        "❌ הפניה בוטלה.",
+        reply_markup=get_main_keyboard()
+    )
+    context.user_data.clear()
+    return ConversationHandler.END
+
+# --- הגדרת handlers ---
+def setup_handlers():
+    """מגדיר את ה-handlers עבור הפקודות"""
+    # ConversationHandler עבור צור קשר
+    contact_conv_handler = ConversationHandler(
+        entry_points=[CallbackQueryHandler(button_handler, pattern='^(contact_business|contact_investment|contact_support|contact_other)$')],
+        states={
+            TYPING_CONTACT: [MessageHandler(Filters.text & ~Filters.command, handle_contact_message)]
+        },
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
+
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(contact_conv_handler)
+    dispatcher.add_handler(CallbackQueryHandler(button_handler))
+    dispatcher.add_handler(MessageHandler(Filters.photo, handle_payment_proof))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_payment_proof))
+    logger.info("Handlers setup completed")
+
+# --- הגדרת Flask routes ---
+@app.route('/')
+def home():
+    return "🤖 הבוט פעיל וחי! שלח /start לבוט כדי להתחיל.", 200
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    """נקודת הכניסה עבור עדכונים מטלגרם"""
+    if request.method == 'POST':
+        try:
+            update = Update.de_json(request.get_json(force=True), bot)
+            dispatcher.process_update(update)
+            return 'ok', 200
+        except Exception as e:
+            logger.error(f"Error processing webhook update: {e}")
+            return 'error', 500
+
+@app.route('/set_webhook', methods=['GET'])
+def set_webhook():
+    """קובע את ה-Webhook עבור הבוט"""
+    try:
+        success = bot.set_webhook(WEBHOOK_URL)
+        if success:
+            logger.info(f"Webhook set successfully to: {WEBHOOK_URL}")
+            return jsonify({"status": "Webhook set successfully", "url": WEBHOOK_URL}), 200
+        else:
+            logger.error("Failed to set webhook")
+            return jsonify({"status": "Failed to set webhook"}), 500
+    except Exception as e:
+        logger.error(f"Error setting webhook: {e}")
+        return jsonify({"status": f"Error: {str(e)}"}), 500
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """בדיקת בריאות של האפליקציה"""
+    return jsonify({"status": "healthy", "service": "SLH Community Gateway Bot"}), 200
+
+# --- אתחול ---
+def initialize_bot():
+    """אתחול הבוט והגדרות"""
+    try:
+        # הגדרת handlers
+        setup_handlers()
+        
+        # קביעת webhook
+        webhook_result = bot.set_webhook(WEBHOOK_URL)
+        if webhook_result:
+            logger.info(f"✅ Webhook set successfully: {WEBHOOK_URL}")
+        else:
+            logger.error("❌ Failed to set webhook")
+            
+        # בדיקת פרטי הבוט
+        bot_info = bot.get_me()
+        logger.info(f"✅ Bot initialized: @{bot_info.username}")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize bot: {e}")
+
+# אתחול הבוט כאשר המודול נטען
+initialize_bot()
+
+# הפעלת שרת Flask
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
