@@ -59,6 +59,7 @@ def get_main_keyboard():
         [InlineKeyboardButton("👥 מי אנחנו?", callback_data='who_we_are')],
         [InlineKeyboardButton("💳 הצטרפות לקהילה - 39₪", callback_data='join_community')],
         [InlineKeyboardButton("🚀 השקעה בפרויקט", callback_data='investment')],
+        [InlineKeyboardButton("🤖 פיתוח בוטים לעסקים", callback_data='bot_development')],
         [InlineKeyboardButton("📞 צור קשר", callback_data='contact')],
         [InlineKeyboardButton("🆘 עזרה ראשונה", callback_data='help')]
     ]
@@ -69,6 +70,7 @@ def get_contact_keyboard():
     keyboard = [
         [InlineKeyboardButton("💼 עסקים ושותפויות", callback_data='contact_business')],
         [InlineKeyboardButton("🚀 השקעה בפרויקט", callback_data='contact_investment')],
+        [InlineKeyboardButton("🤖 פיתוח בוט לעסק שלי", callback_data='contact_bot_development')],
         [InlineKeyboardButton("🤔 תמיכה טכנית", callback_data='contact_support')],
         [InlineKeyboardButton("💬 כל נושא אחר", callback_data='contact_other')],
         [InlineKeyboardButton("↩️ חזרה לתפריט", callback_data='back_to_main')]
@@ -81,6 +83,17 @@ def get_payment_keyboard():
         [InlineKeyboardButton("🏦 העברה בנקאית", callback_data='payment_bank')],
         [InlineKeyboardButton("💎 תשלום ב-TON", callback_data='payment_ton')],
         [InlineKeyboardButton("✅ שלחתי תשלום", callback_data='payment_sent')],
+        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_bot_development_keyboard():
+    """מחזיר את מקלדת שירותי פיתוח בוטים"""
+    keyboard = [
+        [InlineKeyboardButton("💼 בוט לעסק שלי", callback_data='contact_bot_development')],
+        [InlineKeyboardButton("💰 הצעת מחיר", callback_data='contact_business')],
+        [InlineKeyboardButton("📞 שיחת ייעוץ", callback_data='contact_other')],
+        [InlineKeyboardButton("🌐 האתרים שלנו", callback_data='our_websites')],
         [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -101,10 +114,20 @@ def start(update: Update, context: CallbackContext) -> None:
             action="התחיל שיחה עם הבוט (/start)"
         )
 
-        # הודעת ברוך הבא עם תמונה (אם יש)
-        welcome_text = f"""
-🎉 **ברוך הבא {user.first_name} לעולם החדש של הכלכלה הקהילתית!** 🌍
+        # שליחת תמונה עם הודעת ברוך הבא
+        welcome_image_url = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+        
+        try:
+            update.message.reply_photo(
+                photo=welcome_image_url,
+                caption=f"🎉 **ברוך הבא {user.first_name} לעולם החדש של הכלכלה הקהילתית!** 🌍\n\n_קהילה • טכנולוגיה • חופש כלכלי_",
+                parse_mode='Markdown'
+            )
+        except Exception as e:
+            logger.warning(f"Could not send welcome image: {e}")
+            # אם התמונה נכשלת, נשלח רק טקסט
 
+        welcome_text = """
 🤝 **אנחנו כאן כדי לשנות את הכללים** - ליצור קהילה של חברים, בעלי עסקים ויזמים שרוצים יחד לבנות כלכלה קהילתית חזקה ומשגשגת.
 
 💫 **החלום שלנו:** לשפר את המצב החברתי והקהילתי בישראל דרך טכנולוגיה מתקדמת וכלכלה מבוזרת.
@@ -115,8 +138,13 @@ def start(update: Update, context: CallbackContext) -> None:
 • 🔗 **לינק אישי למכירה חוזרת** - תוכל להרוויח כמו בחנות אינטרנטית
 • 👥 **קהילה תומכת** של אנשי עסקים ויזמים
 • 💼 **הזדמנויות עסקיות** ושותפויות אסטרטגיות
+• 🚀 **גישה לטכנולוגיות Web3** מתקדמות
 
 **🎯 אנחנו לא רק קהילה - אנחנו תנועה כלכלית חברתית!**
+
+**🌐 האתרים שלנו:**
+• https://web-production-b425.up.railway.app/set_webhook
+• https://osifeu-prog.github.io/GATE_BOTSHOP/
         """
 
         # שליחת הודעת ברוך הבא עם מקלדת
@@ -152,7 +180,20 @@ def button_handler(update: Update, context: CallbackContext) -> None:
 
 💡 **בדיוק כמו שדובאי בנתה על ביננס** - אנחנו בונים את העתיד הכלכלי של ישראל על קריפטו ו-Web3.
 
-🤝 **אנחנו כאן עבורך** - תמיד זמינים לתמיכה, הדרכה ושותפויות.
+**🛠 אנחנו גם מציעים שירותי פיתוח בוטים!**
+מעוניינים בבוט דומה לעסק שלכם? אנחנו בונים בוטים אוטומטיים עם:
+• שער כניסה וקהילות
+• מערכות תשלום והזמנות
+• אינטגרציה עם אתרים
+• שיווק אוטומטי
+
+**📞 ליצירת קשר:** 
+**אוסיף**: 058-4203384
+**צביקה**: 054-6671882
+
+**🌐 האתרים שלנו:**
+https://web-production-b425.up.railway.app/set_webhook
+https://osifeu-prog.github.io/GATE_BOTSHOP/
             """
             query.edit_message_text(
                 who_we_are_text,
@@ -185,12 +226,22 @@ def button_handler(update: Update, context: CallbackContext) -> None:
             )
 
         elif query.data == 'investment':
+            # שליחת תמונה להשקעה
+            investment_image_url = "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+            
+            try:
+                query.message.reply_photo(
+                    photo=investment_image_url,
+                    caption="🚀 **הזדמנות השקעה ייחודית!**\n\n_מערכת SLH - טכנולוגיה שתשנה את פני הכלכלה הישראלית_",
+                    parse_mode='Markdown'
+                )
+            except Exception as e:
+                logger.warning(f"Could not send investment image: {e}")
+
             investment_text = """
-**🚀 הזדמנות השקעה ייחודית!**
+**💎 אנחנו מחפשים משקיעים שיצטרפו להצלחה!**
 
-💎 **אנחנו מחפשים משקיעים שיצטרפו להצלחה!**
-
-**הפרויקט שלנו כבר ב-production** עם:
+**הפרויקט שלנו כבר ב-production עם:**
 ✅ **מערכת SLH FULL SUITE** פעילה
 ✅ **קהילה גדלה** של משתמשים
 ✅ **טכנולוגיה מתקדמת** שכבר עובדת
@@ -204,11 +255,85 @@ def button_handler(update: Update, context: CallbackContext) -> None:
 
 **📊 החזון:** להפוך למערכת הפיננסית הדיגיטלית המובילה בישראל
 
+**🛠 גם שירותי פיתוח בוטים!**
+אנחנו מציעים גם פיתוח בוטים מותאמים אישית לעסקים. הבוט הזה הוא דוגמה אחת ליכולות שלנו.
+
+**🌐 האתרים שלנו:**
+https://web-production-b425.up.railway.app/set_webhook
+https://osifeu-prog.github.io/GATE_BOTSHOP/
+
 **💼 מעוניינים?** לחצו על '📞 צור קשר' ובחרו 'השקעה בפרויקט'
             """
             query.edit_message_text(
                 investment_text,
                 reply_markup=get_main_keyboard(),
+                parse_mode='Markdown'
+            )
+
+        elif query.data == 'bot_development':
+            bot_dev_text = """
+**🤖 פיתוח בוטים לעסקים - המהפכה הדיגיטלית הבאה!**
+
+**💡 למה כל עסק צריך בוט טלגרם?**
+
+**📈 נתונים מדברים:**
+• **חיסכון של 30%** בעלויות שירות לקוחות
+• **עלייה של 40%** במכירות דרך אוטומציה
+• **זמינות 24/7** ללא תוספת עלויות כוח אדם
+• **ניהול קהילות** והגדלת נאמנות לקוחות
+
+**🚀 מה אנחנו מציעים:**
+• **בוטים מותאמים אישית** לעסק שלך
+• **שערי כניסה לקהילות** בתשלום
+• **מערכות הזמנות ואיקומרס**
+• **אינטגרציה עם אתרים** ומערכות CRM
+• **שיווק אוטומטי** וניהול לקוחות
+
+**💼 דוגמאות לבוטים שאנחנו בונים:**
+• בוטי קהילה ומידע
+• בוטי מכירות והזמנות
+• בוטי שירות ותמיכה
+• בוטי ניהול תוכן
+
+**💰 מחירים נוחים** - החל מ-₪149 בלבד!
+
+**🌐 האתרים שלנו:**
+https://web-production-b425.up.railway.app/set_webhook
+https://osifeu-prog.github.io/GATE_BOTSHOP/
+
+**📞 מעוניינים?** נשמח לשוחח על הצרכים הספציפיים של העסק שלך!
+            """
+            query.edit_message_text(
+                bot_dev_text,
+                reply_markup=get_bot_development_keyboard(),
+                parse_mode='Markdown'
+            )
+
+        elif query.data == 'our_websites':
+            websites_text = """
+**🌐 האתרים שלנו**
+
+**1. פלטפורמת הבוטים שלנו:**
+https://web-production-b425.up.railway.app/set_webhook
+*🛠 פלטפורמת הפיתוח והניהול* - כאן תוכלו לראות את יכולות המערכת המלאה שלנו.
+
+**2. דף הנחיתה והמכירה:**
+https://osifeu-prog.github.io/GATE_BOTSHOP/
+*🌐 הדגמות ותיעוד* - דף נחיתה עם מידע מלא על השירותים שלנו, הדגמות חיות ותיעוד טכני.
+
+**3. שירותים שאנו מציעים:**
+• **פיתוח בוטים מותאמים אישית**
+• **השקעה בפרויקט SLH**
+• **ייעוץ טכנולוגי לעסקים**
+• **פיתוח מערכות Web3**
+
+**📞 ליצירת קשר:**
+**אוסיף**: 058-4203384
+**צביקה**: 054-6671882
+            """
+            query.edit_message_text(
+                websites_text,
+                reply_markup=get_bot_development_keyboard(),
                 parse_mode='Markdown'
             )
 
@@ -239,6 +364,10 @@ def button_handler(update: Update, context: CallbackContext) -> None:
 **👥 רוצה להצטרף לקהילה?**
 • לחץ על 'הצטרפות לקהילה'
 • עקוב אחר הוראות התשלום
+
+**🤖 מעוניין בבוט לעסק שלך?**
+• לחץ על 'פיתוח בוטים לעסקים'
+• נשמח לעזור!
 
 **📞 צריך עזרה נוספת?**
 • לחץ על 'צור קשר'
@@ -297,10 +426,11 @@ UQCr743gEr_nqV_0SBkSp3CtYS_15R3LDLBvLmKeEv7XdGvp
             )
             context.user_data['waiting_for_payment'] = True
 
-        elif query.data in ['contact_business', 'contact_investment', 'contact_support', 'contact_other']:
+        elif query.data in ['contact_business', 'contact_investment', 'contact_bot_development', 'contact_support', 'contact_other']:
             contact_types = {
                 'contact_business': '💼 עסקים ושותפויות',
                 'contact_investment': '🚀 השקעה בפרויקט', 
+                'contact_bot_development': '🤖 פיתוח בוט לעסק שלי',
                 'contact_support': '🤔 תמיכה טכנית',
                 'contact_other': '💬 כל נושא אחר'
             }
@@ -323,11 +453,24 @@ UQCr743gEr_nqV_0SBkSp3CtYS_15R3LDLBvLmKeEv7XdGvp
             return TYPING_CONTACT
 
         elif query.data == 'back_to_main':
-            start(update, context)
+            # במקום לשנות את ההודעה הנוכחית, נשלח הודעה חדשה עם התפריט הראשי
+            welcome_back_text = """
+**🏠 חזרת לתפריט הראשי**
+
+בחר אחת האפשרויות להמשך:
+            """
+            query.message.reply_text(
+                welcome_back_text,
+                reply_markup=get_main_keyboard(),
+                parse_mode='Markdown'
+            )
 
     except Exception as e:
         logger.error(f"Error in button handler: {e}")
-        query.edit_message_text("❌ אירעה שגיאה. אנא נסה שוב.")
+        query.message.reply_text(
+            "❌ אירעה שגיאה. אנא נסה שוב מהתפריט הראשי.",
+            reply_markup=get_main_keyboard()
+        )
 
 def handle_contact_message(update: Update, context: CallbackContext) -> int:
     """מטפל בהודעת קשר מהמשתמש"""
@@ -421,7 +564,7 @@ def setup_handlers():
     """מגדיר את ה-handlers עבור הפקודות"""
     # ConversationHandler עבור צור קשר
     contact_conv_handler = ConversationHandler(
-        entry_points=[CallbackQueryHandler(button_handler, pattern='^(contact_business|contact_investment|contact_support|contact_other)$')],
+        entry_points=[CallbackQueryHandler(button_handler, pattern='^(contact_business|contact_investment|contact_bot_development|contact_support|contact_other)$')],
         states={
             TYPING_CONTACT: [MessageHandler(Filters.text & ~Filters.command, handle_contact_message)]
         },
@@ -438,7 +581,21 @@ def setup_handlers():
 # --- הגדרת Flask routes ---
 @app.route('/')
 def home():
-    return "🤖 הבוט פעיל וחי! שלח /start לבוט כדי להתחיל.", 200
+    return jsonify({
+        "status": "active",
+        "service": "SLH Community Gateway Bot",
+        "version": "2.0",
+        "features": [
+            "Community gateway with payment",
+            "Bot development services", 
+            "Investment opportunities",
+            "Telegram automation"
+        ],
+        "websites": [
+            "https://web-production-b425.up.railway.app/set_webhook",
+            "https://osifeu-prog.github.io/GATE_BOTSHOP/"
+        ]
+    }), 200
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -459,7 +616,19 @@ def set_webhook():
         success = bot.set_webhook(WEBHOOK_URL)
         if success:
             logger.info(f"Webhook set successfully to: {WEBHOOK_URL}")
-            return jsonify({"status": "Webhook set successfully", "url": WEBHOOK_URL}), 200
+            return jsonify({
+                "status": "Webhook set successfully", 
+                "url": WEBHOOK_URL,
+                "bot_info": {
+                    "service": "SLH Community & Bot Development",
+                    "features": [
+                        "Community membership gateway",
+                        "Payment processing",
+                        "Bot development services",
+                        "Investment platform"
+                    ]
+                }
+            }), 200
         else:
             logger.error("Failed to set webhook")
             return jsonify({"status": "Failed to set webhook"}), 500
@@ -470,7 +639,38 @@ def set_webhook():
 @app.route('/health', methods=['GET'])
 def health_check():
     """בדיקת בריאות של האפליקציה"""
-    return jsonify({"status": "healthy", "service": "SLH Community Gateway Bot"}), 200
+    return jsonify({
+        "status": "healthy", 
+        "service": "SLH Community Gateway & Bot Development",
+        "timestamp": "2024-11-24T17:00:00Z"
+    }), 200
+
+@app.route('/services', methods=['GET'])
+def services():
+    """מחזיר מידע על השירותים"""
+    return jsonify({
+        "services": [
+            {
+                "name": "Community Gateway Bot",
+                "description": "בוט שער כניסה לקהילות בתשלום",
+                "price": "39₪ membership"
+            },
+            {
+                "name": "Custom Bot Development", 
+                "description": "פיתוח בוטים מותאמים אישית לעסקים",
+                "price": "Starting from 149₪"
+            },
+            {
+                "name": "Investment Opportunities",
+                "description": "השקעה בפרויקט SLH FULL SUITE",
+                "contact_required": True
+            }
+        ],
+        "contact": {
+            "osif": "058-4203384",
+            "zvika": "054-6671882"
+        }
+    }), 200
 
 # --- אתחול ---
 def initialize_bot():
