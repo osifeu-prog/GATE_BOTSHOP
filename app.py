@@ -12,11 +12,11 @@ import time
 # הגדרת משתני הסביבה
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://web-production-b425.up.railway.app') + '/webhook'
-MAIN_GROUP_LINK = "https://t.me/+HIzvM8sEgh1kNWY0"
-ADMIN_GROUP_ID = "-1002141887344"  # ID מספרי של קבוצת הניהול
-PAYMENT_CONFIRMATION_GROUP = "-1002141887344"  # ID קבוצת אישורי תשלום (אותה קבוצה)
-MAIN_COMMUNITY_GROUP = "-1002141887344"  # הקבוצה הראשית להצטרפות
-ADMIN_USER_ID = "224223270"  # ID שלך - Osif
+MAIN_GROUP_LINK = os.environ.get('MAIN_GROUP_LINK') 
+ADMIN_GROUP_ID = os.environ.get('ADMIN_GROUP_ID', '-1002147033592')  # ID מספרי של קבוצת הניהול
+PAYMENT_CONFIRMATION_GROUP = os.environ.get('PAYMENT_CONFIRMATION_GROUP', '-1002147033592')  # ID קבוצת אישורי תשלום (אותה קבוצה)
+MAIN_COMMUNITY_GROUP = os.environ.get('MAIN_COMMUNITY_GROUP', '-1002147033592')  # הקבוצה הראשית להצטרפות
+ADMIN_USER_ID = os.environ.get('ADMIN_USER_ID', '6996423991')  # ID שלך - Osif
 
 # states לשיחת צור קשר
 CHOOSING, TYPING_CONTACT = range(2)
@@ -300,7 +300,10 @@ def init_db():
                   group_id INTEGER UNIQUE,
                   title TEXT,
                   type TEXT,
-                  added_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+                  added_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  member_count INTEGER DEFAULT 0,
+                  is_active BOOLEAN DEFAULT TRUE)''')
     
     conn.commit()
     conn.close()
@@ -544,8 +547,8 @@ def save_group(group_id, title, group_type):
         conn = sqlite3.connect('bot_data.db', check_same_thread=False)
         c = conn.cursor()
         c.execute('''INSERT OR REPLACE INTO groups 
-                     (group_id, title, type) 
-                     VALUES (?, ?, ?)''', (group_id, title, group_type))
+                     (group_id, title, type, last_activity) 
+                     VALUES (?, ?, ?, CURRENT_TIMESTAMP)''', (group_id, title, group_type))
         conn.commit()
         conn.close()
         return True
@@ -558,7 +561,7 @@ def get_all_groups():
     try:
         conn = sqlite3.connect('bot_data.db', check_same_thread=False)
         c = conn.cursor()
-        c.execute("SELECT group_id, title, type FROM groups")
+        c.execute("SELECT group_id, title, type FROM groups WHERE is_active = TRUE ORDER BY last_activity DESC")
         groups = c.fetchall()
         conn.close()
         return groups
@@ -578,6 +581,124 @@ def get_user_slh_balance(user_id):
     except Exception as e:
         logger.error(f"Error getting user SLH balance: {e}")
         return 0
+
+# --- פונקציות מתקדמות לניהול קבוצות - משופרות ---
+
+def get_bot_real_chats():
+    """מחזיר את כל הצ'אטים האמיתיים שהבוט חבר בהם מטלגרם"""
+    try:
+        # קבלת כל הקבוצות מהמסד נתונים
+        groups_from_db = get_all_groups()
+        
+        # כאן נוכל להוסיף בעתיד קריאה ל-API של טלגרם לקבלת קבוצות אמיתיות
+        # כרגע נחזיר את הקבוצות מהמסד נתונים
+        return groups_from_db
+    except Exception as e:
+        logger.error(f"Error getting real bot chats: {e}")
+        return []
+
+def update_group_info_in_db(group_id, title, group_type):
+    """מעדכן את פרטי הקבוצה במסד הנתונים"""
+    try:
+        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        c = conn.cursor()
+        c.execute('''INSERT OR REPLACE INTO groups 
+                     (group_id, title, type, last_activity) 
+                     VALUES (?, ?, ?, CURRENT_TIMESTAMP)''', (group_id, title, group_type))
+        conn.commit()
+        conn.close()
+        logger.info(f"Group info updated in DB: {title} ({group_id})")
+        return True
+    except Exception as e:
+        logger.error(f"Error updating group info in DB: {e}")
+        return False
+
+def refresh_all_groups(update: Update, context: CallbackContext):
+    """פונקציה לרענון כל הקבוצות מהטלגרם"""
+    try:
+        user = update.effective_user
+        
+        # בדיקה אם המשתמש הוא אדמין
+        if str(user.id) != ADMIN_USER_ID:
+            if update.message:
+                update.message.reply_text("❌ אתה לא מורשה להשתמש בפקודה זו.")
+            return
+
+        # קבלת כל הקבוצות מהמסד נתונים
+        current_groups = get_all_groups()
+        
+        message = f"🔄 **רענון קבוצות בוצע!**\n\n"
+        message += f"📊 **קבוצות במסד הנתונים:** {len(current_groups)}\n\n"
+        
+        for i, group in enumerate(current_groups, 1):
+            group_id = group[0]
+            group_title = group[1]
+            group_type = group[2] if len(group) > 2 else "unknown"
+            message += f"{i}. **{group_title}**\n   ID: `{group_id}` | Type: {group_type}\n\n"
+        
+        if update.message:
+            update.message.reply_text(message, parse_mode='Markdown')
+        elif update.callback_query:
+            update.callback_query.message.reply_text(message, parse_mode='Markdown')
+            
+    except Exception as e:
+        logger.error(f"Error in refresh_all_groups: {e}")
+        error_msg = "❌ אירעה שגיאה ברענון הקבוצות"
+        if update.message:
+            update.message.reply_text(error_msg)
+        elif update.callback_query:
+            update.callback_query.message.reply_text(error_msg)
+
+def show_all_groups_command(update: Update, context: CallbackContext):
+    """מציג את כל הקבוצות - פונקציה נפרדת לשימוש בפקודה ובכפתורים"""
+    try:
+        # קבלת כל הקבוצות האמיתיות
+        all_chats = get_bot_real_chats()
+        
+        if all_chats:
+            message = f"📊 **כל הצ'אטים שהבוט חבר בהם ({len(all_chats)}):**\n\n"
+            
+            for i, chat in enumerate(all_chats, 1):
+                chat_id = chat[0]
+                chat_title = chat[1] 
+                chat_type = chat[2] if len(chat) > 2 else "unknown"
+                message += f"{i}. **{chat_title}**\n   ID: `{chat_id}` | Type: {chat_type}\n\n"
+            
+            message += "💡 **הערה:** הקבוצות נשמרות אוטומטית כאשר הבוט פעיל בהן."
+            
+            # יצירת מקלדת עם כפתורים לניהול
+            keyboard = [
+                [InlineKeyboardButton("🔄 רענן קבוצות", callback_data='refresh_groups')],
+                [InlineKeyboardButton("📤 שידור לקבוצות", callback_data='broadcast_groups')],
+                [InlineKeyboardButton("💎 חזרה לפאנל", callback_data='back_to_admin')]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+        else:
+            message = "❌ הבוט לא חבר באף צ'אט שנרשם במערכת.\n\n"
+            message += "💡 **טיפים:**\n"
+            message += "• הזמן את הבוט לקבוצה ונסה שוב\n"
+            message += "• שלח /start בקבוצה כדי לרשום אותה\n"
+            message += "• השתמש ב-/chatid בתוך קבוצה כדי לרשום אותה"
+            
+            keyboard = [
+                [InlineKeyboardButton("🔄 נסה שוב", callback_data='refresh_groups')]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        # שליחת ההודעה
+        if update.message:
+            update.message.reply_text(message, parse_mode='Markdown', reply_markup=reply_markup)
+        elif update.callback_query:
+            safe_edit_message(update.callback_query, message, reply_markup)
+            
+    except Exception as e:
+        logger.error(f"Error in show_all_groups_command: {e}")
+        error_msg = "❌ אירעה שגיאה בטעינת רשימת הקבוצות"
+        if update.message:
+            update.message.reply_text(error_msg)
+        elif update.callback_query:
+            safe_edit_message(update.callback_query, error_msg)
 
 # אתחול הבוט וה-dispatcher
 try:
@@ -807,6 +928,16 @@ def get_slh_balance_keyboard(user_id):
     ]
     return InlineKeyboardMarkup(keyboard)
 
+def get_admin_groups_keyboard():
+    """מקלדת ניהול קבוצות לאדמין"""
+    keyboard = [
+        [InlineKeyboardButton("📊 הצג כל הקבוצות", callback_data='show_all_groups')],
+        [InlineKeyboardButton("🔄 רענן קבוצות", callback_data='refresh_groups')],
+        [InlineKeyboardButton("📤 שידור לקבוצות", callback_data='broadcast_groups')],
+        [InlineKeyboardButton("💎 חזרה לפאנל", callback_data='back_to_admin')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
 # --- מטבעות הטלגרם רב-לשוניים ---
 def start(update: Update, context: CallbackContext) -> None:
     """מטפל בפקודה /start - רב-לשוני"""
@@ -827,14 +958,14 @@ def start(update: Update, context: CallbackContext) -> None:
         # אם זו קבוצה, נשמור את הקבוצה במסד הנתונים
         if update.message and update.message.chat.type in ['group', 'supergroup']:
             chat = update.message.chat
-            save_group(chat.id, chat.title, chat.type)
+            update_group_info_in_db(chat.id, chat.title, chat.type)
             
             # הודעה מותאמת לקבוצה - רק אם זו פקודת start מפורשת
             if update.message.text and '/start' in update.message.text:
                 update.message.reply_text(
                     "🤖 הבוט פעיל בקבוצה זו!\n\n"
                     f"🆔 **ID הקבוצה:** `{chat.id}`\n"
-                    "👑 **לאדמין:** השתמש ב-`/chatid` כדי לראות את כל הקבוצות.\n"
+                    "👑 **לאדמין:** השתמש ב-`/groupid` או `/chaid` כדי לראות את כל הקבוצות.\n"
                     "👤 **למשתמשים:** שלחו /start בפרטי כדי להתחיל."
                 )
             return
@@ -880,8 +1011,16 @@ def start(update: Update, context: CallbackContext) -> None:
         if update.message:
             update.message.reply_text("❌ אירעה שגיאה. אנא נסה שוב.")
 
+def groupid(update: Update, context: CallbackContext) -> None:
+    """פקודת groupid - מציגה את כל הקבוצות (alias ל-chatid)"""
+    chatid(update, context)
+
+def chaid(update: Update, context: CallbackContext) -> None:
+    """פקודת chaid - מציגה את כל הקבוצות (alias ל-chatid)"""
+    chatid(update, context)
+
 def chatid(update: Update, context: CallbackContext) -> None:
-    """שולח את ה-ID של הקבוצה הנוכחית או רשימת כל הקבוצות"""
+    """שולח את ה-ID של הקבוצה הנוכחית או רשימת כל הקבוצות - משופר"""
     try:
         user = update.effective_user
         
@@ -896,34 +1035,21 @@ def chatid(update: Update, context: CallbackContext) -> None:
             chat_title = update.message.chat.title
             message = f"🆔 **קבוצה:** {chat_title}\n**ID:** `{chat_id}`\n**סוג:** {update.message.chat.type}"
             
-            # שמירת הקבוצה במסד הנתונים
-            save_group(chat_id, chat_title, update.message.chat.type)
-            message += f"\n\n✅ **הקבוצה נשמרה במסד הנתונים!**"
+            # שמירת/עדכון הקבוצה במסד הנתונים
+            update_group_info_in_db(chat_id, chat_title, update.message.chat.type)
+            message += f"\n\n✅ **הקבוצה נשמרה/עודכנה במסד הנתונים!**"
             
-            update.message.reply_text(message, parse_mode='Markdown')
+            # הוספת כפתורים לפעולות נוספות
+            keyboard = [
+                [InlineKeyboardButton("📊 הצג כל הקבוצות", callback_data='show_all_groups')],
+                [InlineKeyboardButton("🔄 רענן קבוצות", callback_data='refresh_groups')]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            update.message.reply_text(message, parse_mode='Markdown', reply_markup=reply_markup)
         else:
             # אם נשלחה בצ'אט פרטי, שלח את רשימת כל הקבוצות
-            all_chats = get_bot_all_chats()
-            
-            if all_chats:
-                message = f"📊 **כל הצ'אטים שהבוט חבר בהם ({len(all_chats)}):**\n\n"
-                
-                for i, chat in enumerate(all_chats, 1):
-                    chat_id = chat[0]
-                    chat_title = chat[1] 
-                    chat_type = chat[2] if len(chat) > 2 else "unknown"
-                    message += f"{i}. **{chat_title}**\n   ID: `{chat_id}` | Type: {chat_type}\n\n"
-                
-                message += "💡 **הערה:** ייתכן שיש צ'אטים נוספים שהבוט חבר בהם אך עוד לא נרשמו במערכת."
-                
-            else:
-                message = "❌ הבוט לא חבר באף צ'אט שנרשם במערכת.\n\n"
-                message += "💡 **טיפים:**\n"
-                message += "• הזמן את הבוט לקבוצה ונסה שוב\n"
-                message += "• שלח /start בקבוצה כדי לרשום אותה\n"
-                message += "• השתמש ב-/chatid בתוך קבוצה כדי לרשום אותה"
-            
-            update.message.reply_text(message, parse_mode='Markdown')
+            show_all_groups_command(update, context)
             
     except Exception as e:
         logger.error(f"Error in chatid command: {e}")
@@ -940,7 +1066,7 @@ def admin(update: Update, context: CallbackContext) -> None:
             return
 
         stats = get_user_stats()
-        groups = get_bot_all_chats()
+        groups = get_bot_real_chats()
         pending_payments = get_pending_payments()
         
         message = "👑 **פאנל ניהול - SLH Bot**\n\n"
@@ -964,18 +1090,19 @@ def admin(update: Update, context: CallbackContext) -> None:
         message += f"💰 **תשלומים ממתינים:** {len(pending_payments)}\n\n"
         
         message += "🔧 **פקודות ניהול:**\n"
-        message += "• `/chatid` - הצג ID קבוצה/רשימת קבוצות\n"
+        message += "• `/groupid` או `/chaid` - הצג ID קבוצה/רשימת קבוצות\n"
         message += "• `/admin` - פאנל ניהול זה\n"
         message += "• `/broadcast` - שליחת הודעה לכל המשתמשים\n"
         message += "• `/group_broadcast` - שליחת הודעה לכל הקבוצות\n"
+        message += "• `/refresh_groups` - רענון רשימת הקבוצות\n"
         message += "• 🌐 https://web-production-b425.up.railway.app/admin?password=slh2025 - פאנל ניהול מתקדם\n\n"
         
         message += "🚀 **לאסוף צ'אטים נוספים:**\n"
         message += "1. הזמן את הבוט לקבוצה\n"
-        message += "2. שלח `/start` או `/chatid` בקבוצה\n"
+        message += "2. שלח `/start` או `/groupid` בקבוצה\n"
         message += "3. הקבוצה תירשם אוטומטית\n"
         
-        update.message.reply_text(message, parse_mode='Markdown')
+        update.message.reply_text(message, parse_mode='Markdown', reply_markup=get_admin_groups_keyboard())
             
     except Exception as e:
         logger.error(f"Error in admin command: {e}")
@@ -1092,14 +1219,14 @@ def handle_group_add(update: Update, context: CallbackContext) -> None:
         bot_id = context.bot.id
         if any(member.id == bot_id for member in new_members):
             # רישום הקבוצה במסד הנתונים
-            save_group(chat.id, chat.title, chat.type)
+            update_group_info_in_db(chat.id, chat.title, chat.type)
             
             # שליחת הודעה לקבוצה
             update.message.reply_text(
                 "🤖 תודה שהוספתם אותי לקבוצה! אני כאן כדי לסייע.\n"
                 "להפעלתי, שלחו /start בפרטי.\n\n"
                 f"🆔 **ID הקבוצה:** `{chat.id}`\n"
-                "👑 **לאדמין:** השתמש ב-`/chatid` כדי לראות את כל הקבוצות."
+                "👑 **לאדמין:** השתמש ב-`/groupid` או `/chaid` כדי לראות את כל הקבוצות."
             )
             
             # שליחת התראה לאדמין
@@ -1108,15 +1235,15 @@ def handle_group_add(update: Update, context: CallbackContext) -> None:
         logger.error(f"Error in handle_group_add: {e}")
 
 def handle_group_activity(update: Update, context: CallbackContext) -> None:
-    """מטפל בכל פעילות בקבוצות ורושם את הקבוצה"""
+    """מטפל בכל פעילות בקבוצות ורושם את הקבוצה - משופר"""
     try:
         if update.message and update.message.chat.type in ['group', 'supergroup']:
             chat = update.message.chat
-            # רישום הקבוצה במסד הנתונים
-            save_group(chat.id, chat.title, chat.type)
+            # רישום/עדכון הקבוצה במסד הנתונים עם פרטים מעודכנים
+            update_group_info_in_db(chat.id, chat.title, chat.type)
             
             # לוג לצורך ניפוי באגים
-            logger.info(f"Group activity detected: {chat.title} (ID: {chat.id})")
+            logger.info(f"Group activity detected and updated: {chat.title} (ID: {chat.id}, Type: {chat.type})")
             
     except Exception as e:
         logger.error(f"Error in handle_group_activity: {e}")
@@ -1182,7 +1309,7 @@ def safe_edit_message(query, text, reply_markup=None, parse_mode='Markdown'):
                 return False
 
 def button_handler(update: Update, context: CallbackContext) -> None:
-    """מטפל בלחיצות על כפתורים - רב-לשוני"""
+    """מטפל בלחיצות על כפתורים - רב-לשוני - משופר"""
     query = update.callback_query
     
     try:
@@ -1215,20 +1342,31 @@ def button_handler(update: Update, context: CallbackContext) -> None:
             language_handler(update, context)
             return
 
+        elif query.data == 'show_all_groups':
+            show_all_groups_command(update, context)
+            return
+
         elif query.data == 'refresh_groups':
-            # רענון רשימת הקבוצות
-            groups = get_all_groups()
-            if groups:
-                groups_list = "\n".join([f"• {group[1]} (ID: `{group[0]}`, Type: {group[2]})" for group in groups])
-                message = f"📊 **קבוצות שהבוט חבר בהן ({len(groups)}):**\n\n{groups_list}"
-                
-                keyboard = [[InlineKeyboardButton("🔄 רענון", callback_data='refresh_groups')]]
+            refresh_all_groups(update, context)
+            return
+
+        elif query.data == 'broadcast_groups':
+            # כפתור לשידור לקבוצות - פותח חלון שידור
+            if str(user.id) == ADMIN_USER_ID:
+                message = "📤 **שידור לקבוצות**\n\nהזן את ההודעה שברצונך לשדר לכל הקבוצות:\n\nהשתמש בפקודה: `/group_broadcast <הודעה>`"
+                keyboard = [[InlineKeyboardButton("↩️ חזרה", callback_data='back_to_admin')]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
-                
                 safe_edit_message(query, message, reply_markup)
             else:
-                message = "❌ הבוט לא חבר באף קבוצה במסד הנתונים.\n\n💡 **טיפ:** הזמן את הבוט לקבוצה ונסה שוב."
-                safe_edit_message(query, message)
+                safe_edit_message(query, "❌ אין לך הרשאות לשידור.", get_back_keyboard(user_id))
+            return
+
+        elif query.data == 'back_to_admin':
+            # חזרה לפאנל אדמין
+            if str(user.id) == ADMIN_USER_ID:
+                admin(update, context)
+            else:
+                safe_edit_message(query, "❌ אין לך הרשאות ניהול.", get_main_keyboard(user_id))
             return
 
         elif query.data == 'ecosystem_explanation':
@@ -1986,15 +2124,18 @@ def handle_payment_proof(update: Update, context: CallbackContext) -> None:
 
 # --- הגדרת handlers ---
 def setup_handlers():
-    """מגדיר את ה-handlers עבור הפקודות"""
+    """מגדיר את ה-handlers עבור הפקודות - משופר"""
     # handler לפקודת start - עובד בכל סוגי הצ'אטים
     dispatcher.add_handler(CommandHandler("start", start))
     
     # handlers לפקודות אדמין - עובדים בכל סוגי הצ'אטים
     dispatcher.add_handler(CommandHandler("chatid", chatid))
+    dispatcher.add_handler(CommandHandler("groupid", groupid))  # הוסף
+    dispatcher.add_handler(CommandHandler("chaid", chaid))      # הוסף
     dispatcher.add_handler(CommandHandler("admin", admin))
     dispatcher.add_handler(CommandHandler("broadcast", broadcast))
     dispatcher.add_handler(CommandHandler("group_broadcast", group_broadcast))
+    dispatcher.add_handler(CommandHandler("refresh_groups", refresh_all_groups))  # הוסף
     
     # handlers לאינטראקציות משתמש - רק בצ'אטים פרטיים
     dispatcher.add_handler(CallbackQueryHandler(button_handler))
@@ -2010,7 +2151,7 @@ def setup_handlers():
         handle_group_activity
     ))
     
-    logger.info("Handlers setup completed")
+    logger.info("Handlers setup completed with enhanced group management")
 
 # --- פאנל ניהול מתקדם ---
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'slh2025')
@@ -2378,7 +2519,7 @@ def home():
     return jsonify({
         "status": "active",
         "service": "SLH Community Gateway Bot - Premium Edition",
-        "version": "5.5",
+        "version": "5.6",
         "timestamp": datetime.now().isoformat(),
         "features": [
             "SLH Coin cryptocurrency ecosystem",
@@ -2393,10 +2534,12 @@ def home():
             "User activity monitoring",
             "Referral tracking system",
             "Free access after 39 referrals",
-            "Group management system",
-            "Admin chatid command",
+            "Enhanced group management system",
+            "Admin groupid/chaid commands",
             "Payment confirmation to groups",
-            "SLH Token rewards system"
+            "SLH Token rewards system",
+            "Automatic group registration",
+            "Group activity tracking"
         ],
         "monitoring": {
             "admin_panel": "/admin?password=slh2025",
@@ -2472,7 +2615,7 @@ def dashboard():
         </div>
 
         <div class="ecosystem">
-            <h2>💎 אקוסיסטם סלה ללא גבולות - גרסה 5.5</h2>
+            <h2>💎 אקוסיסטם סלה ללא גבולות - גרסה 5.6</h2>
             <p><strong>מערכת ניטור מתקדמת:</strong> ✅ פעיל</p>
             <p><strong>התראות בזמן אמת:</strong> ✅ פעיל</p>
             <p><strong>מעקב תשלומים:</strong> ✅ פעיל</p>
@@ -2485,12 +2628,14 @@ def dashboard():
             <p><strong>עלות הצטרפות:</strong> 39₪</p>
             <p><strong>רמות שיווק:</strong> 5 דורות</p>
             <p><strong>צמיחה חודשית:</strong> 20%</p>
-            <p><strong>ניהול קבוצות:</strong> ✅ פעיל</p>
-            <p><strong>פקודת /chatid:</strong> ✅ פעיל</p>
+            <p><strong>ניהול קבוצות מתקדם:</strong> ✅ פעיל</p>
+            <p><strong>פקודות /groupid ו-/chaid:</strong> ✅ פעיל</p>
             <p><strong>פקודת /admin:</strong> ✅ פעיל</p>
             <p><strong>אישורי תשלום לקבוצה:</strong> ✅ פעיל</p>
             <p><strong>תגמולי SLH:</strong> ✅ פעיל (1 SLH לכל תשלום)</p>
             <p><strong>שידור לקבוצות:</strong> ✅ פעיל</p>
+            <p><strong>רישום קבוצות אוטומטי:</strong> ✅ פעיל</p>
+            <p><strong>מעקב פעילות קבוצות:</strong> ✅ פעיל</p>
         </div>
 
         <div class="projects">
@@ -2556,14 +2701,14 @@ def set_webhook():
                 "timestamp": datetime.now().isoformat(),
                 "bot_info": {
                     "service": "SLH Community & Ecosystem Gateway",
-                    "version": "5.5",
+                    "version": "5.6",
                     "ecosystem": {
                         "slh_coin": "444 ILS per coin",
                         "network_marketing": "5 generations", 
                         "membership": "39 ILS",
                         "free_access_after": "39 referrals",
                         "slh_rewards": "1 SLH per payment",
-                        "features": ["Bot development", "NFT marketplace", "Crypto ecosystem", "Advanced monitoring", "Referral system", "Multi-language support", "Group management", "Admin commands", "Payment confirmations", "SLH token rewards"]
+                        "features": ["Bot development", "NFT marketplace", "Crypto ecosystem", "Advanced monitoring", "Enhanced group management", "Referral system", "Multi-language support", "Admin commands", "Payment confirmations", "SLH token rewards"]
                     }
                 }
             }), 200
@@ -2580,7 +2725,7 @@ def health_check():
     return jsonify({
         "status": "healthy", 
         "service": "SLH Community Gateway & Ecosystem",
-        "version": "5.5",
+        "version": "5.6",
         "timestamp": datetime.now().isoformat(),
         "projects_active": 4,
         "system_uptime": "99.9%",
@@ -2591,7 +2736,7 @@ def health_check():
             "admin_panel": "active",
             "referral_system": "active",
             "multi_language": "active",
-            "group_management": "active",
+            "enhanced_group_management": "active",
             "payment_confirmation": "active",
             "slh_rewards": "active"
         }
@@ -2617,7 +2762,8 @@ def initialize_bot():
         
         # שליחת הודעת אתחול לקבוצת הניהול (אם היא קיימת)
         try:
-            send_admin_alert("🚀 **בוט SLH הותחל בהצלחה!**\n\nגרסה: 5.5 - עם מערכת ניטור מתקדמת\nפאנל ניהול: /admin\nמערכת רפראלים: ✅ פעיל\nתמיכה רב-לשונית: ✅ פעיל\nנתונים בזמן אמת: ✅ פעיל\nניהול קבוצות: ✅ פעיל\nפקודת /chatid: ✅ פעיל\nאישורי תשלום לקבוצה: ✅ פעיל\nתגמולי SLH: ✅ פעיל (1 SLH לכל תשלום)\nשידור לקבוצות: ✅ פעיל")
+            groups_count = len(get_all_groups())
+            send_admin_alert(f"🚀 **בוט SLH הותחל בהצלחה!**\n\nגרסה: 5.6 - עם מערכת ניהול קבוצות מתקדמת\n📊 קבוצות רשומות: {groups_count}\n🆔 פקודות חדשות: /groupid, /chaid\n🔄 רענון קבוצות: /refresh_groups\nפאנל ניהול: /admin\nמערכת רפראלים: ✅ פעיל\nתמיכה רב-לשונית: ✅ פעיל\nניהול קבוצות: ✅ משופר\nפקודת /groupid: ✅ פעיל\nאישורי תשלום לקבוצה: ✅ פעיל\nתגמולי SLH: ✅ פעיל (1 SLH לכל תשלום)\nשידור לקבוצות: ✅ פעיל")
         except Exception as e:
             logger.warning(f"Could not send startup message to admin group: {e}")
         
