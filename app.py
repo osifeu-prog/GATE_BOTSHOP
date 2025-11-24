@@ -258,7 +258,6 @@ def button_handler(update: Update, context: CallbackContext) -> None:
 מספר חשבון: 73462
 שם המוטב: קאופמן צביקה
 
-
 **📝 חשוב:** אחרי ההעברה, שלח אלינו את אישור התשלום באמצעות הכפתור '✅ שלחתי תשלום'
             """
             query.edit_message_text(
@@ -270,4 +269,3 @@ def button_handler(update: Update, context: CallbackContext) -> None:
         elif query.data == 'payment_ton':
             ton_text = """
 **💎 תשלום ב-TON**
-
