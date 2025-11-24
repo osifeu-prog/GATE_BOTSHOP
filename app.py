@@ -42,6 +42,7 @@ TRANSLATIONS = {
         'our_projects': "🌐 הפרויקטים שלנו",
         'contact': "📞 צור קשר",
         'help': "🆘 עזרה ראשונה",
+        'website': "🌐 אתר האינטרנט",
         
         # הודעות
         'welcome': "🌅 **ברוך הבא {name} למהפכה הכלכלית של סלה ללא גבולות!**\n\n_גילית את האקוסיסטם הטכנולוגי המתקדם ביותר בישראל שמשלב קריפטו, בוטים חכמים, ושיווק רשתי מתקדם_ ✨",
@@ -81,6 +82,7 @@ TRANSLATIONS = {
         'our_projects': "🌐 Our Projects",
         'contact': "📞 Contact",
         'help': "🆘 Quick Help",
+        'website': "🌐 Website",
         
         # Messages
         'welcome': "🌅 **Welcome {name} to the economic revolution of Sela Without Borders!**\n\n_You've discovered the most advanced technological ecosystem in Israel combining crypto, smart bots, and advanced network marketing_ ✨",
@@ -120,6 +122,7 @@ Recipient: Kaufman Zvika
         'our_projects': "🌐 Наши проекты", 
         'contact': "📞 Контакты",
         'help': "🆘 Быстрая помощь",
+        'website': "🌐 Веб-сайт",
         
         # Сообщения
         'welcome': "🌅 **Добро пожаловать {name} в экономическую революцию Села без границ!**\n\n_Вы открыли самую передовую технологическую экосистему в Израиле, сочетающую крипто, умные боты и продвинутый сетевой маркетинг_ ✨",
@@ -159,6 +162,7 @@ Recipient: Kaufman Zvika
         'our_projects': "🌐 مشاريعنا",
         'contact': "📞 اتصل بنا", 
         'help': "🆘 مساعدة سريعة",
+        'website': "🌐 موقع الويب",
         
         # الرسائل
         'welcome': "🌅 **مرحبًا {name} في الثورة الاقتصادية لسيلا بلا حدود!**\n\n_لقد اكتشفت النظام البيئي التكنولوجي الأكثر تقدمًا في إسرائيل الذي يجمع بين العملات المشفرة، البوتات الذكية، والتسويق الشبكي المتقدم_ ✨",
@@ -731,6 +735,7 @@ def get_main_keyboard(user_id):
         [InlineKeyboardButton(get_translation(lang, 'our_projects'), callback_data='our_projects')],
         [InlineKeyboardButton(get_translation(lang, 'contact'), callback_data='contact'), 
          InlineKeyboardButton(get_translation(lang, 'help'), callback_data='help')],
+        [InlineKeyboardButton(get_translation(lang, 'website'), url='https://slh-nft.com/')],
         [InlineKeyboardButton("🌐 שפה / Language", callback_data='change_language')]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -1179,7 +1184,11 @@ def safe_edit_message(query, text, reply_markup=None, parse_mode='Markdown'):
 def button_handler(update: Update, context: CallbackContext) -> None:
     """מטפל בלחיצות על כפתורים - רב-לשוני"""
     query = update.callback_query
-    query.answer()
+    
+    try:
+        query.answer()
+    except Exception as e:
+        logger.warning(f"Could not answer callback query: {e}")
 
     try:
         user = query.from_user
@@ -1952,7 +1961,7 @@ def handle_payment_proof(update: Update, context: CallbackContext) -> None:
                 'he': "📸 **נא שלח צילום מסך של ההעברה או פרטי התשלום בטקסט.**",
                 'en': "📸 **Please send a screenshot of the transfer or payment details in text.**",
                 'ru': "📸 **Пожалуйста, отправьте скриншот перевода или детали платежа текстом.**",
-                'ar': "📸 **يرгى إرسال لقطة شاشة للتحويل أو تفاصيل الدفع نصًا.**"
+                'ar': "📸 **يرجى إرسال لقطة شاشة للتحويل أو تفاصيل الدفع نصًا.**"
             }
             update.message.reply_text(
                 instruction_messages.get(lang, instruction_messages['he']),
@@ -1988,15 +1997,9 @@ def setup_handlers():
     dispatcher.add_handler(CommandHandler("group_broadcast", group_broadcast))
     
     # handlers לאינטראקציות משתמש - רק בצ'אטים פרטיים
-    class PrivateFilter:
-        def filter(self, message):
-            return message.chat.type == 'private'
-    
-    private_filter = PrivateFilter()
-    
     dispatcher.add_handler(CallbackQueryHandler(button_handler))
-    dispatcher.add_handler(MessageHandler(Filters.photo & private_filter, handle_payment_proof))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command & private_filter, handle_payment_proof))
+    dispatcher.add_handler(MessageHandler(Filters.photo & Filters.chat_type.private, handle_payment_proof))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command & Filters.chat_type.private, handle_payment_proof))
     
     # handler להוספת הבוט לקבוצות
     dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, handle_group_add))
