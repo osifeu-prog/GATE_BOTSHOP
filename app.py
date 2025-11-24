@@ -15,6 +15,7 @@ WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://web-production-b425.up.rail
 MAIN_GROUP_LINK = "https://t.me/+HIzvM8sEgh1kNWY0"
 ADMIN_GROUP_ID = "-1002141887344"  # ID מספרי של קבוצת הניהול
 PAYMENT_CONFIRMATION_GROUP = "-1002141887344"  # ID קבוצת אישורי תשלום (אותה קבוצה)
+MAIN_COMMUNITY_GROUP = "-1002141887344"  # הקבוצה הראשית להצטרפות
 ADMIN_USER_ID = "224223270"  # ID שלך - Osif
 
 # states לשיחת צור קשר
@@ -248,7 +249,8 @@ def init_db():
                   total_earned REAL DEFAULT 0,
                   payment_verified BOOLEAN DEFAULT FALSE,
                   approved_by TEXT,
-                  approved_date TIMESTAMP)''')
+                  approved_date TIMESTAMP,
+                  slh_tokens REAL DEFAULT 0)''')  # הוספת עמודת SLH tokens
     
     # טבלת תשלומים
     c.execute('''CREATE TABLE IF NOT EXISTS payments
@@ -260,7 +262,8 @@ def init_db():
                   proof_text TEXT,
                   payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                   verified_by TEXT,
-                  verification_date TIMESTAMP)''')
+                  verification_date TIMESTAMP,
+                  slh_reward REAL DEFAULT 0)''')  # הוספת עמודת תגמול SLH
     
     # טבלת פעילות
     c.execute('''CREATE TABLE IF NOT EXISTS activity_log
@@ -341,9 +344,12 @@ def log_payment(user_id, payment_type, amount, proof_text=""):
         conn = sqlite3.connect('bot_data.db', check_same_thread=False)
         c = conn.cursor()
         
+        # חישוב תגמול SLH (39₪ = 1 SLH)
+        slh_reward = 1.0  # כל תשלום של 39₪ מזכה ב-1 SLH
+        
         c.execute('''INSERT INTO payments 
-                     (user_id, payment_type, amount, proof_text)
-                     VALUES (?, ?, ?, ?)''', (user_id, payment_type, amount, proof_text))
+                     (user_id, payment_type, amount, proof_text, slh_reward)
+                     VALUES (?, ?, ?, ?, ?)''', (user_id, payment_type, amount, proof_text, slh_reward))
         
         payment_id = c.lastrowid
         
@@ -475,17 +481,27 @@ def get_user_referrals(user_id):
         return []
 
 def approve_user_payment(user_id, approved_by):
-    """אישור תשלום משתמש"""
+    """אישור תשלום משתמש והוספת SLH tokens"""
     try:
         conn = sqlite3.connect('bot_data.db', check_same_thread=False)
         c = conn.cursor()
         
+        # קבלת פרטי התשלום
+        c.execute('''SELECT slh_reward FROM payments 
+                     WHERE user_id = ? AND status = 'pending' 
+                     ORDER BY payment_date DESC LIMIT 1''', (user_id,))
+        result = c.fetchone()
+        slh_reward = result[0] if result else 1.0  # ברירת מחדל 1 SLH
+        
+        # עדכון משתמש - אישור תשלום והוספת SLH
         c.execute('''UPDATE users SET 
                      payment_verified = TRUE,
                      approved_by = ?,
-                     approved_date = CURRENT_TIMESTAMP
-                     WHERE user_id = ?''', (approved_by, user_id))
+                     approved_date = CURRENT_TIMESTAMP,
+                     slh_tokens = slh_tokens + ?
+                     WHERE user_id = ?''', (approved_by, slh_reward, user_id))
         
+        # עדכון תשלום - סימון כמאושר
         c.execute('''UPDATE payments SET 
                      status = 'verified',
                      verified_by = ?,
@@ -494,10 +510,10 @@ def approve_user_payment(user_id, approved_by):
         
         conn.commit()
         conn.close()
-        return True
+        return True, slh_reward
     except Exception as e:
         logger.error(f"Database error in approve_user_payment: {e}")
-        return False
+        return False, 0
 
 def get_pending_payments():
     """קבלת רשימת תשלומים ממתינים"""
@@ -546,6 +562,19 @@ def get_all_groups():
         logger.error(f"Error getting groups: {e}")
         return []
 
+def get_user_slh_balance(user_id):
+    """מחזיר את יתרת ה-SLH tokens של משתמש"""
+    try:
+        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        c = conn.cursor()
+        c.execute("SELECT slh_tokens FROM users WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
+        conn.close()
+        return result[0] if result else 0
+    except Exception as e:
+        logger.error(f"Error getting user SLH balance: {e}")
+        return 0
+
 # אתחול הבוט וה-dispatcher
 try:
     bot = Bot(token=BOT_TOKEN)
@@ -559,15 +588,7 @@ except Exception as e:
 def get_bot_all_chats():
     """מחזיר את כל הצ'אטים שהבוט חבר בהם - כולל קבוצות וערוצים"""
     try:
-        # זו פונקציה שמנסה לקבל את כל הצ'אטים מהטלגרם
-        # note: בפועל, Telegram Bot API לא מאפשרת לקבל רשימה של כל הצ'אטים
-        # אז נשתמש במה שנשמר במסד הנתונים + ננסה לאסוף מידע נוסף
-        
         groups_from_db = get_all_groups()
-        
-        # כאן נוכל להוסיף לוגיקה נוספת לאסוף מידע על צ'אטים
-        # שהבוט חבר בהם אבל עוד לא נשמרו במסד הנתונים
-        
         return groups_from_db
     except Exception as e:
         logger.error(f"Error getting all bot chats: {e}")
@@ -615,6 +636,15 @@ def send_admin_alert(message, image_file_id=None):
         return True
     except Exception as e:
         logger.warning(f"Admin alert failed: {e} - Message: {message[:100]}")
+        # ננסה לשלוח לאדמין ישירות
+        try:
+            bot.send_message(
+                chat_id=ADMIN_USER_ID,
+                text=f"⚠️ Admin group failed: {e}\n\nMessage: {message}",
+                parse_mode='Markdown'
+            )
+        except:
+            pass
         return False
 
 def send_payment_confirmation_to_group(user_id, user_name, payment_type, amount, proof_text="", image_file_id=None):
@@ -759,6 +789,16 @@ def get_contact_keyboard(user_id):
         [InlineKeyboardButton("🤖 פיתוח בוט", callback_data='contact_bot')],
         [InlineKeyboardButton("📞 תמיכה טכנית", callback_data='contact_support')],
         [InlineKeyboardButton("↩️ " + ("חזרה" if lang == 'he' else "Back"), callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_slh_balance_keyboard(user_id):
+    """מקלדת עם יתרת SLH"""
+    lang = get_user_language(user_id)
+    slh_balance = get_user_slh_balance(user_id)
+    keyboard = [
+        [InlineKeyboardButton(f"💎 יתרת SLH: {slh_balance}", callback_data='slh_balance')],
+        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -921,6 +961,8 @@ def admin(update: Update, context: CallbackContext) -> None:
         message += "🔧 **פקודות ניהול:**\n"
         message += "• `/chatid` - הצג ID קבוצה/רשימת קבוצות\n"
         message += "• `/admin` - פאנל ניהול זה\n"
+        message += "• `/broadcast` - שליחת הודעה לכל המשתמשים\n"
+        message += "• `/group_broadcast` - שליחת הודעה לכל הקבוצות\n"
         message += "• 🌐 https://web-production-b425.up.railway.app/admin?password=slh2025 - פאנל ניהול מתקדם\n\n"
         
         message += "🚀 **לאסוף צ'אטים נוספים:**\n"
@@ -933,6 +975,107 @@ def admin(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         logger.error(f"Error in admin command: {e}")
         update.message.reply_text("❌ אירעה שגיאה בפקודת האדמין.")
+
+def broadcast(update: Update, context: CallbackContext) -> None:
+    """שליחת הודעה לכל המשתמשים"""
+    try:
+        user = update.effective_user
+        
+        # בדיקה אם המשתמש הוא אדמין
+        if str(user.id) != ADMIN_USER_ID:
+            update.message.reply_text("❌ אתה לא מורשה להשתמש בפקודה זו.")
+            return
+
+        # בדיקה אם יש טקסט להודעה
+        if not context.args:
+            update.message.reply_text("❌ שימוש: /broadcast <הודעה>")
+            return
+
+        message = " ".join(context.args)
+        
+        # קבלת כל המשתמשים
+        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        c = conn.cursor()
+        c.execute("SELECT user_id FROM users")
+        users = c.fetchall()
+        conn.close()
+        
+        sent_count = 0
+        failed_count = 0
+        
+        for user_tuple in users:
+            user_id = user_tuple[0]
+            try:
+                bot.send_message(
+                    chat_id=user_id,
+                    text=f"📢 **הודעה מהמערכת:**\n\n{message}",
+                    parse_mode='Markdown'
+                )
+                sent_count += 1
+                time.sleep(0.1)  # מניעת הגבלת שיעור
+            except Exception as e:
+                failed_count += 1
+                logger.error(f"Failed to send broadcast to {user_id}: {e}")
+        
+        update.message.reply_text(
+            f"✅ **שידור הושלם!**\n\n"
+            f"✅ נשלח בהצלחה: {sent_count}\n"
+            f"❌ נכשל: {failed_count}\n"
+            f"📊 סה\"כ: {len(users)}"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in broadcast command: {e}")
+        update.message.reply_text("❌ אירעה שגיאה בשליחת השידור.")
+
+def group_broadcast(update: Update, context: CallbackContext) -> None:
+    """שליחת הודעה לכל הקבוצות"""
+    try:
+        user = update.effective_user
+        
+        # בדיקה אם המשתמש הוא אדמין
+        if str(user.id) != ADMIN_USER_ID:
+            update.message.reply_text("❌ אתה לא מורשה להשתמש בפקודה זו.")
+            return
+
+        # בדיקה אם יש טקסט להודעה
+        if not context.args:
+            update.message.reply_text("❌ שימוש: /group_broadcast <הודעה>")
+            return
+
+        message = " ".join(context.args)
+        
+        # קבלת כל הקבוצות
+        groups = get_all_groups()
+        
+        sent_count = 0
+        failed_count = 0
+        
+        for group in groups:
+            group_id = group[0]
+            group_name = group[1]
+            try:
+                bot.send_message(
+                    chat_id=group_id,
+                    text=f"📢 **הודעה מהמערכת:**\n\n{message}",
+                    parse_mode='Markdown'
+                )
+                sent_count += 1
+                time.sleep(0.1)  # מניעת הגבלת שיעור
+            except Exception as e:
+                failed_count += 1
+                logger.error(f"Failed to send group broadcast to {group_name} ({group_id}): {e}")
+        
+        update.message.reply_text(
+            f"✅ **שידור לקבוצות הושלם!**\n\n"
+            f"✅ נשלח בהצלחה: {sent_count}\n"
+            f"❌ נכשל: {failed_count}\n"
+            f"📊 סה\"כ קבוצות: {len(groups)}"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in group_broadcast command: {e}")
+        update.message.reply_text("❌ אירעה שגיאה בשליחת השידור לקבוצות.")
 
 def handle_group_add(update: Update, context: CallbackContext) -> None:
     """מטפל כאשר הבוט מתווסף לקבוצה"""
@@ -1378,6 +1521,8 @@ This is not a "cost" - it's an **investment in a digital asset** that generates 
 
 📸 **שלח עכשיו את אישור התשלום כאן בצ'אט**
 ונחזור אליך עם קישור ההצטרפות תוך 24 שעות!
+
+💎 **בונוס מיוחד:** כל תשלום מזכה אותך ב-**SLH 1** בשווי 444₪!
                 """,
                 'en': """
 **✅ I Sent Payment - What Now?**
@@ -1394,6 +1539,8 @@ This is not a "cost" - it's an **investment in a digital asset** that generates 
 
 📸 **Send the payment confirmation now in this chat**
 We'll get back to you with the joining link within 24 hours!
+
+💎 **Special bonus:** Every payment earns you **SLH 1** worth 444₪!
                 """,
                 'ru': """
 **✅ Я отправил платеж - что теперь?**
@@ -1410,6 +1557,8 @@ We'll get back to you with the joining link within 24 hours!
 
 📸 **Отправьте подтверждение платежа сейчас в этом чате**
 Мы вернемся к вам со ссылкой для вступления в течение 24 часов!
+
+💎 **Специальный бонус:** Каждый платеж приносит вам **SLH 1** стоимостью 444₪!
                 """,
                 'ar': """
 **✅ قمت بإرسال الدفع - ماذا الآن؟**
@@ -1426,9 +1575,98 @@ We'll get back to you with the joining link within 24 hours!
 
 📸 **أرسل تأكيد الدفع الآن في هذه الدردشة**
 سنتواصل معك برابط الانضمام خلال 24 ساعة!
+
+💎 **مكافأة خاصة:** كل دفعة تمنحك **SLH 1** بقيمة 444₪!
                 """
             }
             safe_edit_message(query, payment_instructions.get(lang, payment_instructions['he']), get_payment_keyboard(user_id))
+
+        elif query.data == 'joining_bonuses':
+            bonuses_text = {
+                'he': """
+**🎁 בונוסי הצטרפות - מה תקבל?**
+
+**💎 תגמולי SLH:**
+• **SLH 1** בשווי 444₪ - מיד עם אישור התשלום
+• מטבע utility אמיתי עם שימושים במערכת
+• פוטנציאל צמיחה עם גידול הקהילה
+
+**🚀 גישה מלאה:**
+• קישור להצטרפות לקהילת VIP
+• הלינק האישי שלך לשיתוף והכנסות
+• הדרכה מלאה לשימוש במערכת
+
+**📊 הכנסות פסיביות:**
+• 10% מכל מצטרף חדש דרך הלינק שלך
+• הכנסה מ-5 דורות של רפראלים
+• דוחות מפורטים בזמן אמת
+
+**👑 הטבות נוספות:**
+• שיחת ייעוץ אישית
+• גישה לכל החומרים וההדרכות
+• תמיכה טכנית 24/7
+                """,
+                'en': """
+**🎁 Joining Bonuses - What You'll Get?**
+
+**💎 SLH Rewards:**
+• **SLH 1** worth 444₪ - immediately upon payment confirmation
+• Real utility coin with system uses
+• Growth potential with community growth
+
+**🚀 Full Access:**
+• Link to join VIP community
+• Your personal sharing link for earnings
+• Complete system usage guidance
+
+**📊 Passive Income:**
+• 10% from every new member through your link
+• Income from 5 generations of referrals
+• Detailed real-time reports
+
+**👑 Additional Benefits:**
+• Personal consultation call
+• Access to all materials and trainings
+• 24/7 technical support
+                """
+            }
+            safe_edit_message(query, bonuses_text.get(lang, bonuses_text['he']), get_payment_keyboard(user_id))
+
+        elif query.data == 'slh_balance':
+            slh_balance = get_user_slh_balance(user_id)
+            balance_text = {
+                'he': f"""
+**💎 יתרת SLH שלך**
+
+**🪙 כמות SLH:** {slh_balance}
+**💰 שווי נוכחי:** {slh_balance * 444}₪
+**🚀 סטטוס:** {'פעיל' if slh_balance > 0 else 'ממתין להצטרפות'}
+
+**📈 מה אפשר לעשות עם SLH?**
+• השתתפות בסטייקינג (בקרוב)
+• תשלומים בתוך המערכת
+• מסחר וניתוח (בפיתוח)
+• הצבעות קהילתיות (עתידי)
+
+**💡 טיפ:** כל מצטרף חדש דרך הלינק שלך מזכה אותך בעוד SLH!
+                """,
+                'en': f"""
+**💎 Your SLH Balance**
+
+**🪙 SLH Amount:** {slh_balance}
+**💰 Current Value:** {slh_balance * 444}₪
+**🚀 Status:** {'Active' if slh_balance > 0 else 'Pending joining'}
+
+**📈 What can you do with SLH?**
+• Participate in staking (coming soon)
+• Payments within the system
+• Trading and analysis (in development)
+• Community voting (future)
+
+**💡 Tip:** Every new member through your link earns you more SLH!
+                """
+            }
+            safe_edit_message(query, balance_text.get(lang, balance_text['he']), get_slh_balance_keyboard(user_id))
 
         elif query.data == 'network_marketing':
             network_texts = {
@@ -1501,6 +1739,7 @@ After joining, you'll receive a **unique personal sharing link** that's identifi
 • **רפראלים:** {user_ref_count}/39
 • **נותרו:** {39 - user_ref_count} להשלמה
 • **הכנסות מצטברות:** {user_ref_count * 3.9:.2f}₪
+• **SLH שנצבר:** {user_ref_count * 0.1:.1f}
 
 **🔗 הלינק האישי שלך:**
 `https://t.me/Buy_My_Shop_bot?start={user_id}`
@@ -1522,6 +1761,7 @@ After joining, you'll receive a **unique personal sharing link** that's identifi
 • **Referrals:** {user_ref_count}/39
 • **Remaining:** {39 - user_ref_count} to complete
 • **Cumulative earnings:** {user_ref_count * 3.9:.2f}₪
+• **Accumulated SLH:** {user_ref_count * 0.1:.1f}
 
 **🔗 Your Personal Link:**
 `https://t.me/Buy_My_Shop_bot?start={user_id}`
@@ -1606,6 +1846,8 @@ def handle_payment_proof(update: Update, context: CallbackContext) -> None:
 
 🚀 **נחזור אליך עם קישור ההצטרפות תוך 24 שעות!**
 
+💎 **בונוס SLH:** קיבלת **SLH 1** בשווי 444₪!
+
 📧 **מה תקבל:**
 • קישור להצטרפות לקהילת VIP
 • הלינק האישי שלך לשיתוף והכנסות  
@@ -1619,6 +1861,8 @@ def handle_payment_proof(update: Update, context: CallbackContext) -> None:
 ✅ **Thank you! Payment confirmation received and sent for verification.**
 
 🚀 **We'll get back to you with the joining link within 24 hours!**
+
+💎 **SLH Bonus:** You received **SLH 1** worth 444₪!
 
 📧 **What you'll receive:**
 • Link to join VIP community
@@ -1634,6 +1878,8 @@ def handle_payment_proof(update: Update, context: CallbackContext) -> None:
 
 🚀 **Мы вернемся к вам со ссылкой для вступления в течение 24 часов!**
 
+💎 **Бонус SLH:** Вы получили **SLH 1** стоимостью 444₪!
+
 📧 **Что вы получите:**
 • Ссылку для вступления в VIP сообщество
 • Вашу персональную ссылку для приглашений и заработка
@@ -1647,6 +1893,8 @@ def handle_payment_proof(update: Update, context: CallbackContext) -> None:
 ✅ **شكرًا لك! تم استلام تأكيد الدفع وإرساله للتحقق.**
 
 🚀 **سنتواصل معك برابط الانضمام خلال 24 ساعة!**
+
+💎 **مكافأة SLH:** لقد حصلت على **SLH 1** بقيمة 444₪!
 
 📧 **ما الذي ستحصل عليه:**
 • رابط للانضمام لمجتمع VIP
@@ -1736,6 +1984,8 @@ def setup_handlers():
     # handlers לפקודות אדמין - עובדים בכל סוגי הצ'אטים
     dispatcher.add_handler(CommandHandler("chatid", chatid))
     dispatcher.add_handler(CommandHandler("admin", admin))
+    dispatcher.add_handler(CommandHandler("broadcast", broadcast))
+    dispatcher.add_handler(CommandHandler("group_broadcast", group_broadcast))
     
     # handlers לאינטראקציות משתמש - רק בצ'אטים פרטיים
     class PrivateFilter:
@@ -2037,7 +2287,7 @@ def admin_panel():
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('✅ התשלום אושר! המשתמש קיבל הודעה.');
+                        alert('✅ התשלום אושר! המשתמש קיבל הודעה ו-SLH 1.');
                         location.reload();
                     } else {
                         alert('❌ שגיאה באישור התשלום: ' + data.error);
@@ -2083,18 +2333,19 @@ def approve_payment():
         if password != ADMIN_PASSWORD:
             return jsonify({'success': False, 'error': 'סיסמה לא תקינה'})
         
-        # אישור התשלום במסד הנתונים
-        success = approve_user_payment(user_id, 'admin')
+        # אישור התשלום במסד הנתונים והוספת SLH
+        success, slh_reward = approve_user_payment(user_id, 'admin')
         
         if success:
             # שליחת הודעה למשתמש
             try:
                 user_info = f"🎉 **מזל טוב! התשלום שלך אושר!**\n\n"
+                user_info += f"**💎 בונוס SLH:** קיבלת **{slh_reward} SLH** בשווי {slh_reward * 444}₪!\n\n"
                 user_info += f"**🚀 קישור ההצטרפות לקהילה:**\n{MAIN_GROUP_LINK}\n\n"
-                user_info += f"**💎 הלינק האישי שלך לשיתוף:**\n`https://t.me/Buy_My_Shop_bot?start={user_id}`\n\n"
+                user_info += f"**🔗 הלינק האישי שלך לשיתוף:**\n`https://t.me/Buy_My_Shop_bot?start={user_id}`\n\n"
                 user_info += f"**📊 מה תקבל:**\n"
                 user_info += f"• גישה מלאה לקהילת VIP\n"
-                user_info += f"• SLH 1 בשווי 444₪ (39₪ מידית)\n"
+                user_info += f"• {slh_reward} SLH בשווי {slh_reward * 444}₪\n"
                 user_info += f"• מערכת הכנסות פסיביות\n"
                 user_info += f"• תמיכה טכנית 24/7\n\n"
                 user_info += f"**💫 ברוך הבא למהפכה!**"
@@ -2105,7 +2356,7 @@ def approve_payment():
                     parse_mode='Markdown'
                 )
                 
-                logger.info(f"Payment approved for user {user_id}")
+                logger.info(f"Payment approved for user {user_id}, SLH rewarded: {slh_reward}")
                 
             except Exception as e:
                 logger.error(f"Error sending approval message to user {user_id}: {e}")
@@ -2141,7 +2392,8 @@ def home():
             "Free access after 39 referrals",
             "Group management system",
             "Admin chatid command",
-            "Payment confirmation to groups"
+            "Payment confirmation to groups",
+            "SLH Token rewards system"
         ],
         "monitoring": {
             "admin_panel": "/admin?password=slh2025",
@@ -2149,7 +2401,8 @@ def home():
             "payment_tracking": "Active",
             "user_analytics": "Active",
             "referral_tracking": "Active",
-            "group_tracking": "Active"
+            "group_tracking": "Active",
+            "slh_rewards": "Active"
         },
         "ecosystem": {
             "slh_coin_value": "444 ILS",
@@ -2157,7 +2410,8 @@ def home():
             "network_levels": 5,
             "active_users": "500+",
             "monthly_growth": "20%",
-            "free_access_after": "39 referrals"
+            "free_access_after": "39 referrals",
+            "slh_reward_per_payment": "1 SLH"
         }
     }), 200
 
@@ -2232,6 +2486,8 @@ def dashboard():
             <p><strong>פקודת /chatid:</strong> ✅ פעיל</p>
             <p><strong>פקודת /admin:</strong> ✅ פעיל</p>
             <p><strong>אישורי תשלום לקבוצה:</strong> ✅ פעיל</p>
+            <p><strong>תגמולי SLH:</strong> ✅ פעיל (1 SLH לכל תשלום)</p>
+            <p><strong>שידור לקבוצות:</strong> ✅ פעיל</p>
         </div>
 
         <div class="projects">
@@ -2303,7 +2559,8 @@ def set_webhook():
                         "network_marketing": "5 generations", 
                         "membership": "39 ILS",
                         "free_access_after": "39 referrals",
-                        "features": ["Bot development", "NFT marketplace", "Crypto ecosystem", "Advanced monitoring", "Referral system", "Multi-language support", "Group management", "Admin commands", "Payment confirmations"]
+                        "slh_rewards": "1 SLH per payment",
+                        "features": ["Bot development", "NFT marketplace", "Crypto ecosystem", "Advanced monitoring", "Referral system", "Multi-language support", "Group management", "Admin commands", "Payment confirmations", "SLH token rewards"]
                     }
                 }
             }), 200
@@ -2332,7 +2589,8 @@ def health_check():
             "referral_system": "active",
             "multi_language": "active",
             "group_management": "active",
-            "payment_confirmation": "active"
+            "payment_confirmation": "active",
+            "slh_rewards": "active"
         }
     }), 200
 
@@ -2356,7 +2614,7 @@ def initialize_bot():
         
         # שליחת הודעת אתחול לקבוצת הניהול (אם היא קיימת)
         try:
-            send_admin_alert("🚀 **בוט SLH הותחל בהצלחה!**\n\nגרסה: 5.5 - עם מערכת ניטור מתקדמת\nפאנל ניהול: /admin\nמערכת רפראלים: ✅ פעיל\nתמיכה רב-לשונית: ✅ פעיל\nנתונים בזמן אמת: ✅ פעיל\nניהול קבוצות: ✅ פעיל\nפקודת /chatid: ✅ פעיל\nאישורי תשלום לקבוצה: ✅ פעיל")
+            send_admin_alert("🚀 **בוט SLH הותחל בהצלחה!**\n\nגרסה: 5.5 - עם מערכת ניטור מתקדמת\nפאנל ניהול: /admin\nמערכת רפראלים: ✅ פעיל\nתמיכה רב-לשונית: ✅ פעיל\nנתונים בזמן אמת: ✅ פעיל\nניהול קבוצות: ✅ פעיל\nפקודת /chatid: ✅ פעיל\nאישורי תשלום לקבוצה: ✅ פעיל\nתגמולי SLH: ✅ פעיל (1 SLH לכל תשלום)\nשידור לקבוצות: ✅ פעיל")
         except Exception as e:
             logger.warning(f"Could not send startup message to admin group: {e}")
         
