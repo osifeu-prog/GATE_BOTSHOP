@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from database.operations import get_user_language, get_user_slh_balance
+from database.operations import get_user_language, get_user_slh_balance, get_user_referral_count
 from translations.texts import get_translation
 
 def get_main_keyboard(user_id):
@@ -43,6 +43,49 @@ def get_payment_keyboard(user_id):
     ]
     return InlineKeyboardMarkup(keyboard)
 
+def get_back_keyboard(user_id):
+    """מקלדת חזרה בלבד"""
+    lang = get_user_language(user_id)
+    back_text = "חזרה" if lang == 'he' else "Back" if lang == 'en' else "Назад" if lang == 'ru' else "رجوع"
+    keyboard = [
+        [InlineKeyboardButton(f"↩️ {back_text}", callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_network_marketing_keyboard(user_id):
+    """מקלדת שיווק רשתי"""
+    lang = get_user_language(user_id)
+    keyboard = [
+        [InlineKeyboardButton("💰 מודל 5 הדורות", callback_data='five_generations')],
+        [InlineKeyboardButton("🎯 איך מתחילים להרוויח?", callback_data='how_to_earn')],
+        [InlineKeyboardButton("📊 הלינק האישי שלי", callback_data='personal_link')],
+        [InlineKeyboardButton("💎 הצטרפות עכשיו", callback_data='join_community')],
+        [InlineKeyboardButton("↩️ " + ("חזרה" if lang == 'he' else "Back"), callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_contact_keyboard(user_id):
+    """מקלדת צור קשר"""
+    lang = get_user_language(user_id)
+    keyboard = [
+        [InlineKeyboardButton("💼 עסקים ושותפויות", callback_data='contact_business')],
+        [InlineKeyboardButton("🚀 השקעה בפרויקט", callback_data='contact_investment')],
+        [InlineKeyboardButton("🤖 פיתוח בוט", callback_data='contact_bot')],
+        [InlineKeyboardButton("📞 תמיכה טכנית", callback_data='contact_support')],
+        [InlineKeyboardButton("↩️ " + ("חזרה" if lang == 'he' else "Back"), callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_slh_balance_keyboard(user_id):
+    """מקלדת עם יתרת SLH"""
+    lang = get_user_language(user_id)
+    slh_balance = get_user_slh_balance(user_id)
+    keyboard = [
+        [InlineKeyboardButton(f"💎 יתרת SLH: {slh_balance}", callback_data='slh_balance')],
+        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
 def get_admin_groups_keyboard():
     """מקלדת ניהול קבוצות לאדמין"""
     keyboard = [
@@ -52,5 +95,3 @@ def get_admin_groups_keyboard():
         [InlineKeyboardButton("💎 חזרה לפאנל", callback_data='back_to_admin')]
     ]
     return InlineKeyboardMarkup(keyboard)
-
-# מקלדות נוספות יועברו כאן...
