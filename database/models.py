@@ -1,5 +1,7 @@
 import sqlite3
-from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 def init_db():
     """אתחול מסד הנתונים"""
@@ -77,3 +79,4 @@ def init_db():
     
     conn.commit()
     conn.close()
+    logger.info("Database initialized successfully")
