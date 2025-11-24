@@ -13,7 +13,7 @@ import time
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://web-production-b425.up.railway.app') + '/webhook'
 MAIN_GROUP_LINK = "https://t.me/+HIzvM8sEgh1kNWY0"
-ADMIN_GROUP_ID = "-1002141887344"  # החלפתי ל-ID מספרי של הקבוצה
+ADMIN_GROUP_ID = "-1002141887344"  # ID מספרי של קבוצת הניהול
 
 # states לשיחת צור קשר
 CHOOSING, TYPING_CONTACT = range(2)
@@ -43,7 +43,10 @@ def init_db():
                   join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                   last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                   total_actions INTEGER DEFAULT 1,
-                  status TEXT DEFAULT 'active')''')
+                  status TEXT DEFAULT 'active',
+                  referred_by INTEGER DEFAULT 0,
+                  referral_count INTEGER DEFAULT 0,
+                  total_earned REAL DEFAULT 0)''')
     
     # טבלת תשלומים
     c.execute('''CREATE TABLE IF NOT EXISTS payments
@@ -72,6 +75,15 @@ def init_db():
                   total_actions INTEGER DEFAULT 0,
                   payments_received INTEGER DEFAULT 0,
                   payments_verified INTEGER DEFAULT 0)''')
+    
+    # טבלת רפראלים
+    c.execute('''CREATE TABLE IF NOT EXISTS referrals
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  referrer_id INTEGER,
+                  referred_id INTEGER,
+                  level INTEGER,
+                  earned_amount REAL,
+                  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
     
     conn.commit()
     conn.close()
@@ -138,6 +150,28 @@ def log_payment(user_id, payment_type, amount, proof_text=""):
         logger.error(f"Database error in log_payment: {e}")
         return None
 
+def add_referral(referrer_id, referred_id, level=1, earned_amount=0):
+    """הוספת רפראל חדש"""
+    try:
+        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        c = conn.cursor()
+        
+        c.execute('''INSERT INTO referrals 
+                     (referrer_id, referred_id, level, earned_amount)
+                     VALUES (?, ?, ?, ?)''', (referrer_id, referred_id, level, earned_amount))
+        
+        # עדכון ספירת הרפראלים עבור המשתתף
+        c.execute('''UPDATE users SET referral_count = referral_count + 1, 
+                     total_earned = total_earned + ? 
+                     WHERE user_id = ?''', (earned_amount, referrer_id))
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Database error in add_referral: {e}")
+        return False
+
 def get_user_stats():
     """קבלת סטטיסטיקות משתמשים"""
     try:
@@ -194,6 +228,40 @@ def get_recent_activity(limit=10):
         return activity or []
     except Exception as e:
         logger.error(f"Database error in get_recent_activity: {e}")
+        return []
+
+def get_user_referral_count(user_id):
+    """קבלת מספר הרפראלים של משתמש"""
+    try:
+        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        c = conn.cursor()
+        
+        c.execute("SELECT referral_count FROM users WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
+        conn.close()
+        
+        return result[0] if result else 0
+    except Exception as e:
+        logger.error(f"Database error in get_user_referral_count: {e}")
+        return 0
+
+def get_user_referrals(user_id):
+    """קבלת רשימת הרפראלים של משתמש"""
+    try:
+        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        c = conn.cursor()
+        
+        c.execute('''SELECT u.first_name, u.username, r.timestamp 
+                     FROM referrals r
+                     JOIN users u ON r.referred_id = u.user_id
+                     WHERE r.referrer_id = ?
+                     ORDER BY r.timestamp DESC''', (user_id,))
+        
+        referrals = c.fetchall()
+        conn.close()
+        return referrals
+    except Exception as e:
+        logger.error(f"Database error in get_user_referrals: {e}")
         return []
 
 # אתחול הבוט וה-dispatcher
@@ -378,6 +446,17 @@ def get_premium_keyboard():
         [InlineKeyboardButton("🎁 מה כלול בחבילה?", callback_data='premium_package')],
         [InlineKeyboardButton("💰 איך ארים הכנסות?", callback_data='income_calculator')],
         [InlineKeyboardButton("📞 שיחת ייעוץ חינם", callback_data='contact_other')],
+        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_referral_keyboard(user_id):
+    """מחזיר מקלדת עם סטטוס הרפראלים"""
+    referral_count = get_user_referral_count(user_id)
+    keyboard = [
+        [InlineKeyboardButton(f"📊 הרפראלים שלי: {referral_count}/39", callback_data='my_referrals')],
+        [InlineKeyboardButton("💎 הצטרפות מיידית - 39₪", callback_data='join_community')],
+        [InlineKeyboardButton("🎯 איך משיגים עוד רפראלים?", callback_data='referral_tips')],
         [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -620,8 +699,6 @@ SLH הוא מטבע קריפטו utility ייחודי שאנחנו הנפקנו,
             """
             safe_edit_message(query, personal_link_text, get_ecosystem_keyboard())
 
-        # ... (כל שאר ה-button handlers יישארו כמו שהיו, אבל עם safe_edit_message)
-
         elif query.data == 'join_community':
             join_text = """
 **💎 הצטרפות לקהילת סלה ללא גבולות**
@@ -678,6 +755,85 @@ SLH הוא מטבע קריפטו utility ייחודי שאנחנו הנפקנו,
 **🚀 העלות הסמלית מבטיחה קהילה איכותית ומחויבת!**
             """
             safe_edit_message(query, join_text, get_payment_keyboard())
+
+        elif query.data == 'my_referrals':
+            user_id = query.from_user.id
+            referral_count = get_user_referral_count(user_id)
+            referrals = get_user_referrals(user_id)
+            
+            if referral_count >= 39:
+                referral_text = f"""
+🎉 **מזל טוב! השלמת {referral_count} רפראלים!**
+
+**🏆 הגעת ליעד וקיבלת גישה מלאה לקבוצה בחינם!**
+
+**📊 הסטטוס שלך:**
+• **רפראלים:** {referral_count}/39 ✅
+• **סטטוס:** זכאי לגישה חינם!
+• **הכנסות מצטברות:** {referral_count * 3.9:.2f}₪
+
+**🚀 המשך לשתף ולהרוויח!**
+                """
+            else:
+                referral_text = f"""
+📊 **הרפראלים שלך**
+
+**🎯 התקדמות לעבר גישה חינם:**
+• **רפראלים:** {referral_count}/39
+• **נותרו:** {39 - referral_count} להשלמה
+• **הכנסות מצטברות:** {referral_count * 3.9:.2f}₪
+
+**💡 טיפ:**
+שתף את הלינק האישי שלך עם חברים ומשפחה!
+כל מצטרף חדש מקרב אותך לגישה חינם.
+
+**🎁 לאחר 39 רפראלים תקבל:**
+• גישה מלאה לקבוצה בחינם!
+• מעמד VIP בקהילה
+• הטבות נוספות
+                """
+            
+            if referrals:
+                referral_text += "\n\n**👥 הרפראלים האחרונים שלך:**\n"
+                for i, (name, username, timestamp) in enumerate(referrals[:5], 1):
+                    referral_text += f"{i}. {name} (@{username or 'ללא'}) - {timestamp[:10]}\n"
+            
+            safe_edit_message(query, referral_text, get_referral_keyboard(user_id))
+
+        elif query.data == 'referral_tips':
+            tips_text = """
+🎯 **איך משיגים יותר רפראלים?**
+
+**💡 טיפים לשיווק אפקטיבי:**
+
+1. **📱 מדיה חברתית**
+   - שתף בפייסבוק, אינסטגרם, טיקטוק
+   - הסבר על ההזדמנות הכלכלית
+   - הצג את ההצלחה שלך
+
+2. **👥 רשת אישית**
+   - חברים, משפחה, קולגות
+   - הסבר את היתרונות בשפה פשוטה
+   - שתף את הלינק האישי שלך
+
+3. **💼 קבוצות מקצועיות**
+   - קבוצות טלגרם, וואטסאפ
+   - פורומים מקצועיים
+   - קהילות עסקיות
+
+4. **🎁 תמריצים**
+   - הצע עזרה בהתחלה
+   - שתף טיפים ושיטות עבודה
+   - היה זמין לשאלות
+
+**📝 מסרים אפקטיביים:**
+"גיליתי אקוסיסטם טכנולוגי מדהים שמשלם 10% מכל מצטרף חדש!"
+"הצטרפו אליי לקהילה שמשלמת הכנסה פסיבית מ-5 דורות!"
+"קיבלתי SLH Coin בשווי 444₪ בהצטרפות של 39₪ בלבד!"
+
+**🚀 זכור:** כל רפראל חדש מקרב אותך לגישה חינם!
+            """
+            safe_edit_message(query, tips_text, get_referral_keyboard(query.from_user.id))
 
         elif query.data == 'back_to_main':
             welcome_back_text = """
@@ -1077,7 +1233,7 @@ def home():
     return jsonify({
         "status": "active",
         "service": "SLH Community Gateway Bot - Premium Edition",
-        "version": "5.1",
+        "version": "5.2",
         "timestamp": datetime.now().isoformat(),
         "features": [
             "SLH Coin cryptocurrency ecosystem",
@@ -1090,20 +1246,23 @@ def home():
             "Advanced admin panel",
             "Payment tracking system",
             "User activity monitoring",
-            "Error handling improvements"
+            "Referral tracking system",
+            "Free access after 39 referrals"
         ],
         "monitoring": {
             "admin_panel": "/admin?password=YOUR_PASSWORD",
             "real_time_alerts": "Active",
             "payment_tracking": "Active",
-            "user_analytics": "Active"
+            "user_analytics": "Active",
+            "referral_tracking": "Active"
         },
         "ecosystem": {
             "slh_coin_value": "444 ILS",
             "membership_cost": "39 ILS", 
             "network_levels": 5,
             "active_users": "500+",
-            "monthly_growth": "20%"
+            "monthly_growth": "20%",
+            "free_access_after": "39 referrals"
         }
     }), 200
 
@@ -1161,12 +1320,14 @@ def dashboard():
         </div>
 
         <div class="ecosystem">
-            <h2>💎 אקוסיסטם סלה ללא גבולות - גרסה 5.1</h2>
+            <h2>💎 אקוסיסטם סלה ללא גבולות - גרסה 5.2</h2>
             <p><strong>מערכת ניטור מתקדמת:</strong> ✅ פעיל</p>
             <p><strong>התראות בזמן אמת:</strong> ✅ פעיל</p>
             <p><strong>מעקב תשלומים:</strong> ✅ פעיל</p>
             <p><strong>פאנל ניהול:</strong> ✅ פעיל</p>
             <p><strong>טיפול בשגיאות:</strong> ✅ משופר</p>
+            <p><strong>מערכת רפראלים:</strong> ✅ פעיל</p>
+            <p><strong>גישה חינם אחרי 39:</strong> ✅ פעיל</p>
             <p><strong>מטבע SLH:</strong> 444₪ ליחידה</p>
             <p><strong>עלות הצטרפות:</strong> 39₪</p>
             <p><strong>רמות שיווק:</strong> 5 דורות</p>
@@ -1236,12 +1397,13 @@ def set_webhook():
                 "timestamp": datetime.now().isoformat(),
                 "bot_info": {
                     "service": "SLH Community & Ecosystem Gateway",
-                    "version": "5.1",
+                    "version": "5.2",
                     "ecosystem": {
                         "slh_coin": "444 ILS per coin",
                         "network_marketing": "5 generations", 
                         "membership": "39 ILS",
-                        "features": ["Bot development", "NFT marketplace", "Crypto ecosystem", "Advanced monitoring"]
+                        "free_access_after": "39 referrals",
+                        "features": ["Bot development", "NFT marketplace", "Crypto ecosystem", "Advanced monitoring", "Referral system"]
                     }
                 }
             }), 200
@@ -1258,7 +1420,7 @@ def health_check():
     return jsonify({
         "status": "healthy", 
         "service": "SLH Community Gateway & Ecosystem",
-        "version": "5.1",
+        "version": "5.2",
         "timestamp": datetime.now().isoformat(),
         "projects_active": 4,
         "system_uptime": "99.9%",
@@ -1266,7 +1428,8 @@ def health_check():
         "monitoring": {
             "database": "active",
             "alerts": "active",
-            "admin_panel": "active"
+            "admin_panel": "active",
+            "referral_system": "active"
         }
     }), 200
 
@@ -1290,7 +1453,7 @@ def initialize_bot():
         
         # שליחת הודעת אתחול לקבוצת הניהול (אם היא קיימת)
         try:
-            send_admin_alert("🚀 **בוט SLH הותחל בהצלחה!**\n\nגרסה: 5.1 - עם מערכת ניטור מתקדמת\nפאנל ניהול: /admin\nנתונים בזמן אמת: ✅ פעיל")
+            send_admin_alert("🚀 **בוט SLH הותחל בהצלחה!**\n\nגרסה: 5.2 - עם מערכת ניטור מתקדמת\nפאנל ניהול: /admin\nמערכת רפראלים: ✅ פעיל\nנתונים בזמן אמת: ✅ פעיל")
         except Exception as e:
             logger.warning(f"Could not send startup message to admin group: {e}")
         
