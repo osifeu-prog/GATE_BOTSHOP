@@ -112,3 +112,139 @@ def send_payment_instructions(update: Update, context: CallbackContext) -> None:
 **💳 איך משלמים?**
 
 **אפשרות 1: העברה בנקאית 🏦**
+בנק: הפועלים
+סניף: כפר גנים (153)
+מספר חשבון: 73462
+שם המוטב: קאופמן צביקה
+
+**אפשרות 2: תשלום ב-TON 💎**
+`UQCr743gEr_nqV_0SBkSp3CtYS_15R3LDLBvLmKeEv7XdGvp`
+
+**✅ לאחר התשלום:**
+
+1. **שמור את אישור התשלום** (צילום מסך/תמלול ההעברה).
+2. **שלח את האישור אלינו כאן בצ'אט הזה**.
+3. **מייד לאחר האימות**, נשלח לך את הקישור להצטרפות לקבוצה הסגורה: {}
+
+**⚡ הערה:** האימות ידני ולרוב ייקח עד 24 שעות.
+
+אנא שלח כעת את אישור התשלום כצילום מסך או הודעה.
+    """.format(MAIN_GROUP_LINK)
+
+    update.message.reply_text(payment_text, parse_mode='Markdown')
+
+def handle_payment_proof(update: Update, context: CallbackContext) -> None:
+    """מטפל בשליחת אישור התשלום מהמשתמש"""
+    try:
+        user = update.effective_user
+        chat_id = update.effective_chat.id
+
+        # בדיקה אם המשתמש שלח תמונה (צילום מסך)
+        if update.message.photo:
+            # לוקחים את התמונה באיכות הגבוהה ביותר
+            photo_file = update.message.photo[-1].get_file()
+            # מעבירים את הקובץ לקבוצת הניהול
+            try:
+                bot.send_photo(
+                    chat_id=ADMIN_GROUP_LINK.replace('https://t.me/', ''), 
+                    photo=photo_file.file_id, 
+                    caption=f"📸 אישור תשלום מהמשתמש: {user.first_name} (ID: {chat_id})"
+                )
+                update.message.reply_text("✅ **תודה רבה!** אישור התשלום התקבל ונשלח לאימות. נחזור אליך עם קישור ההצטרפות בהקדם האפשרי (עד 24 שעות).")
+                send_payment_confirmation(chat_id, "צילום מסך")
+            except Exception as e:
+                logger.error(f"שגיאה בשליחת התמונה לקבוצת הניהול: {e}")
+                update.message.reply_text("❌ אירעה שגיאה בשליחת האישור. אנא נסה שוב מאוחר יותר.")
+
+        # בדיקה אם המשתמש שלח טקסט (תמלול ההעברה)
+        elif update.message.text and not update.message.text.startswith('/'):
+            proof_text = update.message.text
+            send_payment_confirmation(chat_id, proof_text)
+            update.message.reply_text("✅ **תודה רבה!** פרטי האישור התקבלו ונשלחו לאימות. נחזור אליך עם קישור ההצטרפות בהקדם האפשרי (עד 24 שעות).")
+
+        else:
+            # אם זו פקודה או סוג תוכן אחר - מתעלמים
+            pass
+            
+    except Exception as e:
+        logger.error(f"Error in handle_payment_proof: {e}")
+        update.message.reply_text("❌ אירעה שגיאה בעיבוד האישור. אנא נסה שוב.")
+
+def handle_unknown(update: Update, context: CallbackContext) -> None:
+    """מטפל בהודעות לא מזוהות"""
+    update.message.reply_text("🤔 לא הבנתי. השתמש ב-/start כדי להתחיל.")
+
+# --- הגדרת handlers ---
+def setup_handlers():
+    """מגדיר את ה-handlers עבור הפקודות"""
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(MessageHandler(Filters.photo, handle_payment_proof))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_payment_proof))
+    dispatcher.add_handler(MessageHandler(Filters.all, handle_unknown))
+    logger.info("Handlers setup completed")
+
+# --- הגדרת Flask routes ---
+@app.route('/')
+def home():
+    return "🤖 הבוט פעיל וחי! שלח /start לבוט כדי להתחיל.", 200
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    """נקודת הכניסה עבור עדכונים מטלגרם"""
+    if request.method == 'POST':
+        try:
+            update = Update.de_json(request.get_json(force=True), bot)
+            dispatcher.process_update(update)
+            return 'ok', 200
+        except Exception as e:
+            logger.error(f"Error processing webhook update: {e}")
+            return 'error', 500
+
+@app.route('/set_webhook', methods=['GET'])
+def set_webhook():
+    """קובע את ה-Webhook עבור הבוט"""
+    try:
+        success = bot.set_webhook(WEBHOOK_URL)
+        if success:
+            logger.info(f"Webhook set successfully to: {WEBHOOK_URL}")
+            return jsonify({"status": "Webhook set successfully", "url": WEBHOOK_URL}), 200
+        else:
+            logger.error("Failed to set webhook")
+            return jsonify({"status": "Failed to set webhook"}), 500
+    except Exception as e:
+        logger.error(f"Error setting webhook: {e}")
+        return jsonify({"status": f"Error: {str(e)}"}), 500
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """בדיקת בריאות של האפלי�켦יה"""
+    return jsonify({"status": "healthy", "service": "Crypto Community Gateway Bot"}), 200
+
+# --- אתחול ---
+def initialize_bot():
+    """אתחול הבוט והגדרות"""
+    try:
+        # הגדרת handlers
+        setup_handlers()
+        
+        # קביעת webhook
+        webhook_result = bot.set_webhook(WEBHOOK_URL)
+        if webhook_result:
+            logger.info(f"✅ Webhook set successfully: {WEBHOOK_URL}")
+        else:
+            logger.error("❌ Failed to set webhook")
+            
+        # בדיקת פרטי הבוט
+        bot_info = bot.get_me()
+        logger.info(f"✅ Bot initialized: @{bot_info.username}")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize bot: {e}")
+
+# אתחול הבוט כאשר המודול נטען
+initialize_bot()
+
+# הפעלת שרת Flask (ב-Railway, הפורט מוגדר ע"י משתנה הסביבה PORT)
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
