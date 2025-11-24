@@ -15,7 +15,7 @@ WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://web-production-b425.up.rail
 MAIN_GROUP_LINK = "https://t.me/+HIzvM8sEgh1kNWY0"
 ADMIN_GROUP_ID = "-1002141887344"  # ID מספרי של קבוצת הניהול
 PAYMENT_CONFIRMATION_GROUP = "-1002141887344"  # ID קבוצת אישורי תשלום (אותה קבוצה)
-ADMIN_USER_ID = "6977822518"  # ID שלך - Osif
+ADMIN_USER_ID = "224223270"  # ID שלך - Osif
 
 # states לשיחת צור קשר
 CHOOSING, TYPING_CONTACT = range(2)
