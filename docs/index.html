@@ -13,12 +13,31 @@
             box-sizing: border-box;
         }
         
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #ff6b6b;
+            --text-color: #333;
+            --light-bg: #f8f9fa;
+            --white: #ffffff;
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-color);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        body[dir="ltr"] {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body[dir="rtl"] {
+            font-family: 'Assistant', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         .container {
@@ -27,14 +46,45 @@
             padding: 20px;
         }
         
+        /* Header Styles */
         .header {
             background: rgba(255, 255, 255, 0.95);
             padding: 40px;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
             text-align: center;
             margin-bottom: 30px;
             backdrop-filter: blur(10px);
+            position: relative;
+        }
+        
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        body[dir="rtl"] .language-switcher {
+            left: auto;
+            right: 20px;
+        }
+        
+        .lang-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        .lang-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
         }
         
         .logo {
@@ -56,7 +106,7 @@
         
         .cta-button {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
             padding: 15px 30px;
             border-radius: 50px;
@@ -72,6 +122,7 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
         
+        /* Features Grid */
         .features {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -103,11 +154,12 @@
             margin-bottom: 15px;
         }
         
+        /* Projects Section */
         .projects {
             background: rgba(255, 255, 255, 0.95);
             padding: 40px;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
             margin-bottom: 30px;
             backdrop-filter: blur(10px);
         }
@@ -124,7 +176,7 @@
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            border-left: 5px solid #667eea;
+            border-left: 5px solid var(--primary-color);
         }
         
         .project-card h4 {
@@ -132,11 +184,12 @@
             margin-bottom: 10px;
         }
         
+        /* Contact Section */
         .contact {
             background: rgba(255, 255, 255, 0.95);
             padding: 40px;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
             text-align: center;
             backdrop-filter: blur(10px);
         }
@@ -155,6 +208,7 @@
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
         
+        /* Stats */
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -173,8 +227,62 @@
         .stat-number {
             font-size: 2em;
             font-weight: bold;
-            color: #667eea;
+            color: var(--primary-color);
             display: block;
+        }
+        
+        /* Ecosystem Section */
+        .ecosystem {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .ecosystem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+        
+        .ecosystem-item {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Payment Methods */
+        .payment-methods {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .payment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+        
+        .payment-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .payment-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
         }
         
         footer {
@@ -184,6 +292,7 @@
             padding: 20px;
         }
         
+        /* Responsive Design */
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -200,201 +309,685 @@
             .features {
                 grid-template-columns: 1fr;
             }
+            
+            .language-switcher {
+                position: static;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+
+            body[dir="rtl"] .language-switcher {
+                position: static;
+            }
+        }
+
+        /* Animation for stats */
+        @keyframes countUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .counting {
+            animation: countUp 1s ease-out;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- כותרת ראשית -->
+        <!-- Header Section -->
         <div class="header">
+            <div class="language-switcher">
+                <button class="lang-btn" onclick="changeLanguage('he')">🇮🇱 עברית</button>
+                <button class="lang-btn" onclick="changeLanguage('en')">🇺🇸 English</button>
+                <button class="lang-btn" onclick="changeLanguage('ru')">🇷🇺 Русский</button>
+                <button class="lang-btn" onclick="changeLanguage('ar')">🇸🇦 العربية</button>
+            </div>
+            
             <div class="logo">🚀</div>
-            <h1>SLH ישראל - שער כניסה לקהילת הקריפטו</h1>
-            <p class="subtitle">הצטרפו לקהילה המתקדמת בישראל לטכנולוגיה, קריפטו וכלכלה מבוזרת</p>
+            <h1 data-translate="main_title">SLH ישראל - שער כניסה לקהילת הקריפטו</h1>
+            <p class="subtitle" data-translate="main_subtitle">הצטרפו לקהילה המתקדמת בישראל לטכנולוגיה, קריפטו וכלכלה מבוזרת</p>
             
             <div class="stats">
                 <div class="stat">
-                    <span class="stat-number">500+</span>
-                    <span>חברי קהילה</span>
+                    <span class="stat-number" id="memberCount">500+</span>
+                    <span data-translate="stat_members">חברי קהילה</span>
                 </div>
                 <div class="stat">
                     <span class="stat-number">24/7</span>
-                    <span>זמינות מערכת</span>
+                    <span data-translate="stat_availability">זמינות מערכת</span>
                 </div>
                 <div class="stat">
                     <span class="stat-number">99.9%</span>
-                    <span>אמינות</span>
+                    <span data-translate="stat_reliability">אמינות</span>
                 </div>
                 <div class="stat">
                     <span class="stat-number">4</span>
-                    <span>פרויקטים פעילים</span>
+                    <span data-translate="stat_projects">פרויקטים פעילים</span>
                 </div>
             </div>
             
-            <a href="https://t.me/SLH_Israel_Bot" class="cta-button">🚀 הצטרפו לבוט הטלגרם</a>
-            <a href="#contact" class="cta-button" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">📞 צרו קשר</a>
+            <a href="https://t.me/SLH_Israel_Bot" class="cta-button" data-translate="join_bot_button">🚀 הצטרפו לבוט הטלגרם</a>
+            <a href="#contact" class="cta-button" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);" data-translate="contact_button">📞 צרו קשר</a>
         </div>
 
-        <!-- תכונות מרכזיות -->
+        <!-- Ecosystem Section -->
+        <div class="ecosystem">
+            <h2 data-translate="ecosystem_title">💎 אקוסיסטם סלה ללא גבולות</h2>
+            <p data-translate="ecosystem_subtitle">מערכת טכנולוגית מלאה המשלבת קריפטו, בוטים חכמים ושיווק רשתי מתקדם</p>
+            
+            <div class="ecosystem-grid">
+                <div class="ecosystem-item">
+                    <h3 data-translate="ecosystem_slh_title">מטבע SLH</h3>
+                    <p data-translate="ecosystem_slh_desc">מטבע קריפטו ייחודי עם ערך אמיתי של 444₪ ליחידה. כל מצטרף מקבל SLH 1 עם 39₪ מידית והשאר בהדרגה.</p>
+                </div>
+                
+                <div class="ecosystem-item">
+                    <h3 data-translate="ecosystem_bot_title">פלטפורמת בוטים</h3>
+                    <p data-translate="ecosystem_bot_desc">בוטים אוטומטיים לניהול קהילות, מערכות תשלום מתקדמות ואינטגרציה עם כל המערכות.</p>
+                </div>
+                
+                <div class="ecosystem-item">
+                    <h3 data-translate="ecosystem_network_title">שיווק רשתי - 5 דורות</h3>
+                    <p data-translate="ecosystem_network_desc">הכנסה פסיבית מכל מצטרף חדש דרך הלינק האישי שלך, עם מעקב אוטומטי ל-5 דורות.</p>
+                </div>
+                
+                <div class="ecosystem-item">
+                    <h3 data-translate="ecosystem_nft_title">NFT ומסחר דיגיטלי</h3>
+                    <p data-translate="ecosystem_nft_desc">שוק NFT מתקדם ליצירה וסחר בנכסים דיגיטליים עם חוזים חכמים אוטומטיים.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
         <div class="features">
             <div class="feature-card">
                 <div class="feature-icon">🤖</div>
-                <h3>בוט טלגרם מתקדם</h3>
-                <p>שער כניסה אוטומטי לקהילה עם מערכת תשלומים, ניהול משתמשים ואינטגרציות מתקדמות</p>
+                <h3 data-translate="feature_bot_title">בוט טלגרם מתקדם</h3>
+                <p data-translate="feature_bot_desc">שער כניסה אוטומטי לקהילה עם מערכת תשלומים, ניהול משתמשים ואינטגרציות מתקדמות</p>
             </div>
             
             <div class="feature-card">
                 <div class="feature-icon">💼</div>
-                <h3>פיתוח בוטים לעסקים</h3>
-                <p>שירותי פיתוח בוטים מותאמים אישית לעסקים עם יכולות איקומרס, CRM ואוטומציה</p>
+                <h3 data-translate="feature_development_title">פיתוח בוטים לעסקים</h3>
+                <p data-translate="feature_development_desc">שירותי פיתוח בוטים מותאמים אישית לעסקים עם יכולות איקומרס, CRM ואוטומציה</p>
             </div>
             
             <div class="feature-card">
                 <div class="feature-icon">🚀</div>
-                <h3>השקעה בפרויקט</h3>
-                <p>הזדמנות להשקעה בפרויקט טכנולוגי פורץ דרך שכבר ב-production ופעיל</p>
+                <h3 data-translate="feature_investment_title">השקעה בפרויקט</h3>
+                <p data-translate="feature_investment_desc">הזדמנות להשקעה בפרויקט טכנולוגי פורץ דרך שכבר ב-production ופעיל</p>
             </div>
         </div>
 
-        <!-- פרויקטים שלנו -->
-        <div class="projects">
-            <h2>🌐 הפרויקטים שלנו</h2>
-            <p>מערכת SLH FULL SUITE - חבילה טכנולוגית מלאה הכוללת:</p>
+        <!-- Payment Methods -->
+        <div class="payment-methods">
+            <h2 data-translate="payment_title">💳 דרכי תשלום</h2>
+            <p data-translate="payment_subtitle">אפשרויות תשלום מגוונות להצטרפות מהירה ונוחה</p>
             
-            <div class="project-grid">
-                <div class="project-card">
-                    <h4>🤖 Botshop</h4>
-                    <p>פלטפורמת בוטים אוטומטיים לקהילות ועסקים עם מערכת תשלומים מתקדמת</p>
-                    <a href="https://web-production-b425.up.railway.app/" style="color: #667eea; text-decoration: none;">▶️ גישה למערכת</a>
+            <div class="payment-grid">
+                <div class="payment-card">
+                    <div class="payment-icon">🏦</div>
+                    <h4 data-translate="payment_bank_title">העברה בנקאית</h4>
+                    <p data-translate="payment_bank_details">בנק הפועלים, סניף כפר גנים (153)<br>חשבון: 73462<br>קאופמן צביקה</p>
                 </div>
                 
-                <div class="project-card">
-                    <h4>🎨 SLH NFT</h4>
-                    <p>שוק NFT מתקדם ליצירה וסחר בנכסים דיגיטליים ייחודיים</p>
-                    <a href="https://slh-nft.com/" style="color: #667eea; text-decoration: none;">▶️ בקרו באתר</a>
+                <div class="payment-card">
+                    <div class="payment-icon">💎</div>
+                    <h4 data-translate="payment_ton_title">תשלום ב-TON</h4>
+                    <p><code>UQCr743gEr_nqV_0SBkSp3CtYS_15R3LDLBvLmKeEv7XdGvp</code></p>
                 </div>
                 
-                <div class="project-card">
-                    <h4>📊 TON-engine</h4>
-                    <p>מנוע ניתוח טכני מתקדם למסחר וניהול סיכונים אוטומטי</p>
-                    <a href="https://web-production-b425.up.railway.app/dashboard" style="color: #667eea; text-decoration: none;">▶️ צפו בדשבורד</a>
-                </div>
-                
-                <div class="project-card">
-                    <h4>💼 פייסבוק עסקי</h4>
-                    <p>דף העסקים שלנו עם עדכונים שוטפים, טיפים וקידומים בלעדיים</p>
-                    <a href="https://www.facebook.com/OMG.adv/" style="color: #667eea; text-decoration: none;">▶️ עקבו אחרינו</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- הצטרפות לקהילה -->
-        <div class="projects">
-            <h2>💫 למה להצטרף לקהילה שלנו?</h2>
-            
-            <div class="project-grid">
-                <div class="project-card">
-                    <h4>🛒 איקומרס מתקדם</h4>
-                    <p>לינק אישי למכירה חוזרת - תוכלו להרוויח כמו בחנות אינטרנטית ישירות בטלגרם</p>
-                </div>
-                
-                <div class="project-card">
-                    <h4>📊 ביננס וניתוח</h4>
-                    <p>גישה לכלים מתקדמים לניתוח מסחר, ניהול תיקים וקבלת החלטות מושכלות</p>
-                </div>
-                
-                <div class="project-card">
-                    <h4>🎨 NFT וחוזים חכמים</h4>
-                    <p>יצירה וניהול נכסים דיגיטליים עם חוזים חכמים אוטומטיים</p>
-                </div>
-                
-                <div class="project-card">
-                    <h4>👥 קהילה תומכת</h4>
-                    <p>רשת של אנשי עסקים, יזמים ומשקיעים לשיתופי פעולה והזדמנויות</p>
+                <div class="payment-card">
+                    <div class="payment-icon">💰</div>
+                    <h4 data-translate="payment_crypto_title">קריפטו נוסף (Ethereum)</h4>
+                    <p><code>0xEc43Fb4819b5DdCb11407DBE46B92a51c7d24B2b</code></p>
                 </div>
             </div>
             
             <div style="text-align: center; margin-top: 25px;">
-                <p><strong>💰 עלות הצטרפות סמלית: 39 ₪ בלבד</strong></p>
-                <a href="https://t.me/SLH_Israel_Bot" class="cta-button">💳 הצטרפו עכשיו דרך הבוט</a>
+                <p><strong data-translate="payment_cost">💰 עלות הצטרפות: 39 ₪ בלבד</strong></p>
+                <a href="https://t.me/SLH_Israel_Bot" class="cta-button" data-translate="payment_button">💳 הצטרפו עכשיו דרך הבוט</a>
             </div>
         </div>
 
-        <!-- יצירת קשר -->
+        <!-- Projects Section -->
+        <div class="projects">
+            <h2 data-translate="projects_title">🌐 הפרויקטים שלנו</h2>
+            <p data-translate="projects_subtitle">מערכת SLH FULL SUITE - חבילה טכנולוגית מלאה הכוללת:</p>
+            
+            <div class="project-grid">
+                <div class="project-card">
+                    <h4>🤖 Botshop</h4>
+                    <p data-translate="project_botshop_desc">פלטפורמת בוטים אוטומטיים לקהילות ועסקים עם מערכת תשלומים מתקדמת</p>
+                    <a href="https://web-production-b425.up.railway.app/" style="color: var(--primary-color); text-decoration: none;">▶️ <span data-translate="project_access">גישה למערכת</span></a>
+                </div>
+                
+                <div class="project-card">
+                    <h4>🎨 SLH NFT</h4>
+                    <p data-translate="project_nft_desc">שוק NFT מתקדם ליצירה וסחר בנכסים דיגיטליים ייחודיים</p>
+                    <a href="https://slh-nft.com/" style="color: var(--primary-color); text-decoration: none;">▶️ <span data-translate="project_visit">בקרו באתר</span></a>
+                </div>
+                
+                <div class="project-card">
+                    <h4>📊 TON-engine</h4>
+                    <p data-translate="project_engine_desc">מנוע ניתוח טכני מתקדם למסחר וניהול סיכונים אוטומטי</p>
+                    <a href="https://web-production-b425.up.railway.app/dashboard" style="color: var(--primary-color); text-decoration: none;">▶️ <span data-translate="project_dashboard">צפו בדשבורד</span></a>
+                </div>
+                
+                <div class="project-card">
+                    <h4>💼 פייסבוק עסקי</h4>
+                    <p data-translate="project_facebook_desc">דף העסקים שלנו עם עדכונים שוטפים, טיפים וקידומים בלעדיים</p>
+                    <a href="https://www.facebook.com/OMG.adv/" style="color: var(--primary-color); text-decoration: none;">▶️ <span data-translate="project_follow">עקבו אחרינו</span></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Why Join Section -->
+        <div class="projects">
+            <h2 data-translate="why_join_title">💫 למה להצטרף לקהילה שלנו?</h2>
+            
+            <div class="project-grid">
+                <div class="project-card">
+                    <h4>🛒 איקומרס מתקדם</h4>
+                    <p data-translate="why_join_ecommerce">לינק אישי למכירה חוזרת - תוכלו להרוויח כמו בחנות אינטרנטית ישירות בטלגרם</p>
+                </div>
+                
+                <div class="project-card">
+                    <h4>📊 ביננס וניתוח</h4>
+                    <p data-translate="why_join_analysis">גישה לכלים מתקדמים לניתוח מסחר, ניהול תיקים וקבלת החלטות מושכלות</p>
+                </div>
+                
+                <div class="project-card">
+                    <h4>🎨 NFT וחוזים חכמים</h4>
+                    <p data-translate="why_join_nft">יצירה וניהול נכסים דיגיטליים עם חוזים חכמים אוטומטיים</p>
+                </div>
+                
+                <div class="project-card">
+                    <h4>👥 קהילה תומכת</h4>
+                    <p data-translate="why_join_community">רשת של אנשי עסקים, יזמים ומשקיעים לשיתופי פעולה והזדמנויות</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 25px;">
+                <p><strong data-translate="why_join_cost">💰 עלות הצטרפות סמלית: 39 ₪ בלבד</strong></p>
+                <a href="https://t.me/SLH_Israel_Bot" class="cta-button" data-translate="why_join_button">💳 הצטרפו עכשיו דרך הבוט</a>
+            </div>
+        </div>
+
+        <!-- Bot Development Services -->
+        <div class="projects">
+            <h2 data-translate="development_title">🤖 שירותי פיתוח בוטים לעסקים</h2>
+            <p data-translate="development_subtitle">מעוניינים בבוט דומה לעסק שלכם? אנחנו מציעים שירותי פיתוח מלאים:</p>
+            
+            <div class="project-grid">
+                <div class="project-card">
+                    <h4>💼 בוטי קהילה</h4>
+                    <p data-translate="development_community">ניהול קהילות, הרשמות אוטומטיות, מערכות תשלום ושערי כניסה</p>
+                </div>
+                
+                <div class="project-card">
+                    <h4>🛒 בוטי איקומרס</h4>
+                    <p data-translate="development_ecommerce">מערכות הזמנות, תשלומים, ניהול מלאי ושירות לקוחות אוטומטי</p>
+                </div>
+                
+                <div class="project-card">
+                    <h4>📊 בוטי ניתוח</h4>
+                    <p data-translate="development_analytics">ניתוח נתונים, דוחות אוטומטיים ומערכות התראות חכמות</p>
+                </div>
+                
+                <div class="project-card">
+                    <h4>🔧 התאמה אישית</h4>
+                    <p data-translate="development_custom">פיתוח בוטים מותאמים אישית לפי צרכי העסק הספציפיים שלכם</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 25px;">
+                <p><strong data-translate="development_pricing">💰 מחירים נוחים - החל מ-149 ₪!</strong></p>
+                <a href="#contact" class="cta-button" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);" data-translate="development_contact">📞 קבלו הצעת מחיר</a>
+            </div>
+        </div>
+
+        <!-- Contact Section -->
         <div class="contact" id="contact">
-            <h2>📞 צרו קשר</h2>
-            <p>מוכנים להצטרף למהפכה הטכנולוגית? אנחנו כאן כדי לעזור!</p>
+            <h2 data-translate="contact_title">📞 צרו קשר</h2>
+            <p data-translate="contact_subtitle">מוכנים להצטרף למהפכה הטכנולוגית? אנחנו כאן כדי לעזור!</p>
             
             <div class="contact-info">
                 <div class="contact-item">
                     <h4>👤 אוסיף אונגר</h4>
-                    <p>מייסד שותף</p>
+                    <p data-translate="contact_founder">מייסד שותף</p>
                     <p><strong>📞 058-4203384</strong></p>
                 </div>
                 
                 <div class="contact-item">
                     <h4>👤 צביקה קאופמן</h4>
-                    <p>מייסד שותף</p>
+                    <p data-translate="contact_founder">מייסד שותף</p>
                     <p><strong>📞 054-6671882</strong></p>
                 </div>
                 
                 <div class="contact-item">
-                    <h4>📧 דרכי התקשרות</h4>
-                    <p>בוט טלגרם: @SLH_Israel_Bot</p>
-                    <p>פייסבוק: OMG.adv</p>
+                    <h4 data-translate="contact_methods_title">📧 דרכי התקשרות</h4>
+                    <p data-translate="contact_bot">בוט טלגרם: @SLH_Israel_Bot</p>
+                    <p data-translate="contact_facebook">פייסבוק: OMG.adv</p>
                 </div>
                 
                 <div class="contact-item">
-                    <h4>🌐 אתרים נוספים</h4>
-                    <p>שוק NFT: slh-nft.com</p>
-                    <p>פלטפורמה: web-production-b425.up.railway.app</p>
+                    <h4 data-translate="contact_websites_title">🌐 אתרים נוספים</h4>
+                    <p data-translate="contact_nft">שוק NFT: slh-nft.com</p>
+                    <p data-translate="contact_platform">פלטפורמה: web-production-b425.up.railway.app</p>
                 </div>
             </div>
             
             <div style="margin-top: 25px;">
-                <a href="https://t.me/SLH_Israel_Bot" class="cta-button">🚀 התחילו בבוט הטלגרם</a>
-            </div>
-        </div>
-
-        <!-- שירותי פיתוח -->
-        <div class="projects">
-            <h2>🤖 שירותי פיתוח בוטים לעסקים</h2>
-            <p>מעוניינים בבוט דומה לעסק שלכם? אנחנו מציעים שירותי פיתוח מלאים:</p>
-            
-            <div class="project-grid">
-                <div class="project-card">
-                    <h4>💼 בוטי קהילה</h4>
-                    <p>ניהול קהילות, הרשמות אוטומטיות, מערכות תשלום ושערי כניסה</p>
-                </div>
-                
-                <div class="project-card">
-                    <h4>🛒 בוטי איקומרס</h4>
-                    <p>מערכות הזמנות, תשלומים, ניהול מלאי ושירות לקוחות אוטומטי</p>
-                </div>
-                
-                <div class="project-card">
-                    <h4>📊 בוטי ניתוח</h4>
-                    <p>ניתוח נתונים, דוחות אוטומטיים ומערכות התראות חכמות</p>
-                </div>
-                
-                <div class="project-card">
-                    <h4>🔧 התאמה אישית</h4>
-                    <p>פיתוח בוטים מותאמים אישית לפי צרכי העסק הספציפיים שלכם</p>
-                </div>
-            </div>
-            
-            <div style="text-align: center; margin-top: 25px;">
-                <p><strong>💰 מחירים נוחים - החל מ-149 ₪!</strong></p>
-                <a href="#contact" class="cta-button" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">📞 קבלו הצעת מחיר</a>
+                <a href="https://t.me/SLH_Israel_Bot" class="cta-button" data-translate="contact_bot_button">🚀 התחילו בבוט הטלגרם</a>
             </div>
         </div>
     </div>
 
     <footer>
-        <p>© 2024 SLH ישראל - כל הזכויות שמורות</p>
-        <p>פיתוח טכנולוגיות מתקדמות לכלכלה העתידית</p>
+        <p>© 2024 SLH ישראל - <span data-translate="footer_rights">כל הזכויות שמורות</span></p>
+        <p data-translate="footer_mission">פיתוח טכנולוגיות מתקדמות לכלכלה העתידית</p>
     </footer>
 
     <script>
+        // מילוני תרגום
+        const translations = {
+            'he': {
+                // Header
+                'main_title': 'SLH ישראל - שער כניסה לקהילת הקריפטו',
+                'main_subtitle': 'הצטרפו לקהילה המתקדמת בישראל לטכנולוגיה, קריפטו וכלכלה מבוזרת',
+                'join_bot_button': '🚀 הצטרפו לבוט הטלגרם',
+                'contact_button': '📞 צרו קשר',
+                
+                // Stats
+                'stat_members': 'חברי קהילה',
+                'stat_availability': 'זמינות מערכת',
+                'stat_reliability': 'אמינות',
+                'stat_projects': 'פרויקטים פעילים',
+                
+                // Ecosystem
+                'ecosystem_title': '💎 אקוסיסטם סלה ללא גבולות',
+                'ecosystem_subtitle': 'מערכת טכנולוגית מלאה המשלבת קריפטו, בוטים חכמים ושיווק רשתי מתקדם',
+                'ecosystem_slh_title': 'מטבע SLH',
+                'ecosystem_slh_desc': 'מטבע קריפטו ייחודי עם ערך אמיתי של 444₪ ליחידה. כל מצטרף מקבל SLH 1 עם 39₪ מידית והשאר בהדרגה.',
+                'ecosystem_bot_title': 'פלטפורמת בוטים',
+                'ecosystem_bot_desc': 'בוטים אוטומטיים לניהול קהילות, מערכות תשלום מתקדמות ואינטגרציה עם כל המערכות.',
+                'ecosystem_network_title': 'שיווק רשתי - 5 דורות',
+                'ecosystem_network_desc': 'הכנסה פסיבית מכל מצטרף חדש דרך הלינק האישי שלך, עם מעקב אוטומטי ל-5 דורות.',
+                'ecosystem_nft_title': 'NFT ומסחר דיגיטלי',
+                'ecosystem_nft_desc': 'שוק NFT מתקדם ליצירה וסחר בנכסים דיגיטליים עם חוזים חכמים אוטומטיים.',
+                
+                // Features
+                'feature_bot_title': 'בוט טלגרם מתקדם',
+                'feature_bot_desc': 'שער כניסה אוטומטי לקהילה עם מערכת תשלומים, ניהול משתמשים ואינטגרציות מתקדמות',
+                'feature_development_title': 'פיתוח בוטים לעסקים',
+                'feature_development_desc': 'שירותי פיתוח בוטים מותאמים אישית לעסקים עם יכולות איקומרס, CRM ואוטומציה',
+                'feature_investment_title': 'השקעה בפרויקט',
+                'feature_investment_desc': 'הזדמנות להשקעה בפרויקט טכנולוגי פורץ דרך שכבר ב-production ופעיל',
+                
+                // Payment
+                'payment_title': '💳 דרכי תשלום',
+                'payment_subtitle': 'אפשרויות תשלום מגוונות להצטרפות מהירה ונוחה',
+                'payment_bank_title': 'העברה בנקאית',
+                'payment_bank_details': 'בנק הפועלים, סניף כפר גנים (153)<br>חשבון: 73462<br>קאופמן צביקה',
+                'payment_ton_title': 'תשלום ב-TON',
+                'payment_crypto_title': 'קריפטו נוסף (Ethereum)',
+                'payment_cost': '💰 עלות הצטרפות: 39 ₪ בלבד',
+                'payment_button': '💳 הצטרפו עכשיו דרך הבוט',
+                
+                // Projects
+                'projects_title': '🌐 הפרויקטים שלנו',
+                'projects_subtitle': 'מערכת SLH FULL SUITE - חבילה טכנולוגית מלאה הכוללת:',
+                'project_botshop_desc': 'פלטפורמת בוטים אוטומטיים לקהילות ועסקים עם מערכת תשלומים מתקדמת',
+                'project_nft_desc': 'שוק NFT מתקדם ליצירה וסחר בנכסים דיגיטליים ייחודיים',
+                'project_engine_desc': 'מנוע ניתוח טכני מתקדם למסחר וניהול סיכונים אוטומטי',
+                'project_facebook_desc': 'דף העסקים שלנו עם עדכונים שוטפים, טיפים וקידומים בלעדיים',
+                'project_access': 'גישה למערכת',
+                'project_visit': 'בקרו באתר',
+                'project_dashboard': 'צפו בדשבורד',
+                'project_follow': 'עקבו אחרינו',
+                
+                // Why Join
+                'why_join_title': '💫 למה להצטרף לקהילה שלנו?',
+                'why_join_ecommerce': 'לינק אישי למכירה חוזרת - תוכלו להרוויח כמו בחנות אינטרנטית ישירות בטלגרם',
+                'why_join_analysis': 'גישה לכלים מתקדמים לניתוח מסחר, ניהול תיקים וקבלת החלטות מושכלות',
+                'why_join_nft': 'יצירה וניהול נכסים דיגיטליים עם חוזים חכמים אוטומטיים',
+                'why_join_community': 'רשת של אנשי עסקים, יזמים ומשקיעים לשיתופי פעולה והזדמנויות',
+                'why_join_cost': '💰 עלות הצטרפות סמלית: 39 ₪ בלבד',
+                'why_join_button': '💳 הצטרפו עכשיו דרך הבוט',
+                
+                // Development
+                'development_title': '🤖 שירותי פיתוח בוטים לעסקים',
+                'development_subtitle': 'מעוניינים בבוט דומה לעסק שלכם? אנחנו מציעים שירותי פיתוח מלאים:',
+                'development_community': 'ניהול קהילות, הרשמות אוטומטיות, מערכות תשלום ושערי כניסה',
+                'development_ecommerce': 'מערכות הזמנות, תשלומים, ניהול מלאי ושירות לקוחות אוטומטי',
+                'development_analytics': 'ניתוח נתונים, דוחות אוטומטיים ומערכות התראות חכמות',
+                'development_custom': 'פיתוח בוטים מותאמים אישית לפי צרכי העסק הספציפיים שלכם',
+                'development_pricing': '💰 מחירים נוחים - החל מ-149 ₪!',
+                'development_contact': '📞 קבלו הצעת מחיר',
+                
+                // Contact
+                'contact_title': '📞 צרו קשר',
+                'contact_subtitle': 'מוכנים להצטרף למהפכה הטכנולוגית? אנחנו כאן כדי לעזור!',
+                'contact_founder': 'מייסד שותף',
+                'contact_methods_title': '📧 דרכי התקשרות',
+                'contact_bot': 'בוט טלגרם: @SLH_Israel_Bot',
+                'contact_facebook': 'פייסבוק: OMG.adv',
+                'contact_websites_title': '🌐 אתרים נוספים',
+                'contact_nft': 'שוק NFT: slh-nft.com',
+                'contact_platform': 'פלטפורמה: web-production-b425.up.railway.app',
+                'contact_bot_button': '🚀 התחילו בבוט הטלגרם',
+                
+                // Footer
+                'footer_rights': 'כל הזכויות שמורות',
+                'footer_mission': 'פיתוח טכנולוגיות מתקדמות לכלכלה העתידית'
+            },
+            'en': {
+                // Header
+                'main_title': 'SLH Israel - Gateway to Crypto Community',
+                'main_subtitle': 'Join the most advanced community in Israel for technology, crypto and decentralized economy',
+                'join_bot_button': '🚀 Join Telegram Bot',
+                'contact_button': '📞 Contact Us',
+                
+                // Stats
+                'stat_members': 'Community Members',
+                'stat_availability': 'System Availability',
+                'stat_reliability': 'Reliability',
+                'stat_projects': 'Active Projects',
+                
+                // Ecosystem
+                'ecosystem_title': '💎 Sela Without Borders Ecosystem',
+                'ecosystem_subtitle': 'Complete technological system combining crypto, smart bots and advanced network marketing',
+                'ecosystem_slh_title': 'SLH Coin',
+                'ecosystem_slh_desc': 'Unique cryptocurrency with real value of 444₪ per unit. Every member receives SLH 1 with 39₪ immediately and the rest gradually.',
+                'ecosystem_bot_title': 'Bot Platform',
+                'ecosystem_bot_desc': 'Automated bots for community management, advanced payment systems and integration with all systems.',
+                'ecosystem_network_title': 'Network Marketing - 5 Generations',
+                'ecosystem_network_desc': 'Passive income from every new member through your personal link, with automatic tracking for 5 generations.',
+                'ecosystem_nft_title': 'NFT and Digital Trading',
+                'ecosystem_nft_desc': 'Advanced NFT market for creation and trading of digital assets with automatic smart contracts.',
+                
+                // Features
+                'feature_bot_title': 'Advanced Telegram Bot',
+                'feature_bot_desc': 'Automatic gateway to community with payment systems, user management and advanced integrations',
+                'feature_development_title': 'Bot Development for Businesses',
+                'feature_development_desc': 'Custom bot development services for businesses with ecommerce, CRM and automation capabilities',
+                'feature_investment_title': 'Project Investment',
+                'feature_investment_desc': 'Opportunity to invest in breakthrough technological project already in production and active',
+                
+                // Payment
+                'payment_title': '💳 Payment Methods',
+                'payment_subtitle': 'Various payment options for fast and convenient joining',
+                'payment_bank_title': 'Bank Transfer',
+                'payment_bank_details': 'Bank Hapoalim, Kfar Ganim branch (153)<br>Account: 73462<br>Kaufman Zvika',
+                'payment_ton_title': 'Payment in TON',
+                'payment_crypto_title': 'Other Crypto (Ethereum)',
+                'payment_cost': '💰 Joining cost: Only 39 ₪',
+                'payment_button': '💳 Join Now via Bot',
+                
+                // Projects
+                'projects_title': '🌐 Our Projects',
+                'projects_subtitle': 'SLH FULL SUITE system - Complete technological package including:',
+                'project_botshop_desc': 'Automated bot platform for communities and businesses with advanced payment system',
+                'project_nft_desc': 'Advanced NFT market for creation and trading of unique digital assets',
+                'project_engine_desc': 'Advanced technical analysis engine for trading and automatic risk management',
+                'project_facebook_desc': 'Our business page with regular updates, tips and exclusive promotions',
+                'project_access': 'Access System',
+                'project_visit': 'Visit Website',
+                'project_dashboard': 'View Dashboard',
+                'project_follow': 'Follow Us',
+                
+                // Why Join
+                'why_join_title': '💫 Why Join Our Community?',
+                'why_join_ecommerce': 'Personal link for recurring sales - you can earn like an online store directly on Telegram',
+                'why_join_analysis': 'Access to advanced tools for trading analysis, portfolio management and informed decision making',
+                'why_join_nft': 'Creation and management of digital assets with automatic smart contracts',
+                'why_join_community': 'Network of business people, entrepreneurs and investors for collaborations and opportunities',
+                'why_join_cost': '💰 Symbolic joining cost: Only 39 ₪',
+                'why_join_button': '💳 Join Now via Bot',
+                
+                // Development
+                'development_title': '🤖 Bot Development Services for Businesses',
+                'development_subtitle': 'Interested in a similar bot for your business? We offer full development services:',
+                'development_community': 'Community management, automatic registrations, payment systems and gateways',
+                'development_ecommerce': 'Order systems, payments, inventory management and automatic customer service',
+                'development_analytics': 'Data analysis, automatic reports and smart alert systems',
+                'development_custom': 'Custom bot development according to your specific business needs',
+                'development_pricing': '💰 Affordable prices - Starting from 149 ₪!',
+                'development_contact': '📞 Get a Quote',
+                
+                // Contact
+                'contact_title': '📞 Contact Us',
+                'contact_subtitle': 'Ready to join the technological revolution? We are here to help!',
+                'contact_founder': 'Co-Founder',
+                'contact_methods_title': '📧 Contact Methods',
+                'contact_bot': 'Telegram Bot: @SLH_Israel_Bot',
+                'contact_facebook': 'Facebook: OMG.adv',
+                'contact_websites_title': '🌐 Additional Websites',
+                'contact_nft': 'NFT Market: slh-nft.com',
+                'contact_platform': 'Platform: web-production-b425.up.railway.app',
+                'contact_bot_button': '🚀 Start with Telegram Bot',
+                
+                // Footer
+                'footer_rights': 'All rights reserved',
+                'footer_mission': 'Developing advanced technologies for the future economy'
+            },
+            'ru': {
+                // Header
+                'main_title': 'SLH Израиль - Вход в криптосообщество',
+                'main_subtitle': 'Присоединяйтесь к самому продвинутому сообществу в Израиле для технологий, крипто и децентрализованной экономики',
+                'join_bot_button': '🚀 Присоединиться к боту Telegram',
+                'contact_button': '📞 Связаться с нами',
+                
+                // Stats
+                'stat_members': 'Участников сообщества',
+                'stat_availability': 'Доступность системы',
+                'stat_reliability': 'Надежность',
+                'stat_projects': 'Активных проектов',
+                
+                // Ecosystem
+                'ecosystem_title': '💎 Экосистема Села без границ',
+                'ecosystem_subtitle': 'Полная технологическая система, объединяющая крипто, умные боты и продвинутый сетевой маркетинг',
+                'ecosystem_slh_title': 'Монета SLH',
+                'ecosystem_slh_desc': 'Уникальная криптовалюта с реальной стоимостью 444₪ за единицу. Каждый участник получает SLH 1 с 39₪ сразу и остальное постепенно.',
+                'ecosystem_bot_title': 'Платформа ботов',
+                'ecosystem_bot_desc': 'Автоматизированные боты для управления сообществом, продвинутые платежные системы и интеграция со всеми системами.',
+                'ecosystem_network_title': 'Сетевой маркетинг - 5 поколений',
+                'ecosystem_network_desc': 'Пассивный доход от каждого нового участника через вашу персональную ссылку, с автоматическим отслеживанием 5 поколений.',
+                'ecosystem_nft_title': 'NFT и цифровая торговля',
+                'ecosystem_nft_desc': 'Продвинутый рынок NFT для создания и торговли цифровыми активами с автоматическими смарт-контрактами.',
+                
+                // Features
+                'feature_bot_title': 'Продвинутый бот Telegram',
+                'feature_bot_desc': 'Автоматический вход в сообщество с платежными системами, управлением пользователями и продвинутыми интеграциями',
+                'feature_development_title': 'Разработка ботов для бизнеса',
+                'feature_development_desc': 'Услуги индивидуальной разработки ботов для бизнеса с возможностями электронной коммерции, CRM и автоматизации',
+                'feature_investment_title': 'Инвестиции в проект',
+                'feature_investment_desc': 'Возможность инвестировать в прорывной технологический проект, уже находящийся в производстве и активный',
+                
+                // Payment
+                'payment_title': '💳 Способы оплаты',
+                'payment_subtitle': 'Различные варианты оплаты для быстрого и удобного присоединения',
+                'payment_bank_title': 'Банковский перевод',
+                'payment_bank_details': 'Банк Хапоалим, филиал Кфар Ганим (153)<br>Счет: 73462<br>Кауфман Звика',
+                'payment_ton_title': 'Оплата в TON',
+                'payment_crypto_title': 'Другая криптовалюта (Ethereum)',
+                'payment_cost': '💰 Стоимость присоединения: Всего 39 ₪',
+                'payment_button': '💳 Присоединиться через бота',
+                
+                // Projects
+                'projects_title': '🌐 Наши проекты',
+                'projects_subtitle': 'Система SLH FULL SUITE - Полный технологический пакет, включающий:',
+                'project_botshop_desc': 'Платформа автоматизированных ботов для сообществ и бизнеса с продвинутой платежной системой',
+                'project_nft_desc': 'Продвинутый рынок NFT для создания и торговли уникальными цифровыми активами',
+                'project_engine_desc': 'Продвинутый движок технического анализа для торговли и автоматического управления рисками',
+                'project_facebook_desc': 'Наша бизнес-страница с регулярными обновлениями, советами и эксклюзивными акциями',
+                'project_access': 'Доступ к системе',
+                'project_visit': 'Посетить сайт',
+                'project_dashboard': 'Посмотреть дашборд',
+                'project_follow': 'Подписаться',
+                
+                // Why Join
+                'why_join_title': '💫 Почему стоит присоединиться к нашему сообществу?',
+                'why_join_ecommerce': 'Персональная ссылка для повторных продаж - вы можете зарабатывать как интернет-магазин прямо в Telegram',
+                'why_join_analysis': 'Доступ к продвинутым инструментам для анализа торговли, управления портфелем и принятия обоснованных решений',
+                'why_join_nft': 'Создание и управление цифровыми активами с автоматическими смарт-контрактами',
+                'why_join_community': 'Сеть бизнесменов, предпринимателей и инвесторов для сотрудничества и возможностей',
+                'why_join_cost': '💰 Символическая стоимость присоединения: Всего 39 ₪',
+                'why_join_button': '💳 Присоединиться через бота',
+                
+                // Development
+                'development_title': '🤖 Услуги разработки ботов для бизнеса',
+                'development_subtitle': 'Интересует похожий бот для вашего бизнеса? Мы предлагаем полные услуги разработки:',
+                'development_community': 'Управление сообществами, автоматические регистрации, платежные системы и входы',
+                'development_ecommerce': 'Системы заказов, платежи, управление запасами и автоматическое обслуживание клиентов',
+                'development_analytics': 'Анализ данных, автоматические отчеты и системы умных оповещений',
+                'development_custom': 'Индивидуальная разработка ботов согласно вашим конкретным бизнес-потребностям',
+                'development_pricing': '💰 Доступные цены - От 149 ₪!',
+                'development_contact': '📞 Получить предложение',
+                
+                // Contact
+                'contact_title': '📞 Свяжитесь с нами',
+                'contact_subtitle': 'Готовы присоединиться к технологической революции? Мы здесь, чтобы помочь!',
+                'contact_founder': 'Соучредитель',
+                'contact_methods_title': '📧 Способы связи',
+                'contact_bot': 'Бот Telegram: @SLH_Israel_Bot',
+                'contact_facebook': 'Facebook: OMG.adv',
+                'contact_websites_title': '🌐 Дополнительные сайты',
+                'contact_nft': 'Рынок NFT: slh-nft.com',
+                'contact_platform': 'Платформа: web-production-b425.up.railway.app',
+                'contact_bot_button': '🚀 Начать с бота Telegram',
+                
+                // Footer
+                'footer_rights': 'Все права защищены',
+                'footer_mission': 'Разработка передовых технологий для экономики будущего'
+            },
+            'ar': {
+                // Header
+                'main_title': 'SLH إسرائيل - بوابة الدخول لمجتمع العملات المشفرة',
+                'main_subtitle': 'انضم إلى المجتمع الأكثر تقدمًا في إسرائيل للتكنولوجيا والعملات المشفرة والاقتصاد اللامركزي',
+                'join_bot_button': '🚀 انضم إلى بوت التليجرام',
+                'contact_button': '📞 اتصل بنا',
+                
+                // Stats
+                'stat_members': 'أعضاء المجتمع',
+                'stat_availability': 'توافر النظام',
+                'stat_reliability': 'موثوقية',
+                'stat_projects': 'مشاريع نشطة',
+                
+                // Ecosystem
+                'ecosystem_title': '💎 نظام سيلا بلا حدود البيئي',
+                'ecosystem_subtitle': 'نظام تكنولوجي كامل يجمع بين العملات المشفرة، البوتات الذكية والتسويق الشبكي المتقدم',
+                'ecosystem_slh_title': 'عملة SLH',
+                'ecosystem_slh_desc': 'عملة مشفرة فريدة بقيمة حقيقية 444₪ للوحدة. كل عضو يحصل على SLH 1 مع 39₪ فورًا والباقي تدريجيًا.',
+                'ecosystem_bot_title': 'منصة البوتات',
+                'ecosystem_bot_desc': 'بوتات آلية لإدارة المجتمعات، أنظمة دفع متقدمة والتكامل مع جميع الأنظمة.',
+                'ecosystem_network_title': 'التسويق الشبكي - 5 أجيال',
+                'ecosystem_network_desc': 'دخل سلبي من كل عضو جديد عبر رابطك الشخصي، مع متابعة آلية لـ 5 أجيال.',
+                'ecosystem_nft_title': 'NFT والتجارة الرقمية',
+                'ecosystem_nft_desc': 'سوق NFT متقدم للإبداع والتجارة في الأصول الرقمية مع عقود ذكية آلية.',
+                
+                // Features
+                'feature_bot_title': 'بوت تليجرام متقدم',
+                'feature_bot_desc': 'بوابة دخول آلية للمجتمع مع أنظمة دفع، إدارة مستخدمين وتكاملات متقدمة',
+                'feature_development_title': 'تطوير بوتات للأعمال',
+                'feature_development_desc': 'خدمات تطوير بوتات مخصصة للأعمال مع إمكانيات التجارة الإلكترونية، إدارة علاقات العملاء والأتمتة',
+                'feature_investment_title': 'الاستثمار في المشروع',
+                'feature_investment_desc': 'فرصة للاستثمار في مشروع تكنولوجي رائد موجود بالفعل في الإنتاج ونشط',
+                
+                // Payment
+                'payment_title': '💳 طرق الدفع',
+                'payment_subtitle': 'خيارات دفع متنوعة للانضمام السريع والمريح',
+                'payment_bank_title': 'تحويل بنكي',
+                'payment_bank_details': 'بنك هبوعليم، فرع كفار جانيم (153)<br>الحساب: 73462<br>كاوفمان زفيكا',
+                'payment_ton_title': 'الدفع بـ TON',
+                'payment_crypto_title': 'عملة مشفرة أخرى (Ethereum)',
+                'payment_cost': '💰 تكلفة الانضمام: 39 ₪ فقط',
+                'payment_button': '💳 انضم الآن عبر البوت',
+                
+                // Projects
+                'projects_title': '🌐 مشاريعنا',
+                'projects_subtitle': 'نظام SLH FULL SUITE - حزمة تكنولوجية كاملة تشمل:',
+                'project_botshop_desc': 'منصة بوتات آلية للمجتمعات والأعمال مع نظام دفع متقدم',
+                'project_nft_desc': 'سوق NFT متقدم للإبداع والتجارة في الأصول الرقمية الفريدة',
+                'project_engine_desc': 'محرك تحليل فني متقدم للتجارة وإدارة المخاطر الآلية',
+                'project_facebook_desc': 'صفحة أعمالنا مع تحديثات منتظمة، نصائح وعروض حصرية',
+                'project_access': 'الدخول للنظام',
+                'project_visit': 'زيارة الموقع',
+                'project_dashboard': 'عرض لوحة التحكم',
+                'project_follow': 'تابعنا',
+                
+                // Why Join
+                'why_join_title': '💫 لماذا تنضم إلى مجتمعنا؟',
+                'why_join_ecommerce': 'رابط شخصي للمبيعات المتكررة - يمكنك الربح مثل متجر إلكتروني مباشرة على تليجرام',
+                'why_join_analysis': 'الوصول إلى أدوات متقدمة لتحليل التداول، إدارة المحافظ واتخاذ القرارات المستنيرة',
+                'why_join_nft': 'الإبداع وإدارة الأصول الرقمية مع عقود ذكية آلية',
+                'why_join_community': 'شبكة من رجال الأعمال، entrepreneurs والمستثمرين للتعاون والفرص',
+                'why_join_cost': '💰 تكلفة انضمام رمزية: 39 ₪ فقط',
+                'why_join_button': '💳 انضم الآن عبر البوت',
+                
+                // Development
+                'development_title': '🤖 خدمات تطوير البوتات للأعمال',
+                'development_subtitle': 'مهتم ببوت مماثل لأعمالك؟ نقدم خدمات تطوير كاملة:',
+                'development_community': 'إدارة المجتمعات، تسجيلات آلية، أنظمة دفع وبوابات دخول',
+                'development_ecommerce': 'أنظمة طلبات، مدفوعات، إدارة مخزون وخدمة عملاء آلية',
+                'development_analytics': 'تحليل بيانات، تقارير آلية وأنظمة تنبيه ذكية',
+                'development_custom': 'تطوير بوتات مخصصة وفقًا لاحتياجات عملك المحددة',
+                'development_pricing': '💰 أسعار مناسبة - بدءًا من 149 ₪!',
+                'development_contact': '📞 احصل على عرض سعر',
+                
+                // Contact
+                'contact_title': '📞 اتصل بنا',
+                'contact_subtitle': 'مستعد للانضمام إلى الثورة التكنولوجية؟ نحن هنا لمساعدتك!',
+                'contact_founder': 'مؤسس شريك',
+                'contact_methods_title': '📧 طرق التواصل',
+                'contact_bot': 'بوت تليجرام: @SLH_Israel_Bot',
+                'contact_facebook': 'فيسبوك: OMG.adv',
+                'contact_websites_title': '🌐 مواقع إضافية',
+                'contact_nft': 'سوق NFT: slh-nft.com',
+                'contact_platform': 'المنصة: web-production-b425.up.railway.app',
+                'contact_bot_button': '🚀 ابدأ ببوت التليجرام',
+                
+                // Footer
+                'footer_rights': 'جميع الحقوق محفوظة',
+                'footer_mission': 'تطوير تكنولوجيات متقدمة لاقتصاد المستقبل'
+            }
+        };
+
+        // פונקציה להחלפת שפה
+        function changeLanguage(lang) {
+            // עדכון כיוון הדף
+            if (lang === 'he' || lang === 'ar') {
+                document.body.dir = 'rtl';
+            } else {
+                document.body.dir = 'ltr';
+            }
+            
+            // עדכון כל הטקסטים
+            const elements = document.querySelectorAll('[data-translate]');
+            elements.forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[lang] && translations[lang][key]) {
+                    element.innerHTML = translations[lang][key];
+                }
+            });
+            
+            // עדכון כותר הדף
+            document.title = translations[lang]['main_title'];
+            
+            // שמירת השפה בהעדפות
+            localStorage.setItem('preferred-language', lang);
+        }
+
+        // טעינת שפה מועדפת
+        document.addEventListener('DOMContentLoaded', function() {
+            const preferredLang = localStorage.getItem('preferred-language') || 'he';
+            changeLanguage(preferredLang);
+            
+            // אנימציות לסטטיסטיקות
+            animateStats();
+        });
+
         // אנימציות לסטטיסטיקות
         function animateStats() {
             const stats = document.querySelectorAll('.stat-number');
@@ -412,9 +1005,6 @@
                 }, 50);
             });
         }
-
-        // הפעלת אנימציה כאשר הדף נטען
-        window.addEventListener('load', animateStats);
 
         // מעקב אחר לחיצות על קישורים
         document.querySelectorAll('a').forEach(link => {
