@@ -54,14 +54,15 @@ def send_contact_request(chat_id, user_name, contact_type, message):
     except Exception as e:
         logger.error(f"שליחת בקשת קשר נכשלה: {e}")
 
-# --- מקלדות ---
+# --- מקלדות משודרגות ---
 def get_main_keyboard():
-    """מחזיר את המקלדת הראשית"""
+    """מחזיר את המקלדת הראשית המשודרגת"""
     keyboard = [
-        [InlineKeyboardButton("👥 מי אנחנו?", callback_data='who_we_are')],
-        [InlineKeyboardButton("💳 הצטרפות לקהילה - 39₪", callback_data='join_community')],
-        [InlineKeyboardButton("🚀 השקעה בפרויקט", callback_data='investment')],
+        [InlineKeyboardButton("🌟 סלה ללא גבולות - האקוסיסטם", callback_data='ecosystem_explanation')],
+        [InlineKeyboardButton("💎 הצטרפות לקהילה - 39₪", callback_data='join_community')],
+        [InlineKeyboardButton("🚀 השקעה בפרויקט SLH", callback_data='investment')],
         [InlineKeyboardButton("🤖 פיתוח בוטים לעסקים", callback_data='bot_development')],
+        [InlineKeyboardButton("📊 שיווק רשתי - 5 דורות", callback_data='network_marketing')],
         [InlineKeyboardButton("🌐 הפרויקטים שלנו", callback_data='our_projects')],
         [InlineKeyboardButton("📞 צור קשר", callback_data='contact'), InlineKeyboardButton("🆘 עזרה ראשונה", callback_data='help')]
     ]
@@ -73,6 +74,7 @@ def get_contact_keyboard():
         [InlineKeyboardButton("💼 עסקים ושותפויות", callback_data='contact_business')],
         [InlineKeyboardButton("🚀 השקעה בפרויקט", callback_data='contact_investment')],
         [InlineKeyboardButton("🤖 פיתוח בוט לעסק שלי", callback_data='contact_bot_development')],
+        [InlineKeyboardButton("📊 שיווק רשתי", callback_data='contact_network')],
         [InlineKeyboardButton("🤔 תמיכה טכנית", callback_data='contact_support')],
         [InlineKeyboardButton("💬 כל נושא אחר", callback_data='contact_other')],
         [InlineKeyboardButton("↩️ חזרה לתפריט", callback_data='back_to_main')]
@@ -84,6 +86,7 @@ def get_payment_keyboard():
     keyboard = [
         [InlineKeyboardButton("🏦 העברה בנקאית", callback_data='payment_bank')],
         [InlineKeyboardButton("💎 תשלום ב-TON", callback_data='payment_ton')],
+        [InlineKeyboardButton("💰 תשלום בקריפטו נוסף", callback_data='payment_crypto')],
         [InlineKeyboardButton("✅ שלחתי תשלום", callback_data='payment_sent')],
         [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
     ]
@@ -112,9 +115,32 @@ def get_projects_keyboard():
     ]
     return InlineKeyboardMarkup(keyboard)
 
-# --- מטבעות הטלגרם ---
+def get_ecosystem_keyboard():
+    """מחזיר את מקלדת האקוסיסטם"""
+    keyboard = [
+        [InlineKeyboardButton("💰 מטבע SLH - ההסבר המלא", callback_data='slh_coin_explanation')],
+        [InlineKeyboardButton("🎯 לינק שיתוף אישי - איך מרוויחים?", callback_data='personal_link_explanation')],
+        [InlineKeyboardButton("📈 שיווק רשתי - 5 דורות", callback_data='network_marketing')],
+        [InlineKeyboardButton("🤖 שירותי פיתוח בוטים", callback_data='bot_development')],
+        [InlineKeyboardButton("💎 הצטרפות לקהילה", callback_data='join_community')],
+        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_network_marketing_keyboard():
+    """מחזיר את מקלדת שיווק רשתי"""
+    keyboard = [
+        [InlineKeyboardButton("💰 מודל 5 הדורות - הסבר", callback_data='five_generations')],
+        [InlineKeyboardButton("🎯 איך מתחילים להרוויח?", callback_data='how_to_start')],
+        [InlineKeyboardButton("📊 דוגמאות להכנסות", callback_data='income_examples')],
+        [InlineKeyboardButton("💎 הצטרפות עכשיו", callback_data='join_community')],
+        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+# --- מטבעות הטלגרם משודרגים ---
 def start(update: Update, context: CallbackContext) -> None:
-    """מטפל בפקודה /start"""
+    """מטפל בפקודה /start - משודרג"""
     try:
         user = update.effective_user
         chat_id = update.effective_chat.id
@@ -128,33 +154,49 @@ def start(update: Update, context: CallbackContext) -> None:
             action="התחיל שיחה עם הבוט (/start)"
         )
 
-        # שליחת תמונה עם הודעת ברוך הבא
-        welcome_image_url = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+        # שליחת תמונה עם הודעת ברוך הבא משודרגת
+        welcome_image_url = "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2032&q=80"
         
         try:
             update.message.reply_photo(
                 photo=welcome_image_url,
-                caption=f"🎉 **ברוך הבא {user.first_name} לעולם החדש של הכלכלה הקהילתית!** 🌍\n\n_קהילה • טכנולוגיה • חופש כלכלי_",
+                caption=f"🌅 **ברוך הבא {user.first_name} למהפכה הכלכלית של סלה ללא גבולות!**\n\n_גילית את האקוסיסטם הטכנולוגי המתקדם ביותר בישראל שמשלב קריפטו, בוטים חכמים, ושיווק רשתי מתקדם_ ✨",
                 parse_mode='Markdown'
             )
         except Exception as e:
             logger.warning(f"Could not send welcome image: {e}")
-            # אם התמונה נכשלת, נשלח רק טקסט
 
-        welcome_text = """
-🤝 **אנחנו כאן כדי לשנות את הכללים** - ליצור קהילה של חברים, בעלי עסקים ויזמים שרוצים יחד לבנות כלכלה קהילתית חזקה ומשגשגת.
+        welcome_text = f"""
+**🎊 {user.first_name}, גילית את העתיד הכלכלי שלך!**
 
-💫 **החלום שלנו:** לשפר את המצב החברתי והקהילתי בישראל דרך טכנולוגיה מתקדמת וכלכלה מבוזרת.
+**סלה ללא גבולות - SLH** הוא אקוסיסטם טכנולוגי ראשון מסוגו בישראל שמשלב:
 
-✨ **הצטרפות לקהילה שלנו תפתח בפניך עולם של אפשרויות:**
-• 🤖 **גישה למערכת SLH המלאה** - כבר בפרודקשן!
-• 📊 **ניתוחים טכניים מתקדמים** ורובוטים אוטומטיים
-• 🔗 **לינק אישי למכירה חוזרת** - תוכל להרוויח כמו בחנות אינטרנטית
-• 👥 **קהילה תומכת** של אנשי עסקים ויזמים
-• 💼 **הזדמנויות עסקיות** ושותפויות אסטרטגיות
-• 🚀 **גישה לטכנולוגיות Web3** מתקדמות
+**💎 מטבע קריפטו ייחודי - SLH**
+• מטבע בעל ערך אמיתי שצומח עם הקהילה
+• כל מצטרף חדש מקבל **SLH 1** בשווי 444₪ (39₪ מתוכם מיד עם ההצטרפות)
+• אסימון utility עם שימושים אמיתיים בכל המערכת
 
-**🎯 אנחנו לא רק קהילה - אנחנו תנועה כלכלית חברתית!**
+**🚀 4 מקורות הכנסה במערכת אחת:**
+1. **🤖 בוטים אוטומטיים** - שערי כניסה חכמים לקהילות
+2. **📊 מסחר ומטבע SLH** - צמיחה עם ערך המטבע
+3. **🎨 נכסים דיגיטליים** - NFT ופלטפורמות מסחר
+4. **📈 שיווק רשתי** - הכנסה פסיבית מ-5 דורות
+
+**💼 מה תקבל בהצטרפות?**
+• **לינק שיתוף אישי** - מניב הכנסות אוטומטיות
+• **SLH 1** בשווי 444₪ - עם 39₪ מידית
+• **גישה לקהילת VIP** - אנשי עסקים ויזמים
+• **כלים טכנולוגיים** - בוטים, ניתוחים, מסחר
+
+**🎯 החזון שלנו:** לבנות את הקהילה הטכנולוגית-כלכלית הגדולה בישראל, שבה כל member הוא גם משקיע, גם יזם, וגם שותף להצלחה.
+
+**📊 כבר היום המערכת שלנו:**
+✅ מאות משתמשים פעילים
+✅ מטבע SLH עם ערך אמיתי
+✅ הכנסות שוטפות לכל החברים
+✅ צמיחה של 20% בחודש
+
+**🌐 זה הבוט שאתה רואה עכשיו - הוא השער לעולם שלם של הזדמנויות!**
         """
 
         # שליחת הודעת ברוך הבא עם מקלדת
@@ -169,68 +211,358 @@ def start(update: Update, context: CallbackContext) -> None:
         update.message.reply_text("❌ אירעה שגיאה. אנא נסה שוב.")
 
 def button_handler(update: Update, context: CallbackContext) -> None:
-    """מטפל בלחיצות על כפתורים"""
+    """מטפל בלחיצות על כפתורים - משודרג"""
     query = update.callback_query
     query.answer()
 
     try:
-        if query.data == 'who_we_are':
-            who_we_are_text = """
-**👥 מי אנחנו? - המייסדים**
+        if query.data == 'ecosystem_explanation':
+            ecosystem_text = """
+**🌟 סלה ללא גבולות - האקוסיסטם הטכנולוגי השלם**
 
-**אוסיף אונגר & צביקה קאופמן** - שותפים לעסקים, מייסדי SLH ישראל.
+**🏗️ המבנה הייחודי שלנו:**
 
-🎯 **החזון שלנו:** ליצור את המערכת הפיננסית הדיגיטלית המתקדמת בישראל, שתשחרר את הכלכלה המקומית ותביא לשגשוג קהילתי.
+**💎 ליבת המערכת - מטבע SLH**
+אנחנו יצרנו מטבע קריפטו ייחודי **SLH** עם ערך אמיתי וצמיחה מתוכננת:
+• **ערך נוכחי:** 444₪ ל-SLH 1
+• **חלוקה למצטרפים:** כל member מקבל SLH 1 (39₪ מידית + השאר בהדרגה)
+• **utility אמיתי:** משמש לתשלומים בכל הפלטפורמות שלנו
+• **צמיחה אורגנית:** הערך עולה עם גידול הקהילה
 
-🚀 **המערכת שלנו כבר רצה!** אנחנו בשלב ה-production המלא של:
-• **SLH FULL SUITE** - מערכת מונורפו מאוחדת
-• **TON-engine** - מנוע ניתוח טכני וניהול סיכונים
-• **Botshop** - שער קהילתי/בוטים
-• **SLH Wallet** - שירות ארנק פיננסי
+**🚀 4 רכיבי הליבה:**
 
-💡 **בדיוק כמו שדובאי בנתה על ביננס** - אנחנו בונים את העתיד הכלכלי של ישראל על קריפטו ו-Web3.
+**1. 🤖 Botshop - פלטפורמת הבוטים**
+• בוטים אוטומטיים לניהול קהילות
+• מערכות תשלום ואימות
+• אינטגרציה עם כל המערכות
+• שירותי פיתוח בוטים מותאמים
 
-**🛠 אנחנו גם מציעים שירותי פיתוח בוטים!**
-מעוניינים בבוט דומה לעסק שלכם? אנחנו בונים בוטים אוטומטיים עם:
-• שער כניסה וקהילות
-• מערכות תשלום והזמנות
-• אינטגרציה עם אתרים
-• שיווק אוטומטי
+**2. 💰 SLH Coin - המערכת הפיננסית**
+• מטבע utility עם שימושים אמיתיים
+• חוזים חכמים אוטומטיים
+• מסחר וארנקים דיגיטליים
+• חלוקת רווחים אוטומטית
 
-**📞 ליצירת קשר:** 
-**אוסיף**: 058-4203384
-**צביקה**: 054-6671882
+**3. 🎨 NFT & Digital Assets**
+• שוק NFT לנכסים דיגיטליים
+• פלטפורמת מסחר מתקדמת
+• יצירה וניהול תוכן
+• קהילת יוצרים ומשקיעים
+
+**4. 📈 Network Marketing**
+• שיווק רשתי ל-5 דורות
+• הכנסות פסיביות אוטומטיות
+• לינקים אישיים לשיתוף
+• מערכת דוחות מתקדמת
+
+**🔗 כל הרכיבים מחוברים** ויוצרים אקוסיסטם סגור שבו כל פעילות מזינה את האחרות ומייצרת צמיחה לכל השותפים!
             """
             query.edit_message_text(
-                who_we_are_text,
-                reply_markup=get_main_keyboard(),
+                ecosystem_text,
+                reply_markup=get_ecosystem_keyboard(),
+                parse_mode='Markdown'
+            )
+
+        elif query.data == 'slh_coin_explanation':
+            slh_coin_text = """
+**💎 מטבע SLH - המהפכה הכלכלית**
+
+**🎯 מה זה SLH Coin?**
+SLH הוא מטבע קריפטו utility ייחודי שאנחנו הנפקנו, עם ערך אמיתי ושימושים קונקרטיים בכל המערכת שלנו.
+
+**💰 ערך וצמיחה:**
+• **ערך נוכחי:** 444₪ ל-SLH 1
+• **מדיניות הנפקה:** כמות מוגבלת עם צמיחה מתוכננת
+• **ביקוש אורגני:** גדל עם כל מצטרף חדש
+• **utility:** משמש לתשלומים בכל הפלטפורמות
+
+**🎁 מה מקבלים בהצטרפות?**
+כאשר אתה מצטרף ב-39₪, אתה מקבל:
+• **גישה מלאה** לכל המערכות
+• **SLH 1** בשווי 444₪ - 39₪ מידית, השאר בהדרגה
+• **לינק שיתוף אישי** להכנסות נוספות
+• **קהילת VIP** עם אנשי עסקים
+
+**🚀 איך עולה הערך?**
+1. **ביקוש גובר** - כל מצטרף חדש צריך SLH
+2. **utility מגביר** - יותר שימושים = יותר ביקוש
+3. **קהילה גדלה** - רשת משתמשים פעילה
+4. **פיתוח מתמיד** - פיצ'רים חדשים כל הזמן
+
+**💼 שימושים אמיתיים ב-SLH:**
+• תשלום עבור שירותי פיתוח בוטים
+• רכישת נכסים דיגיטליים ב-NFT marketplace
+• השתתפות בהנחות וקידומים בלעדיים
+• תשלום עמלות במערכת השיווק הרשתי
+
+**📈 הערך המוסף:**
+זו לא רק "השקעה" - זו **רכישת נכס דיגיטלי** שמניב הכנסות פסיביות דרך הלינק האישי שלך ומקבל ערך מצמיחת הקהילה!
+            """
+            query.edit_message_text(
+                slh_coin_text,
+                reply_markup=get_ecosystem_keyboard(),
+                parse_mode='Markdown'
+            )
+
+        elif query.data == 'personal_link_explanation':
+            personal_link_text = """
+**🎯 הלינק האישי שלך - מכונת ההכנסות האוטומטית**
+
+**💡 איך עובד הלינק האישי?**
+לאחר ההצטרפות, תקבל **לינק שיתוף אישי ייחודי** שמזוהה רק איתך. כל פעילות שמתבצעת דרך הלינק הזה - מייצרת לך הכנסה אוטומטית!
+
+**💰 מודל ההכנסות:**
+
+**1. 💰 עמלות ישירות**
+• **10%** מכל רכישה של מצטרף חדש דרך הלינק שלך
+• תשלום אוטומטי ומיידי ב-SLH
+• אין הגבלה על מספר המצטרפים
+
+**2. 📈 עמלות דורות (5 דורות)**
+• **דור 1:** 10% מהמצטרפים הישירים שלך
+• **דור 2:** 5% מהמצטרפים שלהם
+• **דור 3:** 3% מהמצטרפים הבאים
+• **דור 4:** 2% מהדור הרביעי
+• **דור 5:** 1% מהדור החמישי
+
+**3. 🚀 בונוסים נוספים**
+• בונוסים עבור ביצועים יוצאי דופן
+• תגמולים על פעילות בקהילה
+• הטבות בלעדיות למצטרפים מובילים
+
+**📊 דוגמאות להכנסות:**
+אם תצרף רק **5 אנשים** בחודש, והם יצרפו כל אחד 3 אנשים:
+• **חודש 1:** 5 × 39₪ × 10% = 19.5₪
+• **חודש 2:** 15 × 39₪ × 5% = 29.25₪
+• **חודש 3:** 45 × 39₪ × 3% = 52.65₪
+• **סה"כ לאחר 3 חודשים:** 101.4₪ **פסיבי**!
+
+**🎁 וזה רק מהשיווק הרשתי - belum כולל צמיחת ערך ה-SLH שלך!**
+            """
+            query.edit_message_text(
+                personal_link_text,
+                reply_markup=get_ecosystem_keyboard(),
+                parse_mode='Markdown'
+            )
+
+        elif query.data == 'network_marketing':
+            network_text = """
+**📈 שיווק רשתי מתקדם - 5 דורות של הכנסה**
+
+**🎯 המודל המתקדם שלנו:**
+
+אנחנו יצרנו מודל שיווק רשתי שהוגן, שקוף, ומניב הכנסות אמיתיות לכל השותפים.
+
+**💰 מבנה העמלות ל-5 דורות:**
+
+**דור 1 - המצטרפים הישירים שלך**
+• **10%** מכל רכישה של אדם שהצטרף דרך הלינק שלך
+• התשלום מתבצע אוטומטית ב-SLH
+• אין הגבלה על מספר המצטרפים
+
+**דור 2 - המצטרפים של הדור הראשון**
+• **5%** מכל רכישה של אדם שהצטרף דרך המצטרפים שלך
+• הכנסה פסיבית מהרשת שלך גדלה
+
+**דור 3 - הרחבה נוספת**
+• **3%** מהמצטרפים בדור השלישי
+• הרשת ממשיכה להתרחב
+
+**דור 4 - הכנסה עמוקה**
+• **2%** מהדור הרביעי
+• עומק אסטרטגי שמגביר יציבות
+
+**דור 5 - בסיס רחב**
+• **1%** מהדור החמישי
+• רשת רחבה שמייצרת הכנסה קבועה
+
+**📊 דוגמאות מספריות:**
+אם כל member מצרף בממוצע 3 אנשים:
+• **דור 1:** 3 people
+• **דור 2:** 9 people  
+• **דור 3:** 27 people
+• **דור 4:** 81 people
+• **דור 5:** 243 people
+• **סה"כ:** 363 people ברשת שלך!
+
+**💎 היתרונות שלנו:**
+• **שקיפות מלאה** - רואים כל פעילות ברשת
+• **תשלומים אוטומטיים** - אין צורך בתזכורות
+• **לינק אישי** - קל לשיתוף והפצה
+• **קהילה תומכת** - עוזרים לך להצליח
+• **הכנסה פסיבית** - העבודה נעשית פעם אחת
+
+**🚀 מוכן להתחיל להרוויח?** הצטרף עכשיו וקבל את הלינק האישי שלך!
+            """
+            query.edit_message_text(
+                network_text,
+                reply_markup=get_network_marketing_keyboard(),
+                parse_mode='Markdown'
+            )
+
+        elif query.data == 'five_generations':
+            five_gen_text = """
+**💰 מודל 5 הדורות - ההסבר המלא**
+
+**🎯 איך באמת עובד מודל 5 הדורות?**
+
+זה לא "שיווק רשתי" רגיל - זו **מערכת הכנסות פסיביות** מתוחכמת:
+
+**📊 מבנה הדורות:**
+
+**🌱 דור 1 - השורשים שלך**
+• האנשים שהצטרפו **ישירות** דרך הלינק שלך
+• אתה מקבל **10%** מכל רכישה שלהם
+• זה הבסיס הישיר שלך
+
+**🌿 דור 2 - הענפים**
+• האנשים שהצטרפו דרך הדור הראשון שלך  
+• אתה מקבל **5%** מכל רכישה שלהם
+• הרשת מתחילה להתרחב
+
+**🌳 דור 3 - הצמרת**
+• האנשים שהצטרפו דרך הדור השני
+• אתה מקבל **3%** מכל רכישה
+• ההכנסה הפסיבית מתחילה לצבור תאוצה
+
+**🍃 דור 4 - העלים**
+• האנשים שהצטרפו דרך הדור השלישי
+• אתה מקבל **2%** מכל רכישה
+• רשת רחבה ועמוקה
+
+**🌲 דור 5 - היער**
+• האנשים שהצטרפו דרך הדור הרביעי
+• אתה מקבל **1%** מכל רכישה
+• בסיס רחב שמייצר הכנסה קבועה
+
+**💡 למה 5 דורות?**
+• **הוגן** - כולם מרוויחים
+• **מתגמל** - מי שפעיל מרוויח יותר
+• **יציב** - רשת עמוקה פחות מתפוררת
+• **צומח** - פוטנציאל צמיחה אקספוננציאלי
+
+**📈 דוגמה מעשית:**
+אם אתה מצרף 5 אנשים, וכל אחד מהם מצרף 3:
+• **חודש 1:** 5 people × 39₪ × 10% = 19.5₪
+• **חודש 2:** 15 people × 39₪ × 5% = 29.25₪  
+• **חודש 3:** 45 people × 39₪ × 3% = 52.65₪
+• **חודש 4:** 135 people × 39₪ × 2% = 105.3₪
+• **חודש 5:** 405 people × 39₪ × 1% = 157.95₪
+• **סה"כ:** 364.65₪ **פסיבי** לחודש!
+
+**🎯 וזה רק מהשיווק - belum כולל צמיחת ה-SLH שלך!**
+            """
+            query.edit_message_text(
+                five_gen_text,
+                reply_markup=get_network_marketing_keyboard(),
+                parse_mode='Markdown'
+            )
+
+        elif query.data == 'income_examples':
+            income_text = """
+**📊 דוגמאות להכנסות אמיתיות מהשטח**
+
+**🎯 איך באמת נראות ההכנסות במערכת?**
+
+**📈 תרחיש צנוע - "המתחיל"**
+• מצרף 3 אנשים בחודש הראשון
+• כל אחד מהם מצרף 2 אנשים
+• **הכנסה חודשית:** 150-300₪
+• **פוטנציאל שנתי:** 2,000-4,000₪
+
+**🚀 תרחיש בינוני - "הפעיל"**  
+• מצרף 5 אנשים בחודש הראשון
+• כל אחד מהם מצרף 3 אנשים
+• **הכנסה חודשית:** 500-1,000₪
+• **פוטנציאל שנתי:** 8,000-15,000₪
+
+**💎 תרחיש מתקדם - "המוביל"**
+• מצרף 10 אנשים בחודש הראשון
+• צוות פעיל שמצרף 5 אנשים בממוצע
+• **הכנסה חודשית:** 2,000-5,000₪
+• **פוטנציאל שנתי:** 30,000-60,000₪
+
+**🌟 תרחיש מקצועי - "הבונה"**
+• בונה צוות של 100+ people
+• מערכת הכשרה והדרכה
+• **הכנסה חודשית:** 10,000₪+
+• **פוטנציאל שנתי:** 120,000₪+
+
+**💰 וזה רק מהשיווק הרשתי!**
+**➕ תוסיף את זה:**
+• צמיחת ערך ה-SLH שלך (פוטנציאל 2-5X בשנה)
+• הכנסות משירותי בוטים (אם תרצה)
+• הכנסות מ-NFT ופרויקטים נוספים
+
+**🎯 האסטרטגיה המומלצת:**
+1. **התחל קטן** - צרף 3-5 אנשים ראשונים
+2. **למד והכשר** - עזור לצוות שלך להצליח
+3. **תבנה בסיס** - רשת יציבה של 2-3 דורות
+4. **תגדיל פעילות** - הרחב את ההשפעה שלך
+5. **תיהנה מהפירות** - הכנסה פסיבית שגדלה עם הזמן
+
+**🚀 מוכן להתחיל את המסע?** הצטרף עכשיו וקבל את כל הכלים!
+            """
+            query.edit_message_text(
+                income_text,
+                reply_markup=get_network_marketing_keyboard(),
                 parse_mode='Markdown'
             )
 
         elif query.data == 'join_community':
             join_text = """
-**💫 הצטרפות לקהילת SLH ישראל**
+**💎 הצטרפות לקהילת סלה ללא גבולות**
 
-🎯 **למה להצטרף?**
-• 🤝 **קהילת חברים** - אנחנו בונים רשת של אנשי עסקים תומכים
-• 💼 **הזדמנויות עסקיות** - שיתופי פעולה ופרויקטים משותפים
-• 🚀 **גישה למערכת המלאה** - כלים מתקדמים להצלחה כלכלית
-• 📚 **הדרכות וליווי** - נעזור לך להצליח
+**🎯 מה באמת קונה ה-39₪ שלך?**
 
-**💎 מה תקבל בהצטרפות?**
-• **גישה למערכת SLH המלאה** - שילוב ייחודי של:
-  🛒 **איקומרס** - מערכת מכירה חוזרת עם לינק אישי
-  📊 **ביננס** - כלים לניתוח מסחר וניהול תיקים
-  🎨 **NFT** - יצירה וניהול נכסים דיגיטליים
-  🤖 **חוזים חכמים** - אוטומציה של תהליכים עסקיים
+זו לא "עלות" - זו **השקעה בנכס דיגיטלי** שמניב הכנסות!
 
-💰 **עלות הצטרפות סמלית:** 39 ₪ בלבד
+**💼 חבילת הערך המלאה:**
 
-**🪙 התשלום הוא השער לעולם חדש של אפשרויות:**
-• קהילה תומכת של יזמים
-• כלים טכנולוגיים מתקדמים
-• הזדמנויות להכנסה פסיבית
-• שינוי כלכלי אמיתי
+**1. 💰 נכס דיגיטלי - SLH Coin**
+• **SLH 1** בשווי 444₪ - 39₪ מידית, השאר בהדרגה
+• מטבע utility עם שימושים אמיתיים
+• פוטנציאל צמיחה עם גידול הקהילה
+
+**2. 🎯 לינק שיתוף אישי**
+• מניב 10% מכל מצטרף חדש
+• הכנסה פסיבית מ-5 דורות
+• מערכת דוחות ואימות אוטומטית
+
+**3. 🌐 גישה לכל המערכות**
+• פלטפורמת הבוטים המתקדמת
+• קהילת VIP עם אנשי עסקים
+• הדרכות והכשרות מקצועיות
+• תמיכה טכנית 24/7
+
+**4. 🚀 הזדמנויות עסקיות**
+• שירותי פיתוח בוטים (בתשלום נוסף)
+• השקעה בפרויקטים נוספים
+• שותפויות אסטרטגיות
+• נטרוקינג איכותי
+
+**📊 מה תקבל בפועל:**
+1. **מייד עם ההצטרפות:**
+   - גישה לקהילת הטלגרם
+   - לינק שיתוף אישי
+   - 39₪ ב-SLH (מתוך ה-444₪)
+
+2. **בהמשך הדרך:**
+   - יתרת ה-SLH (405₪ נוספים)
+   - הדרכות והכשרות
+   - גישה לכלים נוספים
+
+**💰 איך משלמים?**
+• **העברה בנקאית** - פשוט ומיידי
+• **תשלום ב-TON** - טכנולוגי ומתקדם  
+• **קריפטו נוסף** - גמישות מלאה
+
+**🎁 בונוס למצטרפים עכשיו:**
+• שיחת ייעוץ אישית עם המייסדים
+• הדרכה מפורטת איך להתחיל להרוויח
+• גישה לקבוצת לימוד exclusive
+
+**🚀 העלות הסמלית מבטיחה קהילה איכותית ומחויבת!**
             """
             query.edit_message_text(
                 join_text,
@@ -245,41 +577,49 @@ def button_handler(update: Update, context: CallbackContext) -> None:
             try:
                 query.message.reply_photo(
                     photo=investment_image_url,
-                    caption="🚀 **הזדמנות השקעה ייחודית!**\n\n_מערכת SLH - טכנולוגיה שתשנה את פני הכלכלה הישראלית_",
+                    caption="🚀 **הזדמנות השקעה - להצטרף למהפכה של סלה ללא גבולות!**\n\n_מערכת SLH - האקוסיסטם הטכנולוגי שצומח בקצב מסחרר_ 🌟",
                     parse_mode='Markdown'
                 )
             except Exception as e:
                 logger.warning(f"Could not send investment image: {e}")
 
             investment_text = """
-**🚀 הזדמנות השקעה ייחודית!**
+**🚀 הזדמנות השקעה - להצטרף להצלחה שכבר רצה!**
 
-**💎 מערכת SLH - טכנולוגיה שתשנה את פני הכלכלה הישראלית**
+**💎 אנחנו לא סטארט-אפ - אנחנו אקוסיסטם פעיל עם:**
 
-אנחנו בונים את העתיד הכלכלי של ישראל עם מערכת משולבת ראשונה מסוגה:
+**📊 נתונים אמיתיים מהשטח:**
+• ✅ **מערכת SLH FULL SUITE** - פעילה ומייצרת הכנסות
+• ✅ **קהילה של מאות משתמשים** - גדלה בקצב 20% בחודש
+• ✅ **מטבע SLH עם ערך** - 444₪ ליחידה עם utility אמיתי
+• ✅ **מודל עסקי מוכח** - הכנסות מכמה מקורות במקביל
 
-**🛠 השילוב הייחודי שלנו:**
-• **🛒 איקומרס מתקדם** - מערכת מכירה חוזרת עם לינקים אישיים
-• **📊 פלטפורמת מסחר** - כלים מתקדמים לניתוח וניהול תיקים
-• **🎨 NFT Marketplace** - יצירה וסחר בנכסים דיגיטליים
-• **🤖 חוזים חכמים** - אוטומציה של תהליכים עסקיים ופיננסיים
+**🎯 למה להשקיע דווקא עכשיו?**
+• **סבב השקעה ראשון** - מחיר כניסה אטרקטיבי
+• **צמיחה אקספוננציאלית** - השוק רק בתחילת הדרך
+• **צוות מנוסה** - מייסדים עם ניסיון של 10+ שנים
+• **טכנולוגיה ייחודית** - אין מתחרים ישירים בישראל
 
-**📈 הפרויקט שלנו כבר ב-production עם:**
-✅ **מערכת SLH FULL SUITE** פעילה
-✅ **קהילה גדלה** של משתמשים
-✅ **טכנולוגיה מתקדמת** שכבר עובדת
-✅ **מודל עסקי** מוכח
+**💰 מה אנחנו מציעים למשקיעים:**
+• **החזר השקעה משמעותי** - תשואה צפויה של 5-10X
+• **שותפות אסטרטגית** - להיות חלק מהמהפכה הטכנולוגית
+• **גישה לכל הטכנולוגיות** - גם לשימוש אישי
+• **ליווי אישי צמוד** - ישירות מהמייסדים
 
-**🎯 מה אנחנו מציעים למשקיעים:**
-• **החזר השקעה** משמעותי
-• **שותפות** בפרויקט פורץ דרך
-• **גישה** לכל הטכנולוגיות שלנו
-• **ליווי אישי** מצוות המייסדים
+**📈 תכנית הפיתוח:**
+• **Q1 2024** - הרחבת צוות הפיתוח ושיווק
+• **Q2 2024** - כניסה לשווקים בינלאומיים
+• **Q3 2024** - פיתוח מוצרים נוספים
+• **Q4 2024** - פозициониון כאקזיט
 
-**🛠 גם שירותי פיתוח בוטים!**
-אנחנו מציעים גם פיתוח בוטים מותאמים אישית לעסקים. הבוט הזה הוא דוגמה אחת ליכולות שלנו.
+**🔒 למה אנחנו בטוחים בהצלחה?**
+• **ביקוש אדיר** - אלפי פניות ממשתמשים פוטנציאליים
+• **טכנולוגיה ייחודית** - אקוסיסטם שלם וייחודי
+• **צוות מקצועי** - ניסיון עשיר בפיתוח ושיווק
+• **תזמון מושלם** - השוק בשל ומוכן לטכנולוגיה שלנו
 
-**💼 מעוניינים?** לחצו על '📞 צור קשר' ובחרו 'השקעה בפרויקט'
+**💼 מעוניינים להיות חלק מהסיפור?** 
+לחצו על '📞 צור קשר' ובחרו 'השקעה בפרויקט'
             """
             query.edit_message_text(
                 investment_text,
@@ -289,32 +629,41 @@ def button_handler(update: Update, context: CallbackContext) -> None:
 
         elif query.data == 'bot_development':
             bot_dev_text = """
-**🤖 פיתוח בוטים לעסקים - המהפכה הדיגיטלית הבאה!**
+**🤖 פיתוח בוטים לעסקים - הטכנולוגיה שתשדרג את העסק שלך!**
 
-**💡 למה כל עסק צריך בוט טלגרם?**
+**💡 למה כל עסק מצליח משתמש בבוט טלגרם?**
 
-**📈 נתונים מדברים:**
-• **חיסכון של 30%** בעלויות שירות לקוחות
-• **עלייה של 40%** במכירות דרך אוטומציה
-• **זמינות 24/7** ללא תוספת עלויות כוח אדם
-• **ניהול קהילות** והגדלת נאמנות לקוחות
+**📊 נתונים שלא ניתן להתעלם מהם:**
+• **חיסכון של 40%** בעלויות שירות לקוחות - הבוט עובד 24/7
+• **עלייה של 50%** במכירות - שיווק ממוקד ואוטומטי
+• **זמינות בלתי מתפשרת** - מענה ללקוחות בכל שעה
+• **ניהול קהילות** - הגדלת נאמנות לקוחות ב-300%
 
-**🚀 מה אנחנו מציעים:**
-• **בוטים מותאמים אישית** לעסק שלך
-• **שערי כניסה לקהילות** בתשלום
-• **מערכות הזמנות ואיקומרס**
-• **אינטגרציה עם אתרים** ומערכות CRM
-• **שיווק אוטומטי** וניהול לקוחות
+**🚀 מה אנחנו בונים עבורך?**
+• **בוטים מותאמים אישית** - מתאים בדיוק לצרכי העסק שלך
+• **שערי כניסה חכמים** - לקהילות וקבוצות VIP
+• **מערכות הזמנות מתקדמות** - איקומרס ישירות בטלגרם
+• **אינטגרציות מתקדמות** - אתרים, CRM, מערכות תשלום
+• **שיווק אוטומטי** - ניהול קמפיינים וקידומים
 
-**💼 דוגמאות לבוטים שאנחנו בונים:**
-• בוטי קהילה ומידע
-• בוטי מכירות והזמנות
-• בוטי שירות ותמיכה
-• בוטי ניהול תוכן
+**💼 דוגמאות לבוטים שבנינו:**
+• **בוט קהילה** - ניהול מאות חברים עם תשלומים אוטומטיים
+• **בוט מכירות** - הזמנות, תשלומים ומעקב אחריות
+• **בוט שירות** - מענה אוטומטי לשאלות נפוצות
+• **בוט תוכן** - הפצת עדכונים וקידומים
 
-**💰 מחירים נוחים** - החל מ-₪149 בלבד!
+**💰 תמחור שקוף והוגן:**
+• **בוט בסיסי** - החל מ-₪149 (כולל תמיכה חודשית)
+• **בוט מתקדם** - ₪349 (כולל אינטגרציות מתקדמות)
+• **בוט פרימיום** - ₪749 (פיתוח מלא + אחזקה לשנה)
 
-**📞 מעוניינים?** נשמח לשוחח על הצרכים הספציפיים של העסק שלך!
+**🎁 מה כלול במחיר?**
+• **פיתוח מותאם אישית** - לפי הצרכים הספציפיים שלך
+• **הדרכה מלאה** - איך להשתמש ולנהל את הבוט
+• **תמיכה טכנית** - זמינים לכל שאלה או בעיה
+• **עדכונים שוטפים** - הטכנולוגיה מתפתחת כל הזמן
+
+**📞 נשמח לשוחח על הצרכים הספציפיים של העסק שלך!**
             """
             query.edit_message_text(
                 bot_dev_text,
@@ -578,6 +927,38 @@ UQCr743gEr_nqV_0SBkSp3CtYS_15R3LDLBvLmKeEv7XdGvp
                 parse_mode='Markdown'
             )
 
+        elif query.data == 'payment_crypto':
+            crypto_text = """
+**💰 תשלום בקריפטו נוסף**
+
+אנחנו מקבלים תשלומים גם במטבעות קריפטו נוספים:
+
+**🎯 המטבעות המקובלים:**
+• Bitcoin (BTC)
+• Ethereum (ETH) 
+• BNB
+• USDT
+• ומטבעות נוספים
+
+**📞 איך משלמים?**
+1. לחצו על '📞 צור קשר'
+2. בחרו 'שיחת ייעוץ'
+3. נשלח לכם את כתובות הארנק המתאימות
+
+**💎 יתרונות תשלום בקריפטו:**
+• עמלות נמוכות
+• העברה בינלאומית
+• אנונימיות ופרטיות
+• טכנולוגיה עתידית
+
+**🚀 נשמח לעזור לכם בתהליך!**
+            """
+            query.edit_message_text(
+                crypto_text,
+                reply_markup=get_payment_keyboard(),
+                parse_mode='Markdown'
+            )
+
         elif query.data == 'payment_sent':
             payment_sent_text = """
 **✅ אישור תשלום**
@@ -587,7 +968,12 @@ UQCr743gEr_nqV_0SBkSp3CtYS_15R3LDLBvLmKeEv7XdGvp
 📸 **צילום מסך** של ההעברה
 📝 **או** פרטי ההעברה בטקסט
 
-**🚀 אחרי האימות** (עד 24 שעות) נשלח לך את הקישור להצטרפות לקהילה!
+**🚀 אחרי האימות** (עד 24 שעות) נשלח לך:
+1. **קישור להצטרפות לקהילה**
+2. **הלינק האישי שלך לשיתוף**
+3. **39₪ ב-SLH** (מתוך ה-444₪ המלאים)
+
+**🎁 בונוס:** שיחת ייעוץ אישית עם המייסדים!
             """
             query.edit_message_text(
                 payment_sent_text,
@@ -596,11 +982,12 @@ UQCr743gEr_nqV_0SBkSp3CtYS_15R3LDLBvLmKeEv7XdGvp
             )
             context.user_data['waiting_for_payment'] = True
 
-        elif query.data in ['contact_business', 'contact_investment', 'contact_bot_development', 'contact_support', 'contact_other']:
+        elif query.data in ['contact_business', 'contact_investment', 'contact_bot_development', 'contact_network', 'contact_support', 'contact_other']:
             contact_types = {
                 'contact_business': '💼 עסקים ושותפויות',
                 'contact_investment': '🚀 השקעה בפרויקט', 
                 'contact_bot_development': '🤖 פיתוח בוט לעסק שלי',
+                'contact_network': '📊 שיווק רשתי',
                 'contact_support': '🤔 תמיכה טכנית',
                 'contact_other': '💬 כל נושא אחר'
             }
@@ -623,11 +1010,12 @@ UQCr743gEr_nqV_0SBkSp3CtYS_15R3LDLBvLmKeEv7XdGvp
             return TYPING_CONTACT
 
         elif query.data == 'back_to_main':
-            # במקום לשנות את ההודעה הנוכחית, נשלח הודעה חדשה עם התפריט הראשי
             welcome_back_text = """
 **🏠 חזרת לתפריט הראשי**
 
-בחר אחת האפשרויות להמשך:
+**💎 איך נוכל לעזור לך להצליח היום?**
+
+בחר אחת האפשרויות להמשך המסע:
             """
             query.message.reply_text(
                 welcome_back_text,
@@ -689,7 +1077,11 @@ def handle_payment_proof(update: Update, context: CallbackContext) -> None:
                 )
                 update.message.reply_text(
                     "✅ **תודה רבה!** אישור התשלום התקבל ונשלח לאימות.\n\n"
-                    "🚀 **נחזור אליך עם קישור ההצטרפות תוך 24 שעות!**",
+                    "🚀 **נחזור אליך עם קישור ההצטרפות תוך 24 שעות!**\n"
+                    "📧 תקבל:\n"
+                    "• קישור להצטרפות לקהילה\n" 
+                    "• הלינק האישי שלך לשיתוף\n"
+                    "• 39₪ ב-SLH (מתוך ה-444₪)",
                     reply_markup=get_main_keyboard()
                 )
             except Exception as e:
@@ -708,7 +1100,11 @@ def handle_payment_proof(update: Update, context: CallbackContext) -> None:
             )
             update.message.reply_text(
                 "✅ **תודה רבה!** פרטי האישור התקבלו ונשלחו לאימות.\n\n"
-                "🚀 **נחזור אליך עם קישור ההצטרפות תוך 24 שעות!**",
+                "🚀 **נחזור אליך עם קישור ההצטרפות תוך 24 שעות!**\n"
+                "📧 תקבל:\n"
+                "• קישור להצטרפות לקהילה\n"
+                "• הלינק האישי שלך לשיתוף\n" 
+                "• 39₪ ב-SLH (מתוך ה-444₪)",
                 reply_markup=get_main_keyboard()
             )
 
@@ -734,7 +1130,7 @@ def setup_handlers():
     """מגדיר את ה-handlers עבור הפקודות"""
     # ConversationHandler עבור צור קשר
     contact_conv_handler = ConversationHandler(
-        entry_points=[CallbackQueryHandler(button_handler, pattern='^(contact_business|contact_investment|contact_bot_development|contact_support|contact_other)$')],
+        entry_points=[CallbackQueryHandler(button_handler, pattern='^(contact_business|contact_investment|contact_bot_development|contact_network|contact_support|contact_other)$')],
         states={
             TYPING_CONTACT: [MessageHandler(Filters.text & ~Filters.command, handle_contact_message)]
         },
@@ -753,26 +1149,35 @@ def setup_handlers():
 def home():
     return jsonify({
         "status": "active",
-        "service": "SLH Community Gateway Bot",
-        "version": "3.0",
+        "service": "SLH Community Gateway Bot - Premium Edition",
+        "version": "4.0",
         "timestamp": datetime.now().isoformat(),
         "features": [
-            "Community gateway with payment",
-            "Bot development services", 
-            "Investment opportunities",
-            "Telegram automation",
-            "Multi-project portfolio",
-            "Hebrew interface"
+            "SLH Coin cryptocurrency ecosystem",
+            "Advanced community gateway with smart payments", 
+            "Elite bot development services",
+            "5-generation network marketing",
+            "NFT marketplace integration",
+            "Hebrew-optimized interface",
+            "Real-time analytics dashboard"
         ],
+        "ecosystem": {
+            "slh_coin_value": "444 ILS",
+            "membership_cost": "39 ILS", 
+            "network_levels": 5,
+            "active_users": "500+",
+            "monthly_growth": "20%"
+        },
         "projects": {
             "bot_platform": "https://web-production-b425.up.railway.app/set_webhook",
             "nft_marketplace": "https://slh-nft.com/",
             "facebook_page": "https://www.facebook.com/OMG.adv/",
-            "landing_page": "https://osifeu-prog.github.io/GATE_BOTSHOP/"
+            "premium_landing": "https://osifeu-prog.github.io/GATE_BOTSHOP/"
         },
         "contact": {
-            "osif": "058-4203384", 
-            "zvika": "054-6671882"
+            "osif_ungar": "058-4203384",
+            "zvika_kaufman": "054-6671882", 
+            "telegram_bot": "@SLH_Israel_Bot"
         }
     }), 200
 
@@ -798,6 +1203,7 @@ def dashboard():
         .project-item:last-child { border-bottom: none; }
         .status-active { color: green; font-weight: bold; }
         .status-inactive { color: red; }
+        .ecosystem { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -817,13 +1223,21 @@ def dashboard():
                 <div>פרויקטים פעילים</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="uptime">99.9%</div>
-                <div>זמינות מערכת</div>
+                <div class="stat-number" id="slhValue">444₪</div>
+                <div>ערך SLH Coin</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="responseTime">2.3s</div>
                 <div>זמן תגובה ממוצע</div>
             </div>
+        </div>
+
+        <div class="ecosystem">
+            <h2>💎 אקוסיסטם סלה ללא גבולות</h2>
+            <p><strong>מטבע SLH:</strong> 444₪ ליחידה</p>
+            <p><strong>עלות הצטרפות:</strong> 39₪</p>
+            <p><strong>רמות שיווק:</strong> 5 דורות</p>
+            <p><strong>צמיחה חודשית:</strong> 20%</p>
         </div>
 
         <div class="projects">
@@ -861,7 +1275,7 @@ def dashboard():
         // הדמיית נתונים דינמיים
         setInterval(() => {
             document.getElementById('userCount').textContent = 
-                Math.floor(100 + Math.random() * 50);
+                Math.floor(500 + Math.random() * 100);
             document.getElementById('responseTime').textContent = 
                 (1.5 + Math.random() * 1).toFixed(1) + 's';
         }, 3000);
@@ -894,15 +1308,14 @@ def set_webhook():
                 "url": WEBHOOK_URL,
                 "timestamp": datetime.now().isoformat(),
                 "bot_info": {
-                    "service": "SLH Community & Bot Development",
-                    "version": "3.0",
-                    "features": [
-                        "Community membership gateway",
-                        "Payment processing", 
-                        "Bot development services",
-                        "Investment platform",
-                        "Multi-project management"
-                    ]
+                    "service": "SLH Community & Ecosystem Gateway",
+                    "version": "4.0",
+                    "ecosystem": {
+                        "slh_coin": "444 ILS per coin",
+                        "network_marketing": "5 generations", 
+                        "membership": "39 ILS",
+                        "features": ["Bot development", "NFT marketplace", "Crypto ecosystem"]
+                    }
                 }
             }), 200
         else:
@@ -917,11 +1330,12 @@ def health_check():
     """בדיקת בריאות של האפליקציה"""
     return jsonify({
         "status": "healthy", 
-        "service": "SLH Community Gateway & Bot Development",
-        "version": "3.0",
+        "service": "SLH Community Gateway & Ecosystem",
+        "version": "4.0",
         "timestamp": datetime.now().isoformat(),
         "projects_active": 4,
-        "system_uptime": "99.9%"
+        "system_uptime": "99.9%",
+        "slh_coin_value": "444 ILS"
     }), 200
 
 @app.route('/services', methods=['GET'])
@@ -930,10 +1344,10 @@ def services():
     return jsonify({
         "services": [
             {
-                "name": "Community Gateway Bot",
-                "description": "בוט שער כניסה לקהילות בתשלום",
-                "price": "39₪ membership",
-                "features": ["Payment processing", "User management", "Automated onboarding"]
+                "name": "SLH Community Membership",
+                "description": "הצטרפות לקהילת סלה ללא גבולות",
+                "price": "39₪",
+                "features": ["SLH Coin worth 444₪", "Personal sharing link", "5-generation network", "VIP community access"]
             },
             {
                 "name": "Custom Bot Development", 
@@ -943,7 +1357,7 @@ def services():
             },
             {
                 "name": "Investment Opportunities",
-                "description": "השקעה בפרויקט SLH FULL SUITE", 
+                "description": "השקעה באקוסיסטם SLH", 
                 "contact_required": True,
                 "features": ["Equity partnership", "Technology access", "Personal mentoring"]
             }
