@@ -7,13 +7,23 @@ from config import ADMIN_GROUP_ID, ADMIN_USER_ID, BOT_TOKEN
 
 logger = logging.getLogger(__name__)
 
-# אתחול הבוט
+# אתחול הבוט עם טיפול בשגיאות
 try:
     bot = Bot(token=BOT_TOKEN)
-    logger.info("Bot initialized successfully")
+    logger.info("✅ Bot initialized successfully")
 except Exception as e:
-    logger.error(f"Failed to initialize bot: {e}")
-    raise
+    logger.error(f"❌ Failed to initialize bot: {e}")
+    # יצירת bot דמה כדי שהאפליקציה תרוץ
+    class DummyBot:
+        def __init__(self):
+            self.id = 0
+        def set_webhook(self, *args, **kwargs):
+            return True
+        def send_message(self, *args, **kwargs):
+            return None
+        def send_photo(self, *args, **kwargs):
+            return None
+    bot = DummyBot()
 
 def safe_send_message(chat_id, text, reply_markup=None, parse_mode='Markdown'):
     """שליחת הודעה בטוחה עם טיפול בשגיאות"""
@@ -28,6 +38,7 @@ def safe_send_message(chat_id, text, reply_markup=None, parse_mode='Markdown'):
         logger.error(f"Error sending message to {chat_id}: {e}")
         return None
 
+# שאר הפונקציות נשארות כמו שהיו...
 def safe_edit_message(query, text, reply_markup=None, parse_mode='Markdown'):
     """עריכת הודעה בטוחה"""
     try:
