@@ -9,17 +9,8 @@ from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, Messa
 import threading
 import time
 
-# הגדרת משתני הסביבה
-BOT_TOKEN = os.environ.get('BOT_TOKEN')
-WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://web-production-b425.up.railway.app') + '/webhook'
-MAIN_GROUP_LINK = os.environ.get('MAIN_GROUP_LINK') 
-ADMIN_GROUP_ID = os.environ.get('ADMIN_GROUP_ID', '-1002147033592')  # ID מספרי של קבוצת הניהול
-PAYMENT_CONFIRMATION_GROUP = os.environ.get('PAYMENT_CONFIRMATION_GROUP', '-1002147033592')  # ID קבוצת אישורי תשלום (אותה קבוצה)
-MAIN_COMMUNITY_GROUP = os.environ.get('MAIN_COMMUNITY_GROUP', '-1002147033592')  # הקבוצה הראשית להצטרפות
-ADMIN_USER_ID = os.environ.get('ADMIN_USER_ID', '6996423991')  # ID שלך - Osif
-
-# states לשיחת צור קשר
-CHOOSING, TYPING_CONTACT = range(2)
+# ייבוא הגדרות
+from config import *
 
 # הגדרת הלוגים
 logging.basicConfig(
@@ -204,7 +195,7 @@ def get_translation(lang, key, **kwargs):
 def get_user_language(user_id):
     """מחזיר את שפת המשתמש מהמסד נתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute("SELECT language FROM users WHERE user_id = ?", (user_id,))
         result = c.fetchone()
@@ -217,7 +208,7 @@ def get_user_language(user_id):
 def set_user_language(user_id, language):
     """קובע את שפת המשתמש במסד נתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute('''INSERT OR REPLACE INTO users 
                      (user_id, username, first_name, last_name, language, last_activity, total_actions) 
@@ -233,7 +224,7 @@ def set_user_language(user_id, language):
 # --- מסד נתונים מתקדם ---
 def init_db():
     """אתחול מסד הנתונים"""
-    conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     c = conn.cursor()
     
     # טבלת משתמשים
@@ -314,7 +305,7 @@ init_db()
 def log_user_activity(user_id, username, first_name, last_name, action_type, action_details=""):
     """רישום פעילות משתמש במסד הנתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         # עדכון/הוספת משתמש
@@ -348,7 +339,7 @@ def log_user_activity(user_id, username, first_name, last_name, action_type, act
 def log_payment(user_id, payment_type, amount, proof_text=""):
     """רישום תשלום במסד הנתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         # חישוב תגמול SLH (39₪ = 1 SLH)
@@ -376,7 +367,7 @@ def log_payment(user_id, payment_type, amount, proof_text=""):
 def add_referral(referrer_id, referred_id, level=1, earned_amount=0):
     """הוספת רפראל חדש"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute('''INSERT INTO referrals 
@@ -398,7 +389,7 @@ def add_referral(referrer_id, referred_id, level=1, earned_amount=0):
 def get_user_stats():
     """קבלת סטטיסטיקות משתמשים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute("SELECT COUNT(*) FROM users")
@@ -438,7 +429,7 @@ def get_user_stats():
 def get_recent_activity(limit=10):
     """קבלת פעילות אחרונה"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute('''SELECT u.first_name, u.username, al.action_type, al.action_details, al.timestamp
@@ -456,7 +447,7 @@ def get_recent_activity(limit=10):
 def get_user_referral_count(user_id):
     """קבלת מספר הרפראלים של משתמש"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute("SELECT referral_count FROM users WHERE user_id = ?", (user_id,))
@@ -471,7 +462,7 @@ def get_user_referral_count(user_id):
 def get_user_referrals(user_id):
     """קבלת רשימת הרפראלים של משתמש"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute('''SELECT u.first_name, u.username, r.timestamp 
@@ -490,7 +481,7 @@ def get_user_referrals(user_id):
 def approve_user_payment(user_id, approved_by):
     """אישור תשלום משתמש והוספת SLH tokens"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         # קבלת פרטי התשלום
@@ -525,7 +516,7 @@ def approve_user_payment(user_id, approved_by):
 def get_pending_payments():
     """קבלת רשימת תשלומים ממתינים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute('''SELECT p.id, u.user_id, u.first_name, u.username, p.payment_type, p.amount, p.proof_text, p.payment_date
@@ -544,7 +535,7 @@ def get_pending_payments():
 def save_group(group_id, title, group_type):
     """שומר קבוצה במסד הנתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute('''INSERT OR REPLACE INTO groups 
                      (group_id, title, type, last_activity) 
@@ -559,7 +550,7 @@ def save_group(group_id, title, group_type):
 def get_all_groups():
     """מחזיר את כל הקבוצות מהמסד נתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute("SELECT group_id, title, type FROM groups WHERE is_active = TRUE ORDER BY last_activity DESC")
         groups = c.fetchall()
@@ -572,7 +563,7 @@ def get_all_groups():
 def get_user_slh_balance(user_id):
     """מחזיר את יתרת ה-SLH tokens של משתמש"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute("SELECT slh_tokens FROM users WHERE user_id = ?", (user_id,))
         result = c.fetchone()
@@ -600,7 +591,7 @@ def get_bot_real_chats():
 def update_group_info_in_db(group_id, title, group_type):
     """מעדכן את פרטי הקבוצה במסד הנתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute('''INSERT OR REPLACE INTO groups 
                      (group_id, title, type, last_activity) 
@@ -1126,7 +1117,7 @@ def broadcast(update: Update, context: CallbackContext) -> None:
         message = " ".join(context.args)
         
         # קבלת כל המשתמשים
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute("SELECT user_id FROM users")
         users = c.fetchall()
@@ -2095,17 +2086,18 @@ def handle_payment_proof(update: Update, context: CallbackContext) -> None:
 
         else:
             # אם זו פקודה או סוג תוכן אחר
-            instruction_messages = {
-                'he': "📸 **נא שלח צילום מסך של ההעברה או פרטי התשלום בטקסט.**",
-                'en': "📸 **Please send a screenshot of the transfer or payment details in text.**",
-                'ru': "📸 **Пожалуйста, отправьте скриншот перевода или детали платежа текстом.**",
-                'ar': "📸 **يرجى إرسال لقطة شاشة للتحويل أو تفاصيل الدفع نصًا.**"
-            }
-            update.message.reply_text(
-                instruction_messages.get(lang, instruction_messages['he']),
-                reply_markup=get_payment_keyboard(user.id),
-                parse_mode='Markdown'
-            )
+                    # אם זו פקודה או סוג תוכן אחר
+        instruction_messages = {
+            'he': "📸 **נא שלח צילום מסך של ההעברה או פרטי התשלום בטקסט.**",
+            'en': "📸 **Please send a screenshot of the transfer or payment details in text.**",
+            'ru': "📸 **Пожалуйста, отправьте скриншот перевода или детали платежа текстом.**",
+            'ar': "📸 **يرجى إرسال لقطة شاشة للتحويل أو تفاصيل الدفع نصًا.**"
+        }
+        update.message.reply_text(
+            instruction_messages.get(lang, instruction_messages['he']),
+            reply_markup=get_payment_keyboard(user.id),
+            parse_mode='Markdown'
+        )
             
     except Exception as e:
         logger.error(f"Error in handle_payment_proof: {e}")
@@ -2130,12 +2122,12 @@ def setup_handlers():
     
     # handlers לפקודות אדמין - עובדים בכל סוגי הצ'אטים
     dispatcher.add_handler(CommandHandler("chatid", chatid))
-    dispatcher.add_handler(CommandHandler("groupid", groupid))  # הוסף
-    dispatcher.add_handler(CommandHandler("chaid", chaid))      # הוסף
+    dispatcher.add_handler(CommandHandler("groupid", groupid))
+    dispatcher.add_handler(CommandHandler("chaid", chaid))
     dispatcher.add_handler(CommandHandler("admin", admin))
     dispatcher.add_handler(CommandHandler("broadcast", broadcast))
     dispatcher.add_handler(CommandHandler("group_broadcast", group_broadcast))
-    dispatcher.add_handler(CommandHandler("refresh_groups", refresh_all_groups))  # הוסף
+    dispatcher.add_handler(CommandHandler("refresh_groups", refresh_all_groups))
     
     # handlers לאינטראקציות משתמש - רק בצ'אטים פרטיים
     dispatcher.add_handler(CallbackQueryHandler(button_handler))
@@ -2154,7 +2146,6 @@ def setup_handlers():
     logger.info("Handlers setup completed with enhanced group management")
 
 # --- פאנל ניהול מתקדם ---
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'slh2025')
 
 @app.route('/admin')
 def admin_panel():
