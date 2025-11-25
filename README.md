@@ -1,4 +1,3 @@
-
 import os
 import logging
 import json
@@ -10,17 +9,8 @@ from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, Messa
 import threading
 import time
 
-# הגדרת משתני הסביבה
-BOT_TOKEN = os.environ.get('BOT_TOKEN')
-WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://web-production-b425.up.railway.app') + '/webhook'
-MAIN_GROUP_LINK = os.environ.get('MAIN_GROUP_LINK') 
-ADMIN_GROUP_ID = os.environ.get('ADMIN_GROUP_ID', '-1002147033592')  # ID מספרי של קבוצת הניהול
-PAYMENT_CONFIRMATION_GROUP = os.environ.get('PAYMENT_CONFIRMATION_GROUP', '-1002147033592')  # ID קבוצת אישורי תשלום (אותה קבוצה)
-MAIN_COMMUNITY_GROUP = os.environ.get('MAIN_COMMUNITY_GROUP', '-1002147033592')  # הקבוצה הראשית להצטרפות
-ADMIN_USER_ID = os.environ.get('ADMIN_USER_ID', '6996423991')  # ID שלך - Osif
-
-# states לשיחת צור קשר
-CHOOSING, TYPING_CONTACT = range(2)
+# ייבוא הגדרות
+from config import *
 
 # הגדרת הלוגים
 logging.basicConfig(
@@ -205,7 +195,7 @@ def get_translation(lang, key, **kwargs):
 def get_user_language(user_id):
     """מחזיר את שפת המשתמש מהמסד נתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute("SELECT language FROM users WHERE user_id = ?", (user_id,))
         result = c.fetchone()
@@ -218,7 +208,7 @@ def get_user_language(user_id):
 def set_user_language(user_id, language):
     """קובע את שפת המשתמש במסד נתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute('''INSERT OR REPLACE INTO users 
                      (user_id, username, first_name, last_name, language, last_activity, total_actions) 
@@ -234,7 +224,7 @@ def set_user_language(user_id, language):
 # --- מסד נתונים מתקדם ---
 def init_db():
     """אתחול מסד הנתונים"""
-    conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     c = conn.cursor()
     
     # טבלת משתמשים
@@ -315,7 +305,7 @@ init_db()
 def log_user_activity(user_id, username, first_name, last_name, action_type, action_details=""):
     """רישום פעילות משתמש במסד הנתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         # עדכון/הוספת משתמש
@@ -349,7 +339,7 @@ def log_user_activity(user_id, username, first_name, last_name, action_type, act
 def log_payment(user_id, payment_type, amount, proof_text=""):
     """רישום תשלום במסד הנתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         # חישוב תגמול SLH (39₪ = 1 SLH)
@@ -377,7 +367,7 @@ def log_payment(user_id, payment_type, amount, proof_text=""):
 def add_referral(referrer_id, referred_id, level=1, earned_amount=0):
     """הוספת רפראל חדש"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute('''INSERT INTO referrals 
@@ -399,7 +389,7 @@ def add_referral(referrer_id, referred_id, level=1, earned_amount=0):
 def get_user_stats():
     """קבלת סטטיסטיקות משתמשים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute("SELECT COUNT(*) FROM users")
@@ -439,7 +429,7 @@ def get_user_stats():
 def get_recent_activity(limit=10):
     """קבלת פעילות אחרונה"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute('''SELECT u.first_name, u.username, al.action_type, al.action_details, al.timestamp
@@ -457,7 +447,7 @@ def get_recent_activity(limit=10):
 def get_user_referral_count(user_id):
     """קבלת מספר הרפראלים של משתמש"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute("SELECT referral_count FROM users WHERE user_id = ?", (user_id,))
@@ -472,7 +462,7 @@ def get_user_referral_count(user_id):
 def get_user_referrals(user_id):
     """קבלת רשימת הרפראלים של משתמש"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute('''SELECT u.first_name, u.username, r.timestamp 
@@ -491,7 +481,7 @@ def get_user_referrals(user_id):
 def approve_user_payment(user_id, approved_by):
     """אישור תשלום משתמש והוספת SLH tokens"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         # קבלת פרטי התשלום
@@ -526,7 +516,7 @@ def approve_user_payment(user_id, approved_by):
 def get_pending_payments():
     """קבלת רשימת תשלומים ממתינים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         
         c.execute('''SELECT p.id, u.user_id, u.first_name, u.username, p.payment_type, p.amount, p.proof_text, p.payment_date
@@ -545,7 +535,7 @@ def get_pending_payments():
 def save_group(group_id, title, group_type):
     """שומר קבוצה במסד הנתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute('''INSERT OR REPLACE INTO groups 
                      (group_id, title, type, last_activity) 
@@ -560,7 +550,7 @@ def save_group(group_id, title, group_type):
 def get_all_groups():
     """מחזיר את כל הקבוצות מהמסד נתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute("SELECT group_id, title, type FROM groups WHERE is_active = TRUE ORDER BY last_activity DESC")
         groups = c.fetchall()
@@ -573,7 +563,7 @@ def get_all_groups():
 def get_user_slh_balance(user_id):
     """מחזיר את יתרת ה-SLH tokens של משתמש"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute("SELECT slh_tokens FROM users WHERE user_id = ?", (user_id,))
         result = c.fetchone()
@@ -601,7 +591,7 @@ def get_bot_real_chats():
 def update_group_info_in_db(group_id, title, group_type):
     """מעדכן את פרטי הקבוצה במסד הנתונים"""
     try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute('''INSERT OR REPLACE INTO groups 
                      (group_id, title, type, last_activity) 
@@ -1127,7 +1117,7 @@ def broadcast(update: Update, context: CallbackContext) -> None:
         message = " ".join(context.args)
         
         # קבלת כל המשתמשים
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
         c.execute("SELECT user_id FROM users")
         users = c.fetchall()
@@ -2100,685 +2090,37 @@ def handle_payment_proof(update: Update, context: CallbackContext) -> None:
                 'he': "📸 **נא שלח צילום מסך של ההעברה או פרטי התשלום בטקסט.**",
                 'en': "📸 **Please send a screenshot of the transfer or payment details in text.**",
                 'ru': "📸 **Пожалуйста, отправьте скриншот перевода или детали платежа текстом.**",
-                'ar': "📸 **يرجى إرسال لقطة شاشة للتحويل أو تفاصيل الدفع نصًا.**"
-            }
-            update.message.reply_text(
-                instruction_messages.get(lang, instruction_messages['he']),
-                reply_markup=get_payment_keyboard(user.id),
-                parse_mode='Markdown'
-            )
-            
-    except Exception as e:
-        logger.error(f"Error in handle_payment_proof: {e}")
-        lang = get_user_language(update.effective_user.id)
-        error_messages = {
-            'he': "❌ אירעה שגיאה בעיבוד האישור. אנא נסה שוב או צור קשר.",
-            'en': "❌ An error occurred processing the confirmation. Please try again or contact us.",
-            'ru': "❌ Произошла ошибка при обработке подтверждения. Пожалуйста, попробуйте снова или свяжитесь с нами.",
-            'ar': "❌ حدث خطأ في معالجة التأكيد. يرجى المحاولة مرة أخرى أو الاتصال بنا."
-        }
-        update.message.reply_text(
-            error_messages.get(lang, error_messages['he']),
-            reply_markup=get_main_keyboard(update.effective_user.id),
-            parse_mode='Markdown'
-        )
+                'ar': "📸 **يرг
 
-# --- הגדרת handlers ---
-def setup_handlers():
-    """מגדיר את ה-handlers עבור הפקודות - משופר"""
-    # handler לפקודת start - עובד בכל סוגי הצ'אטים
-    dispatcher.add_handler(CommandHandler("start", start))
-    
-    # handlers לפקודות אדמין - עובדים בכל סוגי הצ'אטים
-    dispatcher.add_handler(CommandHandler("chatid", chatid))
-    dispatcher.add_handler(CommandHandler("groupid", groupid))  # הוסף
-    dispatcher.add_handler(CommandHandler("chaid", chaid))      # הוסף
-    dispatcher.add_handler(CommandHandler("admin", admin))
-    dispatcher.add_handler(CommandHandler("broadcast", broadcast))
-    dispatcher.add_handler(CommandHandler("group_broadcast", group_broadcast))
-    dispatcher.add_handler(CommandHandler("refresh_groups", refresh_all_groups))  # הוסף
-    
-    # handlers לאינטראקציות משתמש - רק בצ'אטים פרטיים
-    dispatcher.add_handler(CallbackQueryHandler(button_handler))
-    dispatcher.add_handler(MessageHandler(Filters.photo & Filters.chat_type.private, handle_payment_proof))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command & Filters.chat_type.private, handle_payment_proof))
-    
-    # handler להוספת הבוט לקבוצות
-    dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, handle_group_add))
-    
-    # handler למעקב אחר כל ההודעות בקבוצות - כדי לרשום אותן
-    dispatcher.add_handler(MessageHandler(
-        Filters.chat_type.groups & Filters.all, 
-        handle_group_activity
-    ))
-    
-    logger.info("Handlers setup completed with enhanced group management")
 
-# --- פאנל ניהול מתקדם ---
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'slh2025')
 
-@app.route('/admin')
-def admin_panel():
-    """פאנל ניהול מתקדם"""
-    password = request.args.get('password', '')
-    if password != ADMIN_PASSWORD:
-        return "❌ גישה נדחתה - סיסמה לא תקינה", 401
-    
-    stats = get_user_stats()
-    recent_activity = get_recent_activity(20)
-    pending_payments = get_pending_payments()
-    groups = get_all_groups()
-    
-    admin_html = """
-<!DOCTYPE html>
-<html dir="rtl" lang="he">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLH - פאנל ניהול מתקדם</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body { 
-            font-family: 'Arial', sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        .container { 
-            max-width: 1400px; 
-            margin: 0 auto; 
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        .header { 
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-            color: white; 
-            padding: 30px; 
-            text-align: center;
-        }
-        .stats-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
-            gap: 20px; 
-            padding: 20px;
-        }
-        .stat-card { 
-            background: white; 
-            padding: 25px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            text-align: center;
-            border-left: 5px solid #3498db;
-            transition: transform 0.3s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        .stat-number { 
-            font-size: 2.5em; 
-            font-weight: bold; 
-            color: #2c3e50; 
-            margin: 10px 0;
-        }
-        .stat-label {
-            color: #7f8c8d;
-            font-size: 1.1em;
-        }
-        .section {
-            padding: 20px;
-            margin: 20px;
-            background: #f8f9fa;
-            border-radius: 12px;
-        }
-        .section-title {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #3498db;
-        }
-        .activity-item, .payment-item, .group-item {
-            padding: 15px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .activity-item:last-child, .payment-item:last-child, .group-item:last-child {
-            border-bottom: none;
-        }
-        .user-info {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        .action-info {
-            color: #7f8c8d;
-        }
-        .time-info {
-            color: #95a5a6;
-            font-size: 0.9em;
-        }
-        .payment-actions {
-            display: flex;
-            gap: 10px;
-        }
-        .btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9em;
-        }
-        .btn-approve {
-            background: #27ae60;
-            color: white;
-        }
-        .btn-reject {
-            background: #e74c3c;
-            color: white;
-        }
-        .btn-refresh {
-            background: #3498db;
-            color: white;
-        }
-        .btn-export {
-            background: #9b59b6;
-            color: white;
-        }
-        .controls {
-            text-align: center;
-            padding: 20px;
-        }
-        .pending-badge {
-            background: #e74c3c;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            margin-left: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 SLH - פאנל ניהול מתקדם</h1>
-            <p>ניטור וניהול מלא של פעילות הבוט - נתונים בזמן אמת</p>
-        </div>
-        
-        <div class="controls">
-            <button class="btn btn-refresh" onclick="location.reload()">🔄 רענן נתונים</button>
-            <button class="btn btn-export" onclick="exportData()">📊 יצא דוח</button>
-        </div>
-        
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">משתמשים רשומים</div>
-                <div class="stat-number" id="totalUsers">{{ stats.total_users }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">משתמשים פעילים היום</div>
-                <div class="stat-number" id="activeToday">{{ stats.active_today }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">תשלומים מאומתים</div>
-                <div class="stat-number" id="verifiedPayments">{{ stats.verified_payments }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">תשלומים ממתינים</div>
-                <div class="stat-number" id="pendingPayments">{{ stats.pending_payments }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">פעולות היום</div>
-                <div class="stat-number" id="actionsToday">{{ stats.actions_today }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">קבוצות רשומות</div>
-                <div class="stat-number" id="totalGroups">{{ groups|length }}</div>
-            </div>
-        </div>
 
-        <div class="section">
-            <h2 class="section-title">
-                💰 תשלומים ממתינים לאישור
-                {% if pending_payments %}<span class="pending-badge">{{ pending_payments|length }}</span>{% endif %}
-            </h2>
-            <div id="paymentList">
-                {% if pending_payments %}
-                    {% for payment in pending_payments %}
-                    <div class="payment-item">
-                        <div>
-                            <div class="user-info">{{ payment[2] }} (@{{ payment[3] or 'ללא' }})</div>
-                            <div class="action-info">סוג: {{ payment[4] }} | סכום: {{ payment[5] }}₪</div>
-                            {% if payment[6] %}
-                            <div class="action-info">פרטים: {{ payment[6] }}</div>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <div class="time-info">{{ payment[7] }}</div>
-                            <div class="payment-actions">
-                                <button class="btn btn-approve" onclick="approvePayment({{ payment[0] }}, {{ payment[1] }})">✅ אישור</button>
-                                <button class="btn btn-reject" onclick="rejectPayment({{ payment[0] }})">❌ דחייה</button>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p style="text-align: center; color: #7f8c8d; padding: 20px;">אין תשלומים ממתינים לאישור</p>
-                {% endif %}
-            </div>
-        </div>
 
-        <div class="section">
-            <h2 class="section-title">
-                📁 קבוצות רשומות ({{ groups|length }})
-            </h2>
-            <div id="groupsList">
-                {% if groups %}
-                    {% for group in groups %}
-                    <div class="group-item">
-                        <div>
-                            <div class="user-info">{{ group[1] }}</div>
-                            <div class="action-info">ID: {{ group[0] }} | Type: {{ group[2] }}</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p style="text-align: center; color: #7f8c8d; padding: 20px;">אין קבוצות רשומות במערכת</p>
-                {% endif %}
-            </div>
-        </div>
 
-        <div class="section">
-            <h2 class="section-title">📈 פעילות אחרונה</h2>
-            <div id="activityList">
-                {% for activity in recent_activity %}
-                <div class="activity-item">
-                    <div>
-                        <span class="user-info">{{ activity[0] }} ({{ activity[1] or 'ללא' }})</span>
-                        <span class="action-info"> - {{ activity[2] }}</span>
-                        {% if activity[3] %}
-                        <div class="action-info" style="color: #95a5a6; font-size: 0.9em;">{{ activity[3] }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="time-info">{{ activity[4] }}</div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
 
-    <script>
-        function approvePayment(paymentId, userId) {
-            if (confirm('האם לאשר תשלום זה?')) {
-                fetch('/admin/approve_payment', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        payment_id: paymentId,
-                        user_id: userId,
-                        password: '{{ request.args.get("password") }}'
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('✅ התשלום אושר! המשתמש קיבל הודעה ו-SLH 1.');
-                        location.reload();
-                    } else {
-                        alert('❌ שגיאה באישור התשלום: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    alert('❌ שגיאה: ' + error);
-                });
-            }
-        }
-        
-        function rejectPayment(paymentId) {
-            if (confirm('האם לדחות תשלום זה?')) {
-                // כאן ניתן להוסיף לוגיקת דחייה
-                alert('פיצ'ר דחייה בתהליך פיתוח');
-            }
-        }
-        
-        function exportData() {
-            alert('📊 דוח נתונים יוצא... בפועל כאן תתווסף פונקציית ייצוא');
-        }
-        
-        // עדכון אוטומטי כל 30 שניות
-        setInterval(() => {
-            location.reload();
-        }, 30000);
-    </script>
-</body>
-</html>
-    """
-    
-    return render_template_string(admin_html, stats=stats, recent_activity=recent_activity, pending_payments=pending_payments, groups=groups)
 
-@app.route('/admin/approve_payment', methods=['POST'])
-def approve_payment():
-    """מאשר תשלום ומשלח הודעה למשתמש"""
-    try:
-        data = request.get_json()
-        password = data.get('password')
-        payment_id = data.get('payment_id')
-        user_id = data.get('user_id')
-        
-        if password != ADMIN_PASSWORD:
-            return jsonify({'success': False, 'error': 'סיסמה לא תקינה'})
-        
-        # אישור התשלום במסד הנתונים והוספת SLH
-        success, slh_reward = approve_user_payment(user_id, 'admin')
-        
-        if success:
-            # שליחת הודעה למשתמש
-            try:
-                user_info = f"🎉 **מזל טוב! התשלום שלך אושר!**\n\n"
-                user_info += f"**💎 בונוס SLH:** קיבלת **{slh_reward} SLH** בשווי {slh_reward * 444}₪!\n\n"
-                user_info += f"**🚀 קישור ההצטרפות לקהילה:**\n{MAIN_GROUP_LINK}\n\n"
-                user_info += f"**🔗 הלינק האישי שלך לשיתוף:**\n`https://t.me/Buy_My_Shop_bot?start={user_id}`\n\n"
-                user_info += f"**📊 מה תקבל:**\n"
-                user_info += f"• גישה מלאה לקהילת VIP\n"
-                user_info += f"• {slh_reward} SLH בשווי {slh_reward * 444}₪\n"
-                user_info += f"• מערכת הכנסות פסיביות\n"
-                user_info += f"• תמיכה טכנית 24/7\n\n"
-                user_info += f"**💫 ברוך הבא למהפכה!**"
-                
-                bot.send_message(
-                    chat_id=user_id,
-                    text=user_info,
-                    parse_mode='Markdown'
-                )
-                
-                logger.info(f"Payment approved for user {user_id}, SLH rewarded: {slh_reward}")
-                
-            except Exception as e:
-                logger.error(f"Error sending approval message to user {user_id}: {e}")
-            
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'שגיאה באישור התשלום'})
-            
-    except Exception as e:
-        logger.error(f"Error in approve_payment: {e}")
-        return jsonify({'success': False, 'error': str(e)})
 
-# --- הגדרת Flask routes ---
-@app.route('/')
-def home():
-    return jsonify({
-        "status": "active",
-        "service": "SLH Community Gateway Bot - Premium Edition",
-        "version": "5.6",
-        "timestamp": datetime.now().isoformat(),
-        "features": [
-            "SLH Coin cryptocurrency ecosystem",
-            "Advanced community gateway with smart payments", 
-            "Elite bot development services",
-            "5-generation network marketing",
-            "NFT marketplace integration",
-            "Multi-language support (HE/EN/RU/AR)",
-            "Real-time analytics dashboard",
-            "Advanced admin panel",
-            "Payment tracking system",
-            "User activity monitoring",
-            "Referral tracking system",
-            "Free access after 39 referrals",
-            "Enhanced group management system",
-            "Admin groupid/chaid commands",
-            "Payment confirmation to groups",
-            "SLH Token rewards system",
-            "Automatic group registration",
-            "Group activity tracking"
-        ],
-        "monitoring": {
-            "admin_panel": "/admin?password=slh2025",
-            "real_time_alerts": "Active",
-            "payment_tracking": "Active",
-            "user_analytics": "Active",
-            "referral_tracking": "Active",
-            "group_tracking": "Active",
-            "slh_rewards": "Active"
-        },
-        "ecosystem": {
-            "slh_coin_value": "444 ILS",
-            "membership_cost": "39 ILS", 
-            "network_levels": 5,
-            "active_users": "500+",
-            "monthly_growth": "20%",
-            "free_access_after": "39 referrals",
-            "slh_reward_per_payment": "1 SLH"
-        }
-    }), 200
 
-@app.route('/dashboard')
-def dashboard():
-    """ממשק ניהול בעברית"""
-    return """
-<!DOCTYPE html>
-<html dir="rtl" lang="he">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLH - ממשק ניהול</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
-        .stat-number { font-size: 2em; font-weight: bold; color: #667eea; }
-        .projects { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .project-item { padding: 10px; border-bottom: 1px solid #eee; }
-        .project-item:last-child { border-bottom: none; }
-        .status-active { color: green; font-weight: bold; }
-        .status-inactive { color: red; }
-        .ecosystem { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; }
-        .admin-link { background: #ff6b6b; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none; display: inline-block; margin: 10px 0; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 SLH - ממשק ניהול מערכת</h1>
-            <p>ניהול וניטור כל הפרויקטים במערכת אחת</p>
-            <a href="/admin?password=slh2025" class="admin-link">🔐 פאנל ניהול מתקדם</a>
-        </div>
-        
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number" id="userCount">0</div>
-                <div>משתמשים רשומים</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="projectCount">4</div>
-                <div>פרויקטים פעילים</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="slhValue">444₪</div>
-                <div>ערך SLH Coin</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="responseTime">2.3s</div>
-                <div>זמן תגובה ממוצע</div>
-            </div>
-        </div>
 
-        <div class="ecosystem">
-            <h2>💎 אקוסיסטם סלה ללא גבולות - גרסה 5.6</h2>
-            <p><strong>מערכת ניטור מתקדמת:</strong> ✅ פעיל</p>
-            <p><strong>התראות בזמן אמת:</strong> ✅ פעיל</p>
-            <p><strong>מעקב תשלומים:</strong> ✅ פעיל</p>
-            <p><strong>פאנל ניהול:</strong> ✅ פעיל</p>
-            <p><strong>טיפול בשגיאות:</strong> ✅ משופר</p>
-            <p><strong>מערכת רפראלים:</strong> ✅ פעיל</p>
-            <p><strong>גישה חינם אחרי 39:</strong> ✅ פעיל</p>
-            <p><strong>תמיכה רב-לשונית:</strong> ✅ פעיל</p>
-            <p><strong>מטבע SLH:</strong> 444₪ ליחידה</p>
-            <p><strong>עלות הצטרפות:</strong> 39₪</p>
-            <p><strong>רמות שיווק:</strong> 5 דורות</p>
-            <p><strong>צמיחה חודשית:</strong> 20%</p>
-            <p><strong>ניהול קבוצות מתקדם:</strong> ✅ פעיל</p>
-            <p><strong>פקודות /groupid ו-/chaid:</strong> ✅ פעיל</p>
-            <p><strong>פקודת /admin:</strong> ✅ פעיל</p>
-            <p><strong>אישורי תשלום לקבוצה:</strong> ✅ פעיל</p>
-            <p><strong>תגמולי SLH:</strong> ✅ פעיל (1 SLH לכל תשלום)</p>
-            <p><strong>שידור לקבוצות:</strong> ✅ פעיל</p>
-            <p><strong>רישום קבוצות אוטומטי:</strong> ✅ פעיל</p>
-            <p><strong>מעקב פעילות קבוצות:</strong> ✅ פעיל</p>
-        </div>
 
-        <div class="projects">
-            <h2>🌐 הפרויקטים שלנו</h2>
-            <div class="project-item">
-                <strong>🤖 Bot Development Platform</strong>
-                <span class="status-active">פעיל</span>
-                <br><small>https://web-production-b425.up.railway.app</small>
-            </div>
-            <div class="project-item">
-                <strong>🎨 SLH NFT Marketplace</strong>
-                <span class="status-active">פעיל</span>
-                <br><small>https://slh-nft.com/</small>
-            </div>
-            <div class="project-item">
-                <strong>💼 Facebook Business Page</strong>
-                <span class="status-active">פעיל</span>
-                <br><small>https://www.facebook.com/OMG.adv/</small>
-            </div>
-            <div class="project-item">
-                <strong>📚 Landing Page</strong>
-                <span class="status-active">בפיתוח</span>
-                <br><small>https://osifeu-prog.github.io/GATE_BOTSHOP/</small>
-            </div>
-        </div>
-    </div>
 
-    <script>
-        // הדמיית נתונים דינמיים
-        setInterval(() => {
-            document.getElementById('userCount').textContent = 
-                Math.floor(500 + Math.random() * 100);
-            document.getElementById('responseTime').textContent = 
-                (1.5 + Math.random() * 1).toFixed(1) + 's';
-        }, 3000);
-    </script>
-</body>
-</html>
-"""
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    """נקודת הכניסה עבור עדכונים מטלגרם"""
-    if request.method == 'POST':
-        try:
-            update = Update.de_json(request.get_json(force=True), bot)
-            dispatcher.process_update(update)
-            return 'ok', 200
-        except Exception as e:
-            logger.error(f"Error processing webhook update: {e}")
-            return 'error', 500
 
-@app.route('/set_webhook', methods=['GET'])
-def set_webhook():
-    """קובע את ה-Webhook עבור הבוט"""
-    try:
-        success = bot.set_webhook(WEBHOOK_URL)
-        if success:
-            logger.info(f"Webhook set successfully to: {WEBHOOK_URL}")
-            return jsonify({
-                "status": "Webhook set successfully", 
-                "url": WEBHOOK_URL,
-                "timestamp": datetime.now().isoformat(),
-                "bot_info": {
-                    "service": "SLH Community & Ecosystem Gateway",
-                    "version": "5.6",
-                    "ecosystem": {
-                        "slh_coin": "444 ILS per coin",
-                        "network_marketing": "5 generations", 
-                        "membership": "39 ILS",
-                        "free_access_after": "39 referrals",
-                        "slh_rewards": "1 SLH per payment",
-                        "features": ["Bot development", "NFT marketplace", "Crypto ecosystem", "Advanced monitoring", "Enhanced group management", "Referral system", "Multi-language support", "Admin commands", "Payment confirmations", "SLH token rewards"]
-                    }
-                }
-            }), 200
-        else:
-            logger.error("Failed to set webhook")
-            return jsonify({"status": "Failed to set webhook"}), 500
-    except Exception as e:
-        logger.error(f"Error setting webhook: {e}")
-        return jsonify({"status": f"Error: {str(e)}"}), 500
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    """בדיקת בריאות של האפליקציה"""
-    return jsonify({
-        "status": "healthy", 
-        "service": "SLH Community Gateway & Ecosystem",
-        "version": "5.6",
-        "timestamp": datetime.now().isoformat(),
-        "projects_active": 4,
-        "system_uptime": "99.9%",
-        "slh_coin_value": "444 ILS",
-        "monitoring": {
-            "database": "active",
-            "alerts": "active",
-            "admin_panel": "active",
-            "referral_system": "active",
-            "multi_language": "active",
-            "enhanced_group_management": "active",
-            "payment_confirmation": "active",
-            "slh_rewards": "active"
-        }
-    }), 200
 
-# --- אתחול ---
-def initialize_bot():
-    """אתחול הבוט והגדרות"""
-    try:
-        # הגדרת handlers
-        setup_handlers()
-        
-        # קביעת webhook
-        webhook_result = bot.set_webhook(WEBHOOK_URL)
-        if webhook_result:
-            logger.info(f"✅ Webhook set successfully: {WEBHOOK_URL}")
-        else:
-            logger.error("❌ Failed to set webhook")
-            
-        # בדיקת פרטי הבוט
-        bot_info = bot.get_me()
-        logger.info(f"✅ Bot initialized: @{bot_info.username}")
-        
-        # שליחת הודעת אתחול לקבוצת הניהול (אם היא קיימת)
-        try:
-            groups_count = len(get_all_groups())
-            send_admin_alert(f"🚀 **בוט SLH הותחל בהצלחה!**\n\nגרסה: 5.6 - עם מערכת ניהול קבוצות מתקדמת\n📊 קבוצות רשומות: {groups_count}\n🆔 פקודות חדשות: /groupid, /chaid\n🔄 רענון קבוצות: /refresh_groups\nפאנל ניהול: /admin\nמערכת רפראלים: ✅ פעיל\nתמיכה רב-לשונית: ✅ פעיל\nניהול קבוצות: ✅ משופר\nפקודת /groupid: ✅ פעיל\nאישורי תשלום לקבוצה: ✅ פעיל\nתגמולי SLH: ✅ פעיל (1 SLH לכל תשלום)\nשידור לקבוצות: ✅ פעיל")
-        except Exception as e:
-            logger.warning(f"Could not send startup message to admin group: {e}")
-        
-    except Exception as e:
-        logger.error(f"❌ Failed to initialize bot: {e}")
 
-# אתחול הבוט כאשר המודול נטען
-initialize_bot()
 
-# הפעלת שרת Flask
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
 
-על הדרך תקן לי גם את הבעיות בלוגים וגם שאוכל להקליד פקודה (או כפתור) ולקבל את התפריט אדמין שלי, ושבו יהיה לי גם כפתור למיאה של ה ID של הבוט בקבוצות שאצרף אותו אליהן. 
 
-תן לי מבנה קבצים מסודר לפרק את הקובץ הזה שיהיה לי יותר נח לעבוד עליו ושכל מה שהוא צריך לעשות יקרה. 
+
+
+
+
+
+
+
+
+
+
+
+                1234
