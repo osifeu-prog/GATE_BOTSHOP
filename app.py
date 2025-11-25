@@ -2,49 +2,24 @@ import os
 import logging
 import json
 import sqlite3
-import asyncio
-import aiohttp
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template_string
-from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
+from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, Chat
 from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext, ConversationHandler
 import threading
 import time
-import qrcode
-import io
-import base64
-import random
-from urllib.parse import quote
 
 # הגדרת משתני הסביבה
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://web-production-b425.up.railway.app') + '/webhook'
 MAIN_GROUP_LINK = os.environ.get('MAIN_GROUP_LINK') 
-ADMIN_GROUP_ID = os.environ.get('ADMIN_GROUP_ID', '-1002147033592')
-PAYMENT_CONFIRMATION_GROUP = os.environ.get('PAYMENT_CONFIRMATION_GROUP', '-1002147033592')
-MAIN_COMMUNITY_GROUP = os.environ.get('MAIN_COMMUNITY_GROUP', '-1002147033592')
-ADMIN_USER_ID = os.environ.get('ADMIN_USER_ID', '6996423991')
+ADMIN_GROUP_ID = os.environ.get('ADMIN_GROUP_ID', '-1002147033592')  # ID מספרי של קבוצת הניהול
+PAYMENT_CONFIRMATION_GROUP = os.environ.get('PAYMENT_CONFIRMATION_GROUP', '-1002147033592')  # ID קבוצת אישורי תשלום (אותה קבוצה)
+MAIN_COMMUNITY_GROUP = os.environ.get('MAIN_COMMUNITY_GROUP', '-1002147033592')  # הקבוצה הראשית להצטרפות
+ADMIN_USER_ID = os.environ.get('ADMIN_USER_ID', '6996423991')  # ID שלך - Osif
 
-# הגדרות מתקדמות
-MAX_REFERRALS = 39
-SLH_TOKEN_VALUE = 444
-MEMBERSHIP_COST = 39
-COMMUNITY_GROWTH_RATE = 1.20  # 20% growth monthly
-
-# תמונות ואנימציות
-WELCOME_IMAGES = [
-    "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2032&q=80",
-    "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=2065&q=80",
-    "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    "https://images.unsplash.com/photo-1620321023374-d1a68fbc720d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2098&q=80"
-]
-
-ECOSYSTEM_IMAGES = {
-    'main': "https://images.unsplash.com/photo-1639762681057-408e52192e55?ixlib=rb-4.0.3&auto=format&fit=crop&w=2032&q=80",
-    'crypto': "https://images.unsplash.com/photo-1516245834210-c4c142787335?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80",
-    'community': "https://images.unsplash.com/photo-1579532537598-459ecdaf39cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80",
-    'success': "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
-}
+# states לשיחת צור קשר
+CHOOSING, TYPING_CONTACT = range(2)
 
 # הגדרת הלוגים
 logging.basicConfig(
@@ -55,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# --- מילוני תרגום רב-לשוניים משודרגים ---
+# --- מילוני תרגום רב-לשוניים ---
 TRANSLATIONS = {
     'he': {
         # כפתורים ראשיים
@@ -68,10 +43,6 @@ TRANSLATIONS = {
         'contact': "📞 צור קשר",
         'help': "🆘 עזרה ראשונה",
         'website': "🌐 אתר האינטרנט",
-        'personal_area': "👑 האזור האישי שלי",
-        'success_stories': "🏆 סיפורי הצלחה",
-        'calculator': "🧮 מחשבון רווחים",
-        'vip_club': "🎩 מועדון VIP",
         
         # הודעות
         'welcome': "🌅 **ברוך הבא {name} למהפכה הכלכלית של סלה ללא גבולות!**\n\n_גילית את האקוסיסטם הטכנולוגי המתקדם ביותר בישראל שמשלב קריפטו, בוטים חכמים, ושיווק רשתי מתקדם_ ✨",
@@ -99,13 +70,7 @@ TRANSLATIONS = {
         'crypto_details': """
 💰 **תשלום בקריפטו נוסף (Ethereum):**
 `0xEc43Fb4819b5DdCb11407DBE46B92a51c7d24B2b`
-        """,
-        
-        # חדש
-        'daily_rewards': "🎯 פרסים יומיים",
-        'leaderboard': "🏆 טבלת המובילים",
-        'achievements': "🎖️ הישגים",
-        'training': "📚 אימונים והדרכות"
+        """
     },
     'en': {
         # Main buttons
@@ -118,10 +83,6 @@ TRANSLATIONS = {
         'contact': "📞 Contact",
         'help': "🆘 Quick Help",
         'website': "🌐 Website",
-        'personal_area': "👑 My Personal Area",
-        'success_stories': "🏆 Success Stories",
-        'calculator': "🧮 Profit Calculator",
-        'vip_club': "🎩 VIP Club",
         
         # Messages
         'welcome': "🌅 **Welcome {name} to the economic revolution of Sela Without Borders!**\n\n_You've discovered the most advanced technological ecosystem in Israel combining crypto, smart bots, and advanced network marketing_ ✨",
@@ -149,161 +110,97 @@ Recipient: Kaufman Zvika
         'crypto_details': """
 💰 **Other Crypto Payment (Ethereum):**
 `0xEc43Fb4819b5DdCb11407DBE46B92a51c7d24B2b`
-        """,
+        """
+    },
+    'ru': {
+        # Основные кнопки
+        'ecosystem': "🌟 Села без границ - Экосистема",
+        'join_community': "💎 Вступить в сообщество - 39₪", 
+        'investment': "🚀 Инвестировать в проект SLH",
+        'bot_development': "🤖 Разработка ботов для бизнеса",
+        'network_marketing': "📊 Сетевой маркетинг - 5 поколений",
+        'our_projects': "🌐 Наши проекты", 
+        'contact': "📞 Контакты",
+        'help': "🆘 Быстрая помощь",
+        'website': "🌐 Веб-сайт",
         
-        # New
-        'daily_rewards': "🎯 Daily Rewards",
-        'leaderboard': "🏆 Leaderboard",
-        'achievements': "🎖️ Achievements",
-        'training': "📚 Training & Guides"
+        # Сообщения
+        'welcome': "🌅 **Добро пожаловать {name} в экономическую революцию Села без границ!**\n\n_Вы открыли самую передовую технологическую экосистему в Израиле, сочетающую крипто, умные боты и продвинутый сетевой маркетинг_ ✨",
+        'welcome_back': "**🏠 Вернуться в главное меню**\n\n**💎 Как мы можем помочь вам добиться успеха сегодня?**",
+        
+        # Платежи
+        'bank_transfer': "🏦 Банковский перевод",
+        'ton_payment': "💎 Оплата в TON", 
+        'crypto_payment': "💰 Другая криптовалюта",
+        'payment_sent': "✅ Я отправил платеж",
+        'joining_bonuses': "🎁 Бонусы за вступление",
+        
+        # Детали платежей
+        'bank_details': """
+🏦 **Банковский перевод:**
+Банк: Хапоалим
+Филиал: Кфар Ганим (153)
+Счет: 73462
+Получатель: Кауфман Звика
+        """,
+        'ton_details': """
+💎 **Оплата в TON:**
+`UQCr743gEr_nqV_0SBkSp3CtYS_15R3LDLBvLmKeEv7XdGvp`
+        """,
+        'crypto_details': """
+💰 **Оплата другой криптовалютой (Ethereum):**
+`0xEc43Fb4819b5DdCb11407DBE46B92a51c7d24B2b`
+        """
+    },
+    'ar': {
+        # الأزرار الرئيسية
+        'ecosystem': "🌟 سيلا بلا حدود - النظام البيئي",
+        'join_community': "💎 الانضمام للمجتمع - 39₪", 
+        'investment': "🚀 الاستثمار في مشروع SLH",
+        'bot_development': "🤖 تطوير بوتات للأعمال",
+        'network_marketing': "📊 التسويق الشبكي - 5 أجيال",
+        'our_projects': "🌐 مشاريعنا",
+        'contact': "📞 اتصل بنا", 
+        'help': "🆘 مساعدة سريعة",
+        'website': "🌐 موقع الويب",
+        
+        # الرسائل
+        'welcome': "🌅 **مرحبًا {name} في الثورة الاقتصادية لسيلا بلا حدود!**\n\n_لقد اكتشفت النظام البيئي التكنولوجي الأكثر تقدمًا في إسرائيل الذي يجمع بين العملات المشفرة، البوتات الذكية، والتسويق الشبكي المتقدم_ ✨",
+        'welcome_back': "**🏠 العودة إلى القائمة الرئيسية**\n\n**💎 كيف يمكننا مساعدتك على النجاح اليوم?**",
+        
+        # المدفوعات
+        'bank_transfer': "🏦 تحويل بنكي",
+        'ton_payment': "💎 الدفع بـ TON", 
+        'crypto_payment': "💰 دفع بعملة مشفرة أخرى",
+        'payment_sent': "✅ قمت بإرسال الدفع",
+        'joining_bonuses': "🎁 مكافآت الانضمام",
+        
+        # تفاصيل الدفع
+        'bank_details': """
+🏦 **التحويل البنكي:**
+البنك: هبوعليم
+الفرع: كفار جانيم (153)
+الحساب: 73462
+المستلم: كاوفمان زفيكا
+        """,
+        'ton_details': """
+💎 **الدفع بـ TON:**
+`UQCr743gEr_nqV_0SBkSp3CtYS_15R3LDLBvLmKeEv7XdGvp`
+        """,
+        'crypto_details': """
+💰 **الدفع بعملة مشفرة أخرى (Ethereum):**
+`0xEc43Fb4819b5DdCb11407DBE46B92a51c7d24B2b`
+        """
     }
 }
 
 def get_translation(lang, key, **kwargs):
     """מחזיר תרגום לפי שפה ומפתח"""
     if lang not in TRANSLATIONS:
-        lang = 'he'
+        lang = 'he'  # ברירת מחדל לעברית
     translation = TRANSLATIONS[lang].get(key, TRANSLATIONS['he'].get(key, key))
     return translation.format(**kwargs) if kwargs else translation
 
-def get_random_welcome_image():
-    """מחזיר תמונת ברוכים הבאים אקראית"""
-    return random.choice(WELCOME_IMAGES)
-
-def get_ecosystem_image(key='main'):
-    """מחזיר תמונה לפי קטגוריה"""
-    return ECOSYSTEM_IMAGES.get(key, ECOSYSTEM_IMAGES['main'])
-
-# --- מסד נתונים מתקדם משודרג ---
-def init_db():
-    """אתחול מסד הנתונים המשודרג"""
-    conn = sqlite3.connect('bot_data.db', check_same_thread=False)
-    c = conn.cursor()
-    
-    # טבלת משתמשים משודרגת
-    c.execute('''CREATE TABLE IF NOT EXISTS users
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER UNIQUE,
-                  username TEXT,
-                  first_name TEXT,
-                  last_name TEXT,
-                  language TEXT DEFAULT 'he',
-                  join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  total_actions INTEGER DEFAULT 1,
-                  status TEXT DEFAULT 'active',
-                  referred_by INTEGER DEFAULT 0,
-                  referral_count INTEGER DEFAULT 0,
-                  total_earned REAL DEFAULT 0,
-                  payment_verified BOOLEAN DEFAULT FALSE,
-                  approved_by TEXT,
-                  approved_date TIMESTAMP,
-                  slh_tokens REAL DEFAULT 0,
-                  bank_info TEXT,
-                  ton_wallet TEXT,
-                  personal_area_access BOOLEAN DEFAULT FALSE,
-                  challenge_completed BOOLEAN DEFAULT FALSE,
-                  daily_streak INTEGER DEFAULT 0,
-                  last_daily_reward TIMESTAMP,
-                  total_daily_rewards INTEGER DEFAULT 0,
-                  achievements TEXT DEFAULT '[]',
-                  vip_level INTEGER DEFAULT 0,
-                  total_invested REAL DEFAULT 0,
-                  risk_level TEXT DEFAULT 'medium')''')
-    
-    # טבלת תשלומים משודרגת
-    c.execute('''CREATE TABLE IF NOT EXISTS payments
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER,
-                  payment_type TEXT,
-                  amount REAL,
-                  status TEXT DEFAULT 'pending',
-                  proof_text TEXT,
-                  payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  verified_by TEXT,
-                  verification_date TIMESTAMP,
-                  slh_reward REAL DEFAULT 0,
-                  image_file_id TEXT,
-                  investment_type TEXT DEFAULT 'membership')''')
-    
-    # טבלת פעילות משודרגת
-    c.execute('''CREATE TABLE IF NOT EXISTS activity_log
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER,
-                  action_type TEXT,
-                  action_details TEXT,
-                  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  points_earned INTEGER DEFAULT 0)''')
-    
-    # טבלת סטטיסטיקות יומיות משודרגת
-    c.execute('''CREATE TABLE IF NOT EXISTS daily_stats
-                 (date TEXT PRIMARY KEY,
-                  new_users INTEGER DEFAULT 0,
-                  total_actions INTEGER DEFAULT 0,
-                  payments_received INTEGER DEFAULT 0,
-                  payments_verified INTEGER DEFAULT 0,
-                  total_volume REAL DEFAULT 0,
-                  community_growth REAL DEFAULT 0)''')
-    
-    # טבלת רפראלים משודרגת
-    c.execute('''CREATE TABLE IF NOT EXISTS referrals
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  referrer_id INTEGER,
-                  referred_id INTEGER,
-                  level INTEGER,
-                  earned_amount REAL,
-                  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  status TEXT DEFAULT 'active')''')
-    
-    # טבלת קבוצות משודרגת
-    c.execute('''CREATE TABLE IF NOT EXISTS groups
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  group_id INTEGER UNIQUE,
-                  title TEXT,
-                  type TEXT,
-                  added_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  member_count INTEGER DEFAULT 0,
-                  is_active BOOLEAN DEFAULT TRUE,
-                  growth_rate REAL DEFAULT 0)''')
-    
-    # טבלת הישגים חדשה
-    c.execute('''CREATE TABLE IF NOT EXISTS achievements
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER,
-                  achievement_type TEXT,
-                  achievement_name TEXT,
-                  earned_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  reward_points INTEGER DEFAULT 0)''')
-    
-    # טבלת פרסים יומיים
-    c.execute('''CREATE TABLE IF NOT EXISTS daily_rewards
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER,
-                  reward_date TEXT,
-                  reward_type TEXT,
-                  reward_value REAL,
-                  streak_count INTEGER DEFAULT 1)''')
-    
-    # טבלת השקעות מתקדמת
-    c.execute('''CREATE TABLE IF NOT EXISTS investments
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER,
-                  investment_type TEXT,
-                  amount REAL,
-                  slh_tokens_earned REAL,
-                  investment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  status TEXT DEFAULT 'active',
-                  expected_return REAL,
-                  risk_level TEXT)''')
-    
-    conn.commit()
-    conn.close()
-    logger.info("✅ Advanced database initialized successfully")
-
-init_db()
-
-# --- פונקציות מסד נתונים מתקדמות ---
 def get_user_language(user_id):
     """מחזיר את שפת המשתמש מהמסד נתונים"""
     try:
@@ -333,8 +230,89 @@ def set_user_language(user_id, language):
         logger.error(f"Error setting user language: {e}")
         return False
 
-def log_user_activity(user_id, username, first_name, last_name, action_type, action_details="", points=0):
-    """רישום פעילות משתמש משודרג"""
+# --- מסד נתונים מתקדם ---
+def init_db():
+    """אתחול מסד הנתונים"""
+    conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+    c = conn.cursor()
+    
+    # טבלת משתמשים
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  user_id INTEGER UNIQUE,
+                  username TEXT,
+                  first_name TEXT,
+                  last_name TEXT,
+                  language TEXT DEFAULT 'he',
+                  join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  total_actions INTEGER DEFAULT 1,
+                  status TEXT DEFAULT 'active',
+                  referred_by INTEGER DEFAULT 0,
+                  referral_count INTEGER DEFAULT 0,
+                  total_earned REAL DEFAULT 0,
+                  payment_verified BOOLEAN DEFAULT FALSE,
+                  approved_by TEXT,
+                  approved_date TIMESTAMP,
+                  slh_tokens REAL DEFAULT 0)''')  # הוספת עמודת SLH tokens
+    
+    # טבלת תשלומים
+    c.execute('''CREATE TABLE IF NOT EXISTS payments
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  user_id INTEGER,
+                  payment_type TEXT,
+                  amount REAL,
+                  status TEXT DEFAULT 'pending',
+                  proof_text TEXT,
+                  payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  verified_by TEXT,
+                  verification_date TIMESTAMP,
+                  slh_reward REAL DEFAULT 0)''')  # הוספת עמודת תגמול SLH
+    
+    # טבלת פעילות
+    c.execute('''CREATE TABLE IF NOT EXISTS activity_log
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  user_id INTEGER,
+                  action_type TEXT,
+                  action_details TEXT,
+                  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+    
+    # טבלת סטטיסטיקות יומיות
+    c.execute('''CREATE TABLE IF NOT EXISTS daily_stats
+                 (date TEXT PRIMARY KEY,
+                  new_users INTEGER DEFAULT 0,
+                  total_actions INTEGER DEFAULT 0,
+                  payments_received INTEGER DEFAULT 0,
+                  payments_verified INTEGER DEFAULT 0)''')
+    
+    # טבלת רפראלים
+    c.execute('''CREATE TABLE IF NOT EXISTS referrals
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  referrer_id INTEGER,
+                  referred_id INTEGER,
+                  level INTEGER,
+                  earned_amount REAL,
+                  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+    
+    # טבלת קבוצות
+    c.execute('''CREATE TABLE IF NOT EXISTS groups
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  group_id INTEGER UNIQUE,
+                  title TEXT,
+                  type TEXT,
+                  added_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  member_count INTEGER DEFAULT 0,
+                  is_active BOOLEAN DEFAULT TRUE)''')
+    
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# --- פונקציות מסד נתונים ---
+def log_user_activity(user_id, username, first_name, last_name, action_type, action_details=""):
+    """רישום פעילות משתמש במסד הנתונים"""
     try:
         conn = sqlite3.connect('bot_data.db', check_same_thread=False)
         c = conn.cursor()
@@ -345,10 +323,10 @@ def log_user_activity(user_id, username, first_name, last_name, action_type, act
                      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, COALESCE((SELECT total_actions FROM users WHERE user_id = ?), 0) + 1)
                   ''', (user_id, username, first_name, last_name, user_id))
         
-        # רישום פעילות עם נקודות
+        # רישום פעילות
         c.execute('''INSERT INTO activity_log 
-                     (user_id, action_type, action_details, points_earned)
-                     VALUES (?, ?, ?, ?)''', (user_id, action_type, action_details, points))
+                     (user_id, action_type, action_details)
+                     VALUES (?, ?, ?)''', (user_id, action_type, action_details))
         
         # עדכון סטטיסטיקות יומיות
         today = datetime.now().strftime('%Y-%m-%d')
@@ -364,182 +342,57 @@ def log_user_activity(user_id, username, first_name, last_name, action_type, act
         
         conn.commit()
         conn.close()
-        return True
     except Exception as e:
         logger.error(f"Database error in log_user_activity: {e}")
-        return False
 
-def get_user_achievements(user_id):
-    """מחזיר את ההישגים של המשתמש"""
-    try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
-        c = conn.cursor()
-        c.execute('''SELECT achievement_type, achievement_name, earned_date, reward_points 
-                     FROM achievements WHERE user_id = ? ORDER BY earned_date DESC''', (user_id,))
-        achievements = c.fetchall()
-        conn.close()
-        return achievements
-    except Exception as e:
-        logger.error(f"Error getting user achievements: {e}")
-        return []
-
-def award_achievement(user_id, achievement_type, achievement_name, points=10):
-    """מעניק הישג למשתמש"""
+def log_payment(user_id, payment_type, amount, proof_text=""):
+    """רישום תשלום במסד הנתונים"""
     try:
         conn = sqlite3.connect('bot_data.db', check_same_thread=False)
         c = conn.cursor()
         
-        # בדיקה אם כבר קיבל את ההישג
-        c.execute('''SELECT id FROM achievements WHERE user_id = ? AND achievement_type = ?''', 
-                  (user_id, achievement_type))
-        if c.fetchone():
-            conn.close()
-            return False
-            
-        # הענקת ההישג
-        c.execute('''INSERT INTO achievements (user_id, achievement_type, achievement_name, reward_points)
-                     VALUES (?, ?, ?, ?)''', (user_id, achievement_type, achievement_name, points))
+        # חישוב תגמול SLH (39₪ = 1 SLH)
+        slh_reward = 1.0  # כל תשלום של 39₪ מזכה ב-1 SLH
+        
+        c.execute('''INSERT INTO payments 
+                     (user_id, payment_type, amount, proof_text, slh_reward)
+                     VALUES (?, ?, ?, ?, ?)''', (user_id, payment_type, amount, proof_text, slh_reward))
+        
+        payment_id = c.lastrowid
+        
+        # עדכון סטטיסטיקות תשלומים
+        today = datetime.now().strftime('%Y-%m-%d')
+        c.execute('''INSERT OR REPLACE INTO daily_stats (date, payments_received)
+                     VALUES (?, COALESCE((SELECT payments_received FROM daily_stats WHERE date = ?), 0) + 1)
+                  ''', (today, today))
+        
+        conn.commit()
+        conn.close()
+        return payment_id
+    except Exception as e:
+        logger.error(f"Database error in log_payment: {e}")
+        return None
+
+def add_referral(referrer_id, referred_id, level=1, earned_amount=0):
+    """הוספת רפראל חדש"""
+    try:
+        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        c = conn.cursor()
+        
+        c.execute('''INSERT INTO referrals 
+                     (referrer_id, referred_id, level, earned_amount)
+                     VALUES (?, ?, ?, ?)''', (referrer_id, referred_id, level, earned_amount))
+        
+        # עדכון ספירת הרפראלים עבור המשתתף
+        c.execute('''UPDATE users SET referral_count = referral_count + 1, 
+                     total_earned = total_earned + ? 
+                     WHERE user_id = ?''', (earned_amount, referrer_id))
         
         conn.commit()
         conn.close()
         return True
     except Exception as e:
-        logger.error(f"Error awarding achievement: {e}")
-        return False
-
-def check_daily_reward_eligibility(user_id):
-    """בודק אם המשתמש זכאי לפרס יומי"""
-    try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
-        c = conn.cursor()
-        
-        today = datetime.now().strftime('%Y-%m-%d')
-        c.execute('''SELECT streak_count FROM daily_rewards 
-                     WHERE user_id = ? AND reward_date = ?''', (user_id, today))
-        
-        if c.fetchone():
-            conn.close()
-            return False, 0  # כבר קיבל היום
-        
-        # בדיקת רצף
-        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-        c.execute('''SELECT streak_count FROM daily_rewards 
-                     WHERE user_id = ? AND reward_date = ?''', (user_id, yesterday))
-        
-        result = c.fetchone()
-        streak_count = result[0] + 1 if result else 1
-        
-        conn.close()
-        return True, streak_count
-    except Exception as e:
-        logger.error(f"Error checking daily reward: {e}")
-        return False, 0
-
-def grant_daily_reward(user_id, streak_count):
-    """מעניק פרס יומי למשתמש"""
-    try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
-        c = conn.cursor()
-        
-        today = datetime.now().strftime('%Y-%m-%d')
-        reward_value = min(streak_count * 0.1, 1.0)  # מקסימום 1 SLH
-        
-        # רישום הפרס
-        c.execute('''INSERT INTO daily_rewards (user_id, reward_date, reward_type, reward_value, streak_count)
-                     VALUES (?, ?, 'slh_tokens', ?, ?)''', (user_id, today, reward_value, streak_count))
-        
-        # עדכון יתרת SLH
-        c.execute('''UPDATE users SET 
-                     slh_tokens = slh_tokens + ?,
-                     daily_streak = ?,
-                     last_daily_reward = CURRENT_TIMESTAMP,
-                     total_daily_rewards = total_daily_rewards + 1
-                     WHERE user_id = ?''', (reward_value, streak_count, user_id))
-        
-        conn.commit()
-        conn.close()
-        return reward_value
-    except Exception as e:
-        logger.error(f"Error granting daily reward: {e}")
-        return 0
-
-def get_leaderboard(limit=10, period='all_time'):
-    """מחזיר טבלת מובילים"""
-    try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
-        c = conn.cursor()
-        
-        if period == 'daily':
-            date_filter = "AND date(timestamp) = date('now')"
-        elif period == 'weekly':
-            date_filter = "AND timestamp > datetime('now', '-7 days')"
-        else:
-            date_filter = ""
-        
-        query = f'''
-            SELECT u.user_id, u.first_name, u.username, 
-                   SUM(al.points_earned) as total_points,
-                   u.referral_count,
-                   u.slh_tokens
-            FROM users u
-            LEFT JOIN activity_log al ON u.user_id = al.user_id {date_filter}
-            WHERE u.status = 'active'
-            GROUP BY u.user_id
-            ORDER BY total_points DESC, u.referral_count DESC
-            LIMIT ?
-        '''
-        
-        c.execute(query, (limit,))
-        leaderboard = c.fetchall()
-        conn.close()
-        return leaderboard
-    except Exception as e:
-        logger.error(f"Error getting leaderboard: {e}")
-        return []
-
-def get_user_personal_info(user_id):
-    """מחזיר את כל המידע האישי של משתמש"""
-    try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
-        c = conn.cursor()
-        c.execute('''SELECT user_id, first_name, username, referral_count, total_earned, 
-                     slh_tokens, bank_info, ton_wallet, payment_verified, challenge_completed,
-                     vip_level, daily_streak
-                     FROM users WHERE user_id = ?''', (user_id,))
-        result = c.fetchone()
-        conn.close()
-        
-        if result:
-            return {
-                'user_id': result[0],
-                'first_name': result[1],
-                'username': result[2],
-                'referral_count': result[3],
-                'total_earned': result[4],
-                'slh_tokens': result[5],
-                'bank_info': result[6],
-                'ton_wallet': result[7],
-                'payment_verified': bool(result[8]),
-                'challenge_completed': bool(result[9]),
-                'vip_level': result[10] or 0,
-                'daily_streak': result[11] or 0
-            }
-        return None
-    except Exception as e:
-        logger.error(f"Error getting user personal info: {e}")
-        return None
-
-def check_user_personal_area_access(user_id):
-    """בודק אם למשתמש יש גישה לאזור האישי"""
-    try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
-        c = conn.cursor()
-        c.execute("SELECT personal_area_access FROM users WHERE user_id = ?", (user_id,))
-        result = c.fetchone()
-        conn.close()
-        return result[0] if result else False
-    except Exception as e:
-        logger.error(f"Error checking personal area access: {e}")
+        logger.error(f"Database error in add_referral: {e}")
         return False
 
 def get_user_stats():
@@ -621,7 +474,7 @@ def get_user_referrals(user_id):
         conn = sqlite3.connect('bot_data.db', check_same_thread=False)
         c = conn.cursor()
         
-        c.execute('''SELECT u.first_name, u.username, r.timestamp, r.level
+        c.execute('''SELECT u.first_name, u.username, r.timestamp 
                      FROM referrals r
                      JOIN users u ON r.referred_id = u.user_id
                      WHERE r.referrer_id = ?
@@ -633,34 +486,6 @@ def get_user_referrals(user_id):
     except Exception as e:
         logger.error(f"Database error in get_user_referrals: {e}")
         return []
-
-def log_payment(user_id, payment_type, amount, proof_text="", image_file_id=None):
-    """רישום תשלום במסד הנתונים"""
-    try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
-        c = conn.cursor()
-        
-        # חישוב תגמול SLH (39₪ = 1 SLH)
-        slh_reward = 1.0  # כל תשלום של 39₪ מזכה ב-1 SLH
-        
-        c.execute('''INSERT INTO payments 
-                     (user_id, payment_type, amount, proof_text, slh_reward, image_file_id)
-                     VALUES (?, ?, ?, ?, ?, ?)''', (user_id, payment_type, amount, proof_text, slh_reward, image_file_id))
-        
-        payment_id = c.lastrowid
-        
-        # עדכון סטטיסטיקות תשלומים
-        today = datetime.now().strftime('%Y-%m-%d')
-        c.execute('''INSERT OR REPLACE INTO daily_stats (date, payments_received)
-                     VALUES (?, COALESCE((SELECT payments_received FROM daily_stats WHERE date = ?), 0) + 1)
-                  ''', (today, today))
-        
-        conn.commit()
-        conn.close()
-        return payment_id
-    except Exception as e:
-        logger.error(f"Database error in log_payment: {e}")
-        return None
 
 def approve_user_payment(user_id, approved_by):
     """אישור תשלום משתמש והוספת SLH tokens"""
@@ -675,13 +500,12 @@ def approve_user_payment(user_id, approved_by):
         result = c.fetchone()
         slh_reward = result[0] if result else 1.0  # ברירת מחדל 1 SLH
         
-        # עדכון משתמש - אישור תשלום והוספת SLH וגישה לאזור אישי
+        # עדכון משתמש - אישור תשלום והוספת SLH
         c.execute('''UPDATE users SET 
                      payment_verified = TRUE,
                      approved_by = ?,
                      approved_date = CURRENT_TIMESTAMP,
-                     slh_tokens = slh_tokens + ?,
-                     personal_area_access = TRUE
+                     slh_tokens = slh_tokens + ?
                      WHERE user_id = ?''', (approved_by, slh_reward, user_id))
         
         # עדכון תשלום - סימון כמאושר
@@ -698,28 +522,13 @@ def approve_user_payment(user_id, approved_by):
         logger.error(f"Database error in approve_user_payment: {e}")
         return False, 0
 
-def reject_user_payment(payment_id):
-    """דחיית תשלום"""
-    try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
-        c = conn.cursor()
-        
-        c.execute('''UPDATE payments SET status = 'rejected' WHERE id = ?''', (payment_id,))
-        
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        logger.error(f"Database error in reject_user_payment: {e}")
-        return False
-
 def get_pending_payments():
     """קבלת רשימת תשלומים ממתינים"""
     try:
         conn = sqlite3.connect('bot_data.db', check_same_thread=False)
         c = conn.cursor()
         
-        c.execute('''SELECT p.id, u.user_id, u.first_name, u.username, p.payment_type, p.amount, p.proof_text, p.payment_date, p.image_file_id
+        c.execute('''SELECT p.id, u.user_id, u.first_name, u.username, p.payment_type, p.amount, p.proof_text, p.payment_date
                      FROM payments p
                      JOIN users u ON p.user_id = u.user_id
                      WHERE p.status = 'pending'
@@ -732,6 +541,21 @@ def get_pending_payments():
         logger.error(f"Database error in get_pending_payments: {e}")
         return []
 
+def save_group(group_id, title, group_type):
+    """שומר קבוצה במסד הנתונים"""
+    try:
+        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        c = conn.cursor()
+        c.execute('''INSERT OR REPLACE INTO groups 
+                     (group_id, title, type, last_activity) 
+                     VALUES (?, ?, ?, CURRENT_TIMESTAMP)''', (group_id, title, group_type))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error saving group: {e}")
+        return False
+
 def get_all_groups():
     """מחזיר את כל הקבוצות מהמסד נתונים"""
     try:
@@ -743,6 +567,34 @@ def get_all_groups():
         return groups
     except Exception as e:
         logger.error(f"Error getting groups: {e}")
+        return []
+
+def get_user_slh_balance(user_id):
+    """מחזיר את יתרת ה-SLH tokens של משתמש"""
+    try:
+        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        c = conn.cursor()
+        c.execute("SELECT slh_tokens FROM users WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
+        conn.close()
+        return result[0] if result else 0
+    except Exception as e:
+        logger.error(f"Error getting user SLH balance: {e}")
+        return 0
+
+# --- פונקציות מתקדמות לניהול קבוצות - משופרות ---
+
+def get_bot_real_chats():
+    """מחזיר את כל הצ'אטים האמיתיים שהבוט חבר בהם מטלגרם"""
+    try:
+        # קבלת כל הקבוצות מהמסד נתונים
+        groups_from_db = get_all_groups()
+        
+        # כאן נוכל להוסיף בעתיד קריאה ל-API של טלגרם לקבלת קבוצות אמיתיות
+        # כרגע נחזיר את הקבוצות מהמסד נתונים
+        return groups_from_db
+    except Exception as e:
+        logger.error(f"Error getting real bot chats: {e}")
         return []
 
 def update_group_info_in_db(group_id, title, group_type):
@@ -761,1297 +613,47 @@ def update_group_info_in_db(group_id, title, group_type):
         logger.error(f"Error updating group info in DB: {e}")
         return False
 
-def get_user_slh_balance(user_id):
-    """מחזיר את יתרת ה-SLH tokens של משתמש"""
-    try:
-        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
-        c = conn.cursor()
-        c.execute("SELECT slh_tokens FROM users WHERE user_id = ?", (user_id,))
-        result = c.fetchone()
-        conn.close()
-        return result[0] if result else 0
-    except Exception as e:
-        logger.error(f"Error getting user SLH balance: {e}")
-        return 0
-
-# --- פונקציות עזר מתקדמות ---
-def safe_edit_message(query, text, reply_markup=None, parse_mode='Markdown'):
-    """פונקציה בטוחה לעריכת הודעה עם טיפול בשגיאות"""
-    try:
-        query.edit_message_text(
-            text=text,
-            reply_markup=reply_markup,
-            parse_mode=parse_mode
-        )
-        return True
-    except Exception as e:
-        logger.error(f"Error editing message: {e}")
-        try:
-            query.message.reply_text(
-                text=text,
-                reply_markup=reply_markup,
-                parse_mode=parse_mode
-            )
-            return True
-        except Exception as e2:
-            logger.error(f"Failed to send new message: {e2}")
-            return False
-
-def generate_achievements_progress(user_id):
-    """מייצר מחרוזת התקדמות בהישגים"""
-    achievements = get_user_achievements(user_id)
-    total_achievements = 15  # סה"כ הישגים אפשריים
-    
-    if not achievements:
-        return f"🎯 **הישגים:** 0/{total_achievements}\n🚀 התחל לצבור הישגים!"
-    
-    progress = len(achievements)
-    percentage = (progress / total_achievements) * 100
-    
-    # מציאת הישגים בולטים
-    notable_achievements = []
-    for ach in achievements[:3]:  # שלושת ההישגים האחרונים
-        notable_achievements.append(ach[1])
-    
-    progress_text = f"🎯 **הישגים:** {progress}/{total_achievements} ({percentage:.1f}%)\n"
-    progress_text += f"🏆 **אחרונים:** {', '.join(notable_achievements)}\n"
-    progress_text += "🌟 **המשך כך!**"
-    
-    return progress_text
-
-def create_animated_welcome(user_name, lang):
-    """יוצר הודעת ברוכים הבאים אנימטיבית"""
-    welcome_emojis = ["🌅", "🚀", "💎", "🌟", "🔥", "💫", "🎯", "🏆"]
-    emoji = random.choice(welcome_emojis)
-    
-    welcome_templates = [
-        f"{emoji} **{user_name}, גילית אוצר דיגיטלי!** {emoji}",
-        f"{emoji} **המסע להצלחה מתחיל כאן, {user_name}!** {emoji}",
-        f"{emoji} **ברוך הבא למהפכה, {user_name}!** {emoji}",
-        f"{emoji} **{user_name}, ההזדמנות של חייך מחכה!** {emoji}"
-    ]
-    
-    return random.choice(welcome_templates)
-
-def calculate_projection(user_id, months=12):
-    """מחשב תחזית רווחים למשתמש"""
-    try:
-        user_info = get_user_personal_info(user_id)
-        if not user_info:
-            return None
-            
-        current_referrals = user_info['referral_count']
-        monthly_growth = COMMUNITY_GROWTH_RATE
-        slh_value = SLH_TOKEN_VALUE
-        
-        projections = []
-        current_total = user_info['slh_tokens']
-        
-        for month in range(1, months + 1):
-            # חישוב צמיחה
-            projected_referrals = int(current_referrals * (monthly_growth ** month))
-            projected_slh = current_total * (monthly_growth ** month)
-            projected_value = projected_slh * slh_value
-            
-            projections.append({
-                'month': month,
-                'referrals': projected_referrals,
-                'slh_tokens': round(projected_slh, 2),
-                'value': round(projected_value, 2),
-                'growth_rate': f"{(monthly_growth ** month - 1) * 100:.1f}%"
-            })
-        
-        return projections
-    except Exception as e:
-        logger.error(f"Error calculating projection: {e}")
-        return None
-
-# --- מקלדות משודרגות ---
-def get_main_keyboard(user_id):
-    """מחזיר את המקלדת הראשית המשודרגת"""
-    lang = get_user_language(user_id)
-    has_personal_access = check_user_personal_area_access(user_id)
-    
-    # שורה ראשונה - הליבה
-    keyboard = [
-        [InlineKeyboardButton(get_translation(lang, 'ecosystem'), callback_data='ecosystem_explanation')],
-        [InlineKeyboardButton(get_translation(lang, 'join_community'), callback_data='join_community')],
-        [InlineKeyboardButton(get_translation(lang, 'investment'), callback_data='investment')],
-    ]
-    
-    # שורה שנייה - שירותים
-    keyboard.extend([
-        [InlineKeyboardButton(get_translation(lang, 'bot_development'), callback_data='bot_development'),
-         InlineKeyboardButton(get_translation(lang, 'network_marketing'), callback_data='network_marketing')],
-    ])
-    
-    # שורה שלישית - תכונות מתקדמות
-    keyboard.extend([
-        [InlineKeyboardButton(get_translation(lang, 'success_stories'), callback_data='success_stories'),
-         InlineKeyboardButton(get_translation(lang, 'calculator'), callback_data='calculator')],
-    ])
-    
-    # שורה רביעית - אזור אישי אם יש גישה
-    if has_personal_access:
-        keyboard.append([InlineKeyboardButton(get_translation(lang, 'personal_area'), callback_data='personal_area')])
-    
-    # שורה אחרונה - תמיכה ושפה
-    keyboard.extend([
-        [InlineKeyboardButton(get_translation(lang, 'contact'), callback_data='contact'), 
-         InlineKeyboardButton(get_translation(lang, 'help'), callback_data='help')],
-        [InlineKeyboardButton(get_translation(lang, 'daily_rewards'), callback_data='daily_rewards'),
-         InlineKeyboardButton(get_translation(lang, 'leaderboard'), callback_data='leaderboard')],
-        [InlineKeyboardButton(get_translation(lang, 'website'), url='https://slh-nft.com/')],
-        [InlineKeyboardButton("🌐 שפה / Language", callback_data='change_language')]
-    ])
-    
-    return InlineKeyboardMarkup(keyboard)
-
-def get_language_keyboard():
-    """מקלדת בחירת שפה"""
-    keyboard = [
-        [InlineKeyboardButton("🇮🇱 עברית", callback_data='lang_he')],
-        [InlineKeyboardButton("🇺🇸 English", callback_data='lang_en')],
-        [InlineKeyboardButton("🇷🇺 Русский", callback_data='lang_ru')],
-        [InlineKeyboardButton("🇸🇦 العربية", callback_data='lang_ar')],
-        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
-    ]
-    return InlineKeyboardMarkup(keyboard)
-
-def get_personal_area_keyboard(user_id):
-    """מקלדת אזור אישי משודרגת"""
-    user_info = get_user_personal_info(user_id)
-    lang = get_user_language(user_id)
-    
-    keyboard = [
-        [InlineKeyboardButton("🔗 הלינק האישי שלי", callback_data='personal_link'),
-         InlineKeyboardButton("📊 הסטטיסטיקות שלי", callback_data='my_stats')],
-        [InlineKeyboardButton("💳 פרטי חשבון בנק", callback_data='bank_details_setup'),
-         InlineKeyboardButton("💎 ארנק TON", callback_data='ton_wallet_setup')],
-        [InlineKeyboardButton("📈 5 דורות של מצטרפים", callback_data='referral_tree'),
-         InlineKeyboardButton("💰 תשלומים שהתקבלו", callback_data='received_payments')],
-        [InlineKeyboardButton("🎯 הישגים שלי", callback_data='my_achievements'),
-         InlineKeyboardButton("🧮 מחשבון רווחים", callback_data='profit_calculator')],
-        [InlineKeyboardButton("📈 תחזית צמיחה", callback_data='growth_projection'),
-         InlineKeyboardButton("🎩 מועדון VIP", callback_data='vip_club')],
-        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
-    ]
-    
-    return InlineKeyboardMarkup(keyboard)
-
-def get_payment_keyboard(user_id):
-    """מחזיר את מקלדת אפשרויות התשלום לפי שפה"""
-    lang = get_user_language(user_id)
-    keyboard = [
-        [InlineKeyboardButton(get_translation(lang, 'bank_transfer'), callback_data='payment_bank')],
-        [InlineKeyboardButton(get_translation(lang, 'ton_payment'), callback_data='payment_ton')],
-        [InlineKeyboardButton(get_translation(lang, 'crypto_payment'), callback_data='payment_crypto')],
-        [InlineKeyboardButton(get_translation(lang, 'payment_sent'), callback_data='payment_sent')],
-        [InlineKeyboardButton(get_translation(lang, 'joining_bonuses'), callback_data='joining_bonuses')],
-        [InlineKeyboardButton("↩️ " + ("חזרה" if lang == 'he' else "Back"), callback_data='back_to_main')]
-    ]
-    return InlineKeyboardMarkup(keyboard)
-
-def get_ecosystem_keyboard(user_id):
-    """מקלדת אקוסיסטם משודרגת"""
-    lang = get_user_language(user_id)
-    
-    keyboard = [
-        [InlineKeyboardButton("💎 SLH Coin - המטבע", callback_data='slh_coin_info')],
-        [InlineKeyboardButton("🤖 מערכת הבוטרים", callback_data='bot_system_info')],
-        [InlineKeyboardButton("🌐 NFT Marketplace", callback_data='nft_marketplace_info')],
-        [InlineKeyboardButton("🚀 פלטפורמת השקעות", callback_data='investment_platform')],
-        [InlineKeyboardButton("📊 סטטיסטיקות קהילה", callback_data='community_stats')],
-        [InlineKeyboardButton("🎯 איך מתחילים?", callback_data='how_to_start')],
-        [InlineKeyboardButton("💫 הצטרפות מיידית", callback_data='join_community')],
-        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
-    ]
-    
-    return InlineKeyboardMarkup(keyboard)
-
-def get_success_stories_keyboard():
-    """מקלדת סיפורי הצלחה"""
-    keyboard = [
-        [InlineKeyboardButton("👨‍💼 יזם צעיר", callback_data='success_1')],
-        [InlineKeyboardButton("👩‍💻 אמא חד הורית", callback_data='success_2')],
-        [InlineKeyboardButton("🧓 פנסיונר", callback_data='success_3')],
-        [InlineKeyboardButton("👨‍🎓 סטודנט", callback_data='success_4')],
-        [InlineKeyboardButton("📊 כל הסיפורים", callback_data='all_success_stories')],
-        [InlineKeyboardButton("🎥 סרטוני הצלחה", callback_data='success_videos')],
-        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
-    ]
-    return InlineKeyboardMarkup(keyboard)
-
-def get_calculator_keyboard(user_id):
-    """מקלדת מחשבונים"""
-    keyboard = [
-        [InlineKeyboardButton("🧮 מחשבון רווחים", callback_data='profit_calculator')],
-        [InlineKeyboardButton("📈 מחשבון השקעות", callback_data='investment_calculator')],
-        [InlineKeyboardButton("🚀 מחשבון צמיחה", callback_data='growth_calculator')],
-        [InlineKeyboardButton("💎 מחשבון SLH", callback_data='slh_calculator')],
-        [InlineKeyboardButton("📊 השוואה להשקעות אחרות", callback_data='comparison_calculator')],
-        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
-    ]
-    return InlineKeyboardMarkup(keyboard)
-
-def get_vip_club_keyboard(user_id):
-    """מקלדת מועדון VIP"""
-    user_info = get_user_personal_info(user_id)
-    vip_level = user_info.get('vip_level', 0) if user_info else 0
-    
-    keyboard = [
-        [InlineKeyboardButton(f"🎩 רמת VIP נוכחית: {vip_level}", callback_data='vip_info')],
-        [InlineKeyboardButton("💎 הטבות VIP", callback_data='vip_benefits')],
-        [InlineKeyboardButton("🚀 שדרוג רמה", callback_data='vip_upgrade')],
-        [InlineKeyboardButton("📊 סטטוס VIP", callback_data='vip_status')],
-        [InlineKeyboardButton("👑 מובילי VIP", callback_data='vip_leaders')],
-        [InlineKeyboardButton("🎪 אירועי VIP", callback_data='vip_events')],
-        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
-    ]
-    
-    return InlineKeyboardMarkup(keyboard)
-
-# --- אתחול הבוט ---
-try:
-    bot = Bot(token=BOT_TOKEN)
-    dispatcher = Dispatcher(bot, None, workers=4)
-    logger.info("Bot and dispatcher initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize bot: {e}")
-    raise
-
-# --- Handlers משודרגים ---
-def start(update: Update, context: CallbackContext) -> None:
-    """מטפל בפקודה /start - משודרג עם אנימציות"""
-    try:
-        user = update.effective_user
-        chat_id = update.effective_chat.id
-
-        # רישום מפורט של המשתמש
-        log_user_activity(
-            chat_id=chat_id,
-            first_name=user.first_name or "לא צוין",
-            last_name=user.last_name or "",
-            username=user.username or "לא צוין",
-            action="התחיל שיחה עם הבוט (/start)",
-            details=f"User ID: {user.id}, Language: {user.language_code}",
-            points=5  # נקודות על התחלה
-        )
-
-        # הענקת הישג "מתחיל"
-        award_achievement(user.id, "starter", "🚀 מתחיל את המסע", 10)
-
-        # אם זו קבוצה
-        if update.message and update.message.chat.type in ['group', 'supergroup']:
-            chat = update.message.chat
-            update_group_info_in_db(chat.id, chat.title, chat.type)
-            
-            if update.message.text and '/start' in update.message.text:
-                update.message.reply_text(
-                    "🤖 הבוט פעיל בקבוצה זו!\n\n"
-                    f"🆔 **ID הקבוצה:** `{chat.id}`\n"
-                    "👑 **לאדמין:** השתמש ב-`/groupid` או `/chaid` כדי לראות את כל הקבוצות.\n"
-                    "👤 **למשתמשים:** שלחו /start בפרטי כדי להתחיל."
-                )
-            return
-
-        # הודעת ברוכים הבאים אנימטיבית
-        welcome_message = create_animated_welcome(user.first_name, get_user_language(user.id))
-        welcome_image = get_random_welcome_image()
-        
-        # הודעה ראשונית עם תמונה
-        try:
-            if update.message:
-                update.message.reply_photo(
-                    photo=welcome_image,
-                    caption=welcome_message + "\n\n" + get_translation(get_user_language(user.id), 'welcome', name=user.first_name),
-                    parse_mode='Markdown',
-                    reply_markup=get_main_keyboard(user.id)
-                )
-            else:
-                update.callback_query.message.reply_photo(
-                    photo=welcome_image,
-                    caption=welcome_message + "\n\n" + get_translation(get_user_language(user.id), 'welcome', name=user.first_name),
-                    parse_mode='Markdown',
-                    reply_markup=get_main_keyboard(user.id)
-                )
-        except Exception as e:
-            logger.warning(f"Could not send welcome image: {e}")
-            # גיבוי להודעה טקסטואלית
-            if update.message:
-                update.message.reply_text(
-                    welcome_message + "\n\n" + get_translation(get_user_language(user.id), 'welcome', name=user.first_name),
-                    reply_markup=get_main_keyboard(user.id),
-                    parse_mode='Markdown'
-                )
-        
-    except Exception as e:
-        logger.error(f"Error in start command: {e}")
-        if update.message:
-            update.message.reply_text("❌ אירעה שגיאה. אנא נסה שוב.")
-
-def button_handler(update: Update, context: CallbackContext) -> None:
-    """מטפל בלחיצות על כפתורים - רב-לשוני - משופר ומתוקן"""
-    query = update.callback_query
-    
-    try:
-        query.answer()
-    except Exception as e:
-        logger.warning(f"Could not answer callback query: {e}")
-
-    try:
-        user = query.from_user
-        user_id = user.id
-        lang = get_user_language(user_id)
-        action_details = f"לחץ על: {query.data}"
-        
-        # רישום פעילות מפורט
-        log_user_activity(
-            user.id, 
-            user.username, 
-            user.first_name, 
-            user.last_name or "",
-            "button_click", 
-            action_details,
-            points=2
-        )
-
-        if query.data == 'change_language':
-            language_text = "🌐 **בחר שפה / Choose language**\n\nSelect your preferred language:"
-            safe_edit_message(query, language_text, get_language_keyboard())
-            return
-
-        elif query.data.startswith('lang_'):
-            lang_code = query.data.replace('lang_', '')
-            set_user_language(user_id, lang_code)
-            
-            confirmation_messages = {
-                'he': "✅ שפת הממשק שונתה לעברית",
-                'en': "✅ Interface language changed to English", 
-                'ru': "✅ Язык интерфейса изменен на русский",
-                'ar': "✅ تم تغيير لغة الواجهة إلى العربية"
-            }
-            
-            safe_edit_message(query, confirmation_messages.get(lang_code, "Language changed"), get_main_keyboard(user_id))
-            return
-
-        elif query.data == 'daily_rewards':
-            daily_rewards_handler(update, context)
-            return
-
-        elif query.data == 'leaderboard':
-            leaderboard_handler(update, context)
-            return
-
-        elif query.data == 'success_stories' or query.data.startswith('success_'):
-            success_stories_handler(update, context)
-            return
-
-        elif query.data == 'calculator' or query.data.endswith('_calculator'):
-            calculator_handler(update, context)
-            return
-
-        elif query.data == 'vip_club' or query.data.startswith('vip_'):
-            vip_club_handler(update, context)
-            return
-
-        elif query.data == 'personal_area':
-            # גישה לאזור האישי
-            if not check_user_personal_area_access(user_id):
-                access_denied = """
-❌ **אין לך עדיין גישה לאזור האישי**
-
-🚀 **כדי לקבל גישה מלאה למערכת:**
-
-1. **השלם 39₪** והמתן לאישור האדמין
-   - מקבל גישה מיידית לאחר אישור
-   - SLH 1 בשווי 444₪
-   - לינק שיתוף אישי
-
-2. **אתגר 39 השיתופים**  
-   - שתף את הלינק האישי שלך
-   - לאחר 39 מצטרפים - גישה חינם!
-   - SLH 1 בשווי 444₪
-   - כל המצטרפים נשמרים לעץ שלך
-
-💎 **בכל אפשרות תקבל:**
-• גישה מלאה לאזור האישי
-• SLH tokens צוברי ערך
-• הכנסה פסיבית מ-5 דורות
-• קהילת VIP ותמיכה
-"""
-                safe_edit_message(query, access_denied, get_main_keyboard(user_id))
-                return
-
-            user_info = get_user_personal_info(user_id)
-            if user_info:
-                status_text = "מאושר בתשלום" if user_info['payment_verified'] else "אתגר 39 שיתופים" if user_info['challenge_completed'] else "ממתין לאישור"
-                
-                personal_area_text = f"""
-👑 **האזור האישי של {user_info['first_name']}**
-
-💎 **נכסים דיגיטליים:**
-• **SLH Tokens:** {user_info['slh_tokens']}
-• **שווי נוכחי:** {user_info['slh_tokens'] * 444}₪
-• **סטטוס:** {status_text}
-
-📊 **פעילות רשת:**
-• **מצטרפים:** {user_info['referral_count']}/39
-• **הכנסות:** {user_info['total_earned']}₪
-• **אחוז השלמה:** {(user_info['referral_count']/39)*100:.1f}%
-
-🔧 **ניהול כספים:**
-• **חשבון בנק:** {'✅ מוגדר' if user_info['bank_info'] else '❌ לא מוגדר'}
-• **ארנק TON:** {'✅ מוגדר' if user_info['ton_wallet'] else '❌ לא מוגדר'}
-
-🚀 **מה תוכל לעשות כאן:**
-• ניהול והפצת הלינק האישי שלך
-• מעקב אחר צמיחת הקהילה שלך  
-• קבלת תשלומים אוטומטית
-• ניהול נכסים דיגיטליים
-• צפייה בעץ הרפראלים המלא
-"""
-                safe_edit_message(query, personal_area_text, get_personal_area_keyboard(user_id))
-            return
-
-        elif query.data == 'personal_link':
-            # הלינק האישי של המשתמש
-            if not check_user_personal_area_access(user_id):
-                safe_edit_message(query, "❌ אין לך גישה לאזור זה. השלם תשלום או השלם 39 שיתופים.", get_main_keyboard(user_id))
-                return
-
-            user_ref_count = get_user_referral_count(user_id)
-            personal_link = f"https://t.me/Buy_My_Shop_bot?start={user_id}"
-            
-            personal_link_text = f"""
-🎯 **הלינק האישי שלך - מכונת ההכנסות שלך**
-
-🔗 **הקישור להפצה:**
-`{personal_link}`
-
-📊 **סטטוס נוכחי:**
-• **מצטרפים פעילים:** {user_ref_count}/39
-• **נותרו להשלמה:** {39 - user_ref_count} 
-• **SLH שנצברו:** {user_ref_count * 0.1:.1f}
-• **הכנסות מצטברות:** {user_ref_count * 3.9:.2f}₪
-
-💡 **איך לשתף ולהרוויח:**
-
-1. **שיתוף ברשתות חברתיות**
-   • פייסבוק, אינסטגרם, טיקטוק
-   • הסבר על ההזדמנות הכלכלית
-   • שתף סיפורי הצלחה
-
-2. **שיתוף בקבוצות**
-   • קבוצות טלגרם ווואטסאפ
-   • פורומים וקהילות אונליין
-   • נטרוקינג אישי
-
-3. **שיווק ישיר**
-   • שיחות אחד על אחד
-   • הצגת הערך המוסף
-   • ליווי מצטרפים חדשים
-
-🎁 **לאחר 39 מצטרפים תקבל:**
-• גישה מלאה בחינם!
-• מעמד VIP בקהילה
-• הטבות ופריבילגיות
-• המשך צמיחה אוטומטית
-
-🚀 **כל מצטרף חדש = SLH נוסף + הכנסה פסיבית!**
-"""
-            safe_edit_message(query, personal_link_text, get_personal_area_keyboard(user_id))
-            return
-
-        elif query.data == 'my_stats':
-            # הסטטיסטיקות האישיות של המשתמש
-            user_info = get_user_personal_info(user_id)
-            if user_info:
-                status_text = "מאושר בתשלום" if user_info['payment_verified'] else "אתגר 39 שיתופים" if user_info['challenge_completed'] else "ממתין לאישור"
-                progress_percentage = (user_info['referral_count']/39)*100 if user_info['referral_count'] < 39 else 100
-                
-                stats_text = f"""
-📊 **הסטטיסטיקות האישיות של {user_info['first_name']}**
-
-💎 **נכסים דיגיטליים:**
-• **SLH Tokens:** {user_info['slh_tokens']}
-• **שווי נוכחי:** {user_info['slh_tokens'] * 444}₪
-• **סטטוס:** {status_text}
-
-📈 **פעילות רשת:**
-• **מצטרפים:** {user_info['referral_count']}/39
-• **התקדמות:** {progress_percentage:.1f}%
-• **הכנסות:** {user_info['total_earned']}₪
-• **דור 1:** {user_info['referral_count']} אנשים
-
-🔧 **ניהול כספים:**
-• **חשבון בנק:** {'✅ מוגדר' if user_info['bank_info'] else '❌ לא מוגדר'}
-• **ארנק TON:** {'✅ מוגדר' if user_info['ton_wallet'] else '❌ לא מוגדר'}
-
-🚀 **יעדים קרובים:**
-• **להשלמת אתגר:** {39 - user_info['referral_count']} מצטרפים נותרו
-• **הכנסה צפויה:** {(39 - user_info['referral_count']) * 3.9}₪
-• **SLH נוספים:** {(39 - user_info['referral_count']) * 0.1:.1f}
-
-💡 **טיפ:** שתף את הלינק האישי שלך ברשתות חברתיות להגברת הצמיחה!
-"""
-                safe_edit_message(query, stats_text, get_personal_area_keyboard(user_id))
-            return
-
-        elif query.data == 'referral_tree':
-            # עץ הרפראלים של המשתמש
-            referrals = get_user_referrals(user_id)
-            
-            if referrals:
-                tree_text = "📈 **5 דורות של מצטרפים שלך:**\n\n"
-                
-                # ארגון לפי דורות
-                generations = {1: [], 2: [], 3: [], 4: [], 5: []}
-                for ref in referrals:
-                    level = ref[3] if len(ref) > 3 else 1
-                    if level in generations:
-                        generations[level].append(ref)
-                
-                for level in range(1, 6):
-                    if generations[level]:
-                        tree_text += f"**דור {level}:**\n"
-                        for i, ref in enumerate(generations[level][:10], 1):  # מוגבל ל-10 מוצגים לדור
-                            tree_text += f"  {i}. {ref[0]} (@{ref[1] or 'ללא'})\n"
-                        if len(generations[level]) > 10:
-                            tree_text += f"  ... ועוד {len(generations[level]) - 10}\n"
-                        tree_text += "\n"
-                
-                tree_text += f"**סה\"כ מצטרפים:** {len(referrals)}"
-                
-                if len(referrals) > 50:
-                    tree_text += f"\n\n💡 **טיפ:** המשך לשתף! כל מצטרף חדש מגדיל את ההכנסות הפסיביות שלך."
-                
-            else:
-                tree_text = """
-🌱 **עדיין אין לך מצטרפים**
-
-🚀 **איך להתחיל לבנות את הקהילה שלך:**
-
-1. **שתף את הלינק האישי שלך** ברשתות חברתיות
-2. **הסבר את ההזדמנות** לחברים ומשפחה
-3. **הדגש את היתרונות** של המערכת
-4. **תן ליווי אישי** למצטרפים חדשים
-
-💡 **טיפים לשיתוף אפקטיבי:**
-• שתף בפייסבוק ואינסטגרם
-• הצטרף לקבוצות רלוונטיות בטלגרם
-• שתף בסיפורים אישיים
-• הדגש את פוטנציאל ההכנסה
-
-🎯 **זכור:** כל מצטרף חדש = הכנסה פסיבית + SLH נוספים!
-"""
-            
-            safe_edit_message(query, tree_text, get_personal_area_keyboard(user_id))
-            return
-
-        elif query.data == 'growth_projection':
-            # תחזית צמיחה אישית
-            projections = calculate_projection(user_id, 12)
-            
-            if projections:
-                projection_text = f"""
-📈 **תחזית צמיחה אישית - 12 חודשים קדימה**
-
-💎 **נתונים נוכחיים:**
-• מצטרפים: {projections[0]['referrals']}
-• SLH: {projections[0]['slh_tokens']}
-• שווי: {projections[0]['value']}₪
-
-🚀 **תחזית צמיחה (20% בחודש):**
-
-"""
-                for proj in projections[3::3]:  # כל 3 חודשים
-                    projection_text += f"**📅 לאחר {proj['month']} חודשים:**\n"
-                    projection_text += f"• 👥 {proj['referrals']} מצטרפים\n"
-                    projection_text += f"• 💎 {proj['slh_tokens']} SLH\n"
-                    projection_text += f"• 💰 {proj['value']}₪ שווי\n"
-                    projection_text += f"• 📈 {proj['growth_rate']} צמיחה\n\n"
-                
-                projection_text += "💡 **הערה:** התחזית מבוססת על צמיחה של 20% בחודש והשקעה עקבית."
-            else:
-                projection_text = """
-📈 **תחזית צמיחה אישית**
-
-🚀 **התחל את המסע שלך כדי לראות תחזיות!**
-
-💎 **מה תצטרך:**
-• השלם 39₪ או השלם 39 שיתופים
-• התחל לבנות את הקהילה שלך
-• עקוב אחר הצמיחה האישית שלך
-
-🎯 **פוטנציאל הרווחים שלך מחכה!**
-"""
-            
-            safe_edit_message(query, projection_text, get_personal_area_keyboard(user_id))
-            return
-
-        elif query.data == 'back_to_main':
-            welcome_back_text = get_translation(lang, 'welcome_back')
-            safe_edit_message(query, welcome_back_text, get_main_keyboard(user_id))
-            return
-
-        elif query.data in ['payment_bank', 'payment_ton', 'payment_crypto']:
-            payment_methods = {
-                'payment_bank': get_translation(lang, 'bank_details'),
-                'payment_ton': get_translation(lang, 'ton_details'),
-                'payment_crypto': get_translation(lang, 'crypto_details')
-            }
-            safe_edit_message(query, payment_methods[query.data], get_payment_keyboard(user_id))
-            return
-
-        elif query.data == 'join_community':
-            join_text = """
-💎 **הצטרפות לקהילת סלה ללא גבולות - השקעה בנכס דיגיטלי**
-
-🎯 **זו לא עלות - זו השקעה בנכס דיגיטלי צובר ערך!**
-
-💼 **מה אתה באמת מקבל ב-39₪ שלך:**
-
-1. **💎 SLH Coin - הנכס הדיגיטלי שלך**
-   • SLH 1 בשווי 444₪ - 39₪ מידית, השאר בהדרגה
-   • מטבע utility עם שימושים אמיתיים בכל הפלטפורמות
-   • פוטנציאל צמיחה אקספוננציאלי עם גדילת הקהילה
-
-2. **🚀 גישה למערכת הבוטרים המתקדמת**
-   • פלטפורמת בוטים מהמתקדמות בעולם
-   • כלים לניהול קהילה אוטומטי
-   • מערכת תשלומים מאובטחת
-
-3. **📊 הלינק האישי שלך - מכונת ההכנסות**
-   • הכנסה פסיבית מ-5 דורות של מצטרפים
-   • 10% מכל תשלום של מצטרף ישיר
-   • דוחות מפורטים וניהול בזמן אמת
-
-4. **👑 קהילת VIP בלעדית**
-   • נטרוקינג עם אנשי עסקים ומובילים
-   • הדרכות והכשרות מקצועיות
-   • תמיכה טכנית 24/7
-
-💎 **המטבע SLH - הביטחון הדיגיטלי שלך:**
-
-המטבע שלנו אינו רק מספר - הוא **נכס דיגיטלי** עם ערך אמיתי:
-
-• **גיבוי ערכי:** כל SLH שווה 444₪
-• **תוכנית המרה:** להמרה עתידית ל-TON/Binance
-• **Utility אמיתי:** תשלומים בכל הפלטפורמות שלנו
-• **צבירת ערך:** גדל עם צמיחת הקהילה
-
-🎯 **2 דרכים אסטרטגיות להצטרפות:**
-
-1. **תשלום 39₪** - גישה מיידית + SLH 1
-   - מתאים למחפשי תוצאות מהירות
-   - כניסה מיידית לכל המערכות
-   - התחלת הרווחים מיד
-
-2. **אתגר 39 השיתופים** - גישה חינם + SLH 1
-   - מתאים לבעלי רשת חברתית
-   - בניית קהילה אורגנית
-   - בסיום - אותן ההטבות
-
-🚀 **בחר את הדרך שמתאימה לך והתחל את המסע:**
-"""
-            safe_edit_message(query, join_text, get_payment_keyboard(user_id))
-            return
-
-        # הוסף כאן עוד handlers לפי הצורך...
-
-    except Exception as e:
-        logger.error(f"Error in button handler: {e}")
-        try:
-            query.message.reply_text("❌ אירעה שגיאה. אנא נסה שוב.", reply_markup=get_main_keyboard(user_id))
-        except:
-            pass
-
-def daily_rewards_handler(update: Update, context: CallbackContext) -> None:
-    """מטפל בפרסים יומיים"""
-    query = update.callback_query
-    query.answer()
-    
-    user_id = query.from_user.id
-    lang = get_user_language(user_id)
-    
-    eligible, streak_count = check_daily_reward_eligibility(user_id)
-    
-    if eligible:
-        reward_value = grant_daily_reward(user_id, streak_count)
-        
-        # הודעה על קבלת הפרס
-        reward_message = f"""
-🎁 **פרס יומי - קבלת!** 🎁
-
-📅 **רצף ימים:** {streak_count}
-💎 **SLH שהרווחת:** {reward_value:.2f}
-💰 **שווי נוכחי:** {reward_value * SLH_TOKEN_VALUE:.2f}₪
-
-🔥 **המשך הרצף מחר לקבלת פרס גדול יותר!**
-
-🏆 **הישג:** {'🎯 מתחיל רצף' if streak_count == 1 else f'🔥 רצף של {streak_count} ימים!'}
-"""
-        
-        # הענקת הישגים לפי רצף
-        if streak_count == 7:
-            award_achievement(user_id, "weekly_streak", "📅 רצף שבועי", 25)
-        elif streak_count == 30:
-            award_achievement(user_id, "monthly_streak", "📆 רצף חודשי", 50)
-            
-    else:
-        reward_message = f"""
-⏰ **כבר קיבלת את הפרס היומי שלך היום!**
-
-🕒 **הפרס הבא יתאפס בעוד:** 00:00:00
-📅 **המשך הרצף שלך:** {streak_count} ימים
-
-💡 **טיפ:** חזר מדי יום כדי לשמור על הרצף ולקבל פרסים גדולים יותר!
-"""
-    
-    safe_edit_message(query, reward_message, get_main_keyboard(user_id))
-
-def leaderboard_handler(update: Update, context: CallbackContext) -> None:
-    """מציג טבלת מובילים"""
-    query = update.callback_query
-    query.answer()
-    
-    user_id = query.from_user.id
-    leaderboard = get_leaderboard(10, 'all_time')
-    
-    if leaderboard:
-        message = "🏆 **טבלת המובילים - SLH Community**\n\n"
-        
-        medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
-        
-        for i, user_data in enumerate(leaderboard):
-            medal = medals[i] if i < len(medals) else f"{i+1}."
-            username = f"@{user_data[2]}" if user_data[2] else user_data[1]
-            points = user_data[3] or 0
-            referrals = user_data[4] or 0
-            
-            message += f"{medal} **{username}**\n"
-            message += f"   📊 נקודות: {points} | 👥 מצטרפים: {referrals}\n\n"
-        
-        message += "💎 **הצטרף גם אתה למובילים!**"
-    else:
-        message = "📊 **טבלת המובילים**\n\nעדיין אין מספיק נתונים.\n🚀 **תהיה הראשון!**"
-    
-    keyboard = [
-        [InlineKeyboardButton("📅 מובילים יומיים", callback_data='daily_leaderboard'),
-         InlineKeyboardButton("📈 מובילים שבועיים", callback_data='weekly_leaderboard')],
-        [InlineKeyboardButton("🎯 איך להיות מוביל?", callback_data='how_to_lead'),
-         InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
-    ]
-    
-    safe_edit_message(query, message, InlineKeyboardMarkup(keyboard))
-
-def success_stories_handler(update: Update, context: CallbackContext) -> None:
-    """מציג סיפורי הצלחה"""
-    query = update.callback_query
-    query.answer()
-    
-    user_id = query.from_user.id
-    story_type = query.data
-    
-    success_stories = {
-        'success_1': {
-            'title': "👨‍💼 יזם צעיר - מהסטארטאפ להצלחה",
-            'story': """
-**שם:** דוד, בן 28
-**תחום:** פיתוח תוכנה
-**השקעה ראשונית:** 39₪
-**זמן:** 6 חודשים
-**תוצאה:** 15,000₪ רווח חודשי
-
-**הסיפור:**
-דוד, יזם צעיר עם סטארטאפ בתחילת הדרך, הצטרף למערכת SLH כדי לגוון את מקורות ההכנסה שלו. בתוך 6 חודשים:
-
-💼 **פעילות:**
-• הביא 45 מצטרפים דרך הלינק האישי
-• פיתח 2 בוטים לעסקים מקומיים
-• השקיע ב-SLH Coin בשלב מוקדם
-
-💰 **הכנסות:**
-• רפראלים: 1,755₪ (45 × 39₪)
-• פיתוח בוטים: 8,000₪
-• צמיחת SLH Coin: 5,245₪
-• **סה\"כ:** 15,000₪ בחודש
-
-🚀 **מה אומר דוד:**
-"המערכת נתנה לי את הגמישות הכלכלית להמשיך לפתח את הסטארטאפ שלי בלי דאגות!"
-""",
-            'image': "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
-        },
-        'success_2': {
-            'title': "👩‍💻 אמא חד הורית - עצמאות כלכלית",
-            'story': """
-**שם:** שרית, בת 35
-**תחום:** משווקת רשת
-**השקעה ראשונית:** 39₪
-**זמן:** 4 חודשים
-**תוצאה:** 8,000₪ רווח חודשי
-
-**הסיפור:**
-שרית, אמא חד הורית ל-2, חיפשה דרך להגדיל את ההכנסה מהבית. היא גילתה את SLH:
-
-💼 **פעילות:**
-• 32 מצטרפים דרך הרשת החברתית
-• שיתוף פעיל בפייסבוק ואינסטגרם
-• ליווי אישי לכל מצטרף
-
-💰 **הכנסות:**
-• רפראלים: 1,248₪ (32 × 39₪)
-• הכנסות פסיביות: 6,752₪
-• **סה\"כ:** 8,000₪ בחודש
-
-🌟 **מה אומרת שרית:**
-"סוף סוף יש לי עצמאות כלכלית ואני יכולה לספק לילדים שלי את הטוב ביותר!"
-""",
-            'image': "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2076&q=80"
-        }
-    }
-    
-    if story_type in success_stories:
-        story = success_stories[story_type]
-        try:
-            query.message.reply_photo(
-                photo=story['image'],
-                caption=f"🏆 **סיפור הצלחה**\n\n{story['title']}\n\n{story['story']}",
-                parse_mode='Markdown',
-                reply_markup=get_success_stories_keyboard()
-            )
-        except:
-            safe_edit_message(query, f"🏆 **סיפור הצלחה**\n\n{story['title']}\n\n{story['story']}", get_success_stories_keyboard())
-    else:
-        # מסך ראשי של סיפורי הצלחה
-        message = """
-🏆 **סיפורי הצלחה - SLH Community**
-
-✨ **מהפכים חיים אמיתיים של אנשים אמיתיים:**
-
-👨‍💼 **דוד** - יזם צעיר
-• 15,000₪ רווח חודשי
-• 6 חודשים בלבד
-• שילוב טכנולוגיה ושיווק
-
-👩‍💻 **שרית** - אמא חד הורית  
-• 8,000₪ רווח חודשי
-• עבודה מהבית
-• עצמאות כלכלית
-
-🧓 **משה** - פנסיונר
-• 5,000₪ תוספת לפנסיה
-• גילוי עולם הדיגיטל
-• פעילות חברתית עשירה
-
-👨‍🎓 **תומר** - סטודנט
-• 3,000₪ בחודש בזמן הלימודים
-• מימון שכר לימוד
-• ניסיון מעשי בעולם הטק
-
-💫 **הסיפור הבא יכול להיות שלך!**
-"""
-        safe_edit_message(query, message, get_success_stories_keyboard())
-
-def calculator_handler(update: Update, context: CallbackContext) -> None:
-    """מחשבון רווחים משודרג"""
-    query = update.callback_query
-    query.answer()
-    
-    user_id = query.from_user.id
-    calc_type = query.data
-    
-    calculators = {
-        'profit_calculator': """
-🧮 **מחשבון רווחים - SLH Community**
-
-💰 **הכנס נתונים כדי לחשב את הפוטנציאל שלך:**
-
-**1. מספר מצטרפים צפוי בחודש:**
-   • [10] - התחלה טובה
-   • [25] - פעילות עקבית  
-   • [50] - פעילות אינטנסיבית
-
-**2. השקעה ראשונית ב-SLH Coin:**
-   • [39₪] - השקעת התחלה
-   • [100₪] - השקעה בינונית
-   • [500₪] - השקעה משמעותית
-
-**🎯 דוגמה לחישוב:**
-• 25 מצטרפים בחודש
-• השקעה של 100₪ ב-SLH
-• צמיחה של 20% בחודש
-
-**📈 תוצאה צפויה לאחר 6 חודשים:**
-• 👥 74 מצטרפים פעילים
-• 💰 8,400₪ רווחים
-• 💎 18.9 SLH בשווי 8,400₪
-
-🚀 **מוכן להתחיל?** השתמש בלינק האישי שלך!
-""",
-        'investment_calculator': """
-📈 **מחשבון השקעות - SLH Coin**
-
-💎 **נתוני SLH Coin:**
-• שווי נוכחי: 444₪ ל-SLH
-• צמיחה חודשית ממוצעת: 20%
-• דיבידנדים: 5% רבעוני
-
-**🧮 הזן את סכום ההשקעה:**
-[______] ₪
-
-**📊 תוצאות צפויות:**
-
-**לאחר 12 חודשים:**
-• 🔼 צמיחה: 791% 
-• 💰 שווי השקעה: [תוצאה]₪
-• 📈 רווח נקי: [תוצאה]₪
-
-**לאחר 24 חודשים:**
-• 🔼 צמיחה: 6,200%
-• 💰 שווי השקעה: [תוצאה]₪  
-• 📈 רווח נקי: [תוצאa]₪
-
-🛡️ **השקעה עם גיבוי:** כל SLH מגובה ב-444₪
-"""
-    }
-    
-    message = calculators.get(calc_type, """
-🧮 **מרכז המחשבונים - SLH**
-
-בחר מחשבון:
-
-• **🧮 מחשבון רווחים** - חשב את פוטנציאל ההכנסה שלך
-• **📈 מחשבון השקעות** - חשב תשואות על השקעה ב-SLH Coin  
-• **🚀 מחשבון צמיחה** - צפה צמיחה עתידית של הקהילה שלך
-• **💎 מחשבון SLH** - המרות וערך SLH Coin
-• **📊 השוואה** - השווה להשקעות מסורתיות
-
-💡 **כלי עזר מתקדמים לניהול הפיננסים שלך!**
-""")
-    
-    safe_edit_message(query, message, get_calculator_keyboard(user_id))
-
-def vip_club_handler(update: Update, context: CallbackContext) -> None:
-    """מטפל במועדון VIP"""
-    query = update.callback_query
-    query.answer()
-    
-    user_id = query.from_user.id
-    user_info = get_user_personal_info(user_id)
-    vip_level = user_info.get('vip_level', 0) if user_info else 0
-    
-    vip_info = """
-🎩 **מועדון VIP - SLH Elite**
-
-💎 **רמות VIP והטבות:**
-
-**🌟 VIP 1** (השקעה של 1,000₪)
-• 🔑 גישה לחדר VIP בלעדי
-• 📊 דוחות מתקדמים
-• 👑 סימון VIP בפרופיל
-• 🎯 ייעוץ אישי חודשי
-
-**🚀 VIP 2** (השקעה של 5,000₪) 
-• 💰 10% בונוס SLH
-• 📈 ניתוחים אישיים
-• 🎪 השתתפות באירועים
-• 🤝 נטרוקינג בלעדי
-
-**💫 VIP 3** (השקעה של 15,000₪)
-• 🔥 25% בונוס SLH
-• 🏆 מעמד מייסד
-• 💼 השקעות מוקדמות
-• 🌐 נציגות בקהילה
-
-**👑 VIP 4** (השקעה של 50,000₪)
-• 💎 50% בונוס SLH
-• 🚀 גישה לכל הפרויקטים
-• 📊 seat בדירקטוריון
-• 🌍 נסיעות ואירועים בינלאומיים
-
-**📊 הסטטוס שלך:**
-"""
-    
-    if vip_level == 0:
-        vip_info += "• 🎯 **רמה נוכחית:** Standard\n"
-        vip_info += "• 📈 **לשדרוג הבא:** 1,000₪\n"
-        vip_info += "• 💰 **הטבות מחכות:** גישה לחדר VIP\n"
-    else:
-        vip_info += f"• 🎯 **רמה נוכחית:** VIP {vip_level}\n"
-        next_level = vip_level + 1
-        requirements = {1: 1000, 2: 5000, 3: 15000, 4: 50000}
-        if next_level in requirements:
-            vip_info += f"• 📈 **לשדרוג הבא:** {requirements[next_level]:,}₪\n"
-    
-    vip_info += "\n🚀 **מועדון ה-VIP - המקום בו נוצרות ההזדמנויות האמיתיות!**"
-    
-    safe_edit_message(query, vip_info, get_vip_club_keyboard(user_id))
-
-def handle_payment_proof(update: Update, context: CallbackContext) -> None:
-    """מטפל בשליחת אישור תשלום מהמשתמש"""
-    try:
-        user = update.effective_user
-        chat_id = update.effective_chat.id
-        lang = get_user_language(user.id)
-
-        # רישום פעילות מפורט
-        log_user_activity(
-            user.id, 
-            user.username, 
-            user.first_name, 
-            user.last_name or "",
-            "payment_proof_sent", 
-            f"שלח אישור תשלום - שפה: {lang}",
-            points=10
-        )
-
-        # הודעות אישור רב-לשוניות
-        success_messages = {
-            'he': """
-✅ **תודה רבה! אישור התשלום התקבל ונשלח לאימות.**
-
-🚀 **נחזור אליך עם קישור ההצטרפות תוך 24 שעות!**
-
-💎 **בונוס SLH:** קיבלת **SLH 1** בשווי 444₪!
-
-📧 **מה תקבל:**
-• קישור להצטרפות לקהילת VIP
-• הלינק האישי שלך לשיתוף והכנסות  
-• 39₪ ב-SLH (מתוך ה-444₪)
-• שיחת ייעוץ אישית
-• כל הבונוסים
-
-💎 **בינתיים, מוזמן לבדוק את שאר האפשרויות!**
-            """,
-            'en': """
-✅ **Thank you! Payment confirmation received and sent for verification.**
-
-🚀 **We'll get back to you with the joining link within 24 hours!**
-
-💎 **SLH Bonus:** You received **SLH 1** worth 444₪!
-
-📧 **What you'll receive:**
-• Link to join VIP community
-• Your personal sharing link for earnings
-• 39₪ in SLH (out of 444₪)
-• Personal consultation call
-• All bonuses
-
-💎 **Meanwhile, feel free to check out other options!**
-            """
-        }
-
-        # בדיקה אם המשתמש שלח תמונה (צילום מסך)
-        if update.message.photo:
-            photo_file = update.message.photo[-1].get_file()
-            image_file_id = photo_file.file_id
-            
-            # רישום התשלום במסד הנתונים
-            payment_id = log_payment(
-                user_id=chat_id,
-                payment_type="העברה בנקאית",
-                amount=39,
-                proof_text="אישור תמונה",
-                image_file_id=image_file_id
-            )
-            
-            # שליחת אישור תשלום לקבוצת הניהול
-            admin_message = f"💰 **אישור תשלום חדש ממתין!**\n\n👤 **משתמש:** {user.first_name} {user.last_name or ''}\n🆔 **ID:** `{user.id}`\n📛 **Username:** @{user.username or 'ללא'}\n💳 **סוג:** העברה בנקאית\n💸 **סכום:** 39₪\n🆔 **מספר תשלום:** {payment_id}"
-            
-            keyboard = [
-                [
-                    InlineKeyboardButton("✅ אישור תשלום", callback_data=f'approve_payment_{payment_id}'),
-                    InlineKeyboardButton("❌ דחיית תשלום", callback_data=f'reject_payment_{payment_id}')
-                ],
-                [
-                    InlineKeyboardButton("👤 צ'אט עם משתמש", callback_data=f'chat_with_{user.id}'),
-                    InlineKeyboardButton("📊 פרופיל משתמש", callback_data=f'profile_{user.id}')
-                ]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
-            try:
-                bot.send_photo(
-                    chat_id=ADMIN_GROUP_ID,
-                    photo=image_file_id,
-                    caption=admin_message,
-                    parse_mode='Markdown',
-                    reply_markup=reply_markup
-                )
-            except Exception as e:
-                logger.error(f"Failed to send photo to admin: {e}")
-                bot.send_message(
-                    chat_id=ADMIN_GROUP_ID,
-                    text=admin_message,
-                    parse_mode='Markdown',
-                    reply_markup=reply_markup
-                )
-            
-            update.message.reply_text(
-                success_messages.get(lang, success_messages['he']),
-                reply_markup=get_main_keyboard(user.id),
-                parse_mode='Markdown'
-            )
-
-        # בדיקה אם המשתמש שלח טקסט (תמלול ההעברה)
-        elif update.message.text and not update.message.text.startswith('/'):
-            proof_text = update.message.text
-            
-            # רישום התשלום במסד הנתונים
-            payment_id = log_payment(
-                user_id=chat_id,
-                payment_type="העברה בנקאית",
-                amount=39,
-                proof_text=proof_text
-            )
-            
-            # שליחת אישור תשלום לקבוצת הניהול
-            admin_message = f"💰 **אישור תשלום חדש ממתין!**\n\n👤 **משתמש:** {user.first_name} {user.last_name or ''}\n🆔 **ID:** `{user.id}`\n📛 **Username:** @{user.username or 'ללא'}\n💳 **סוג:** העברה בנקאית\n💸 **סכום:** 39₪\n📝 **פרטים:** {proof_text}\n🆔 **מספר תשלום:** {payment_id}"
-            
-            keyboard = [
-                [
-                    InlineKeyboardButton("✅ אישור תשלום", callback_data=f'approve_payment_{payment_id}'),
-                    InlineKeyboardButton("❌ דחיית תשלום", callback_data=f'reject_payment_{payment_id}')
-                ],
-                [
-                    InlineKeyboardButton("👤 צ'אט עם משתמש", callback_data=f'chat_with_{user.id}'),
-                    InlineKeyboardButton("📊 פרופיל משתמש", callback_data=f'profile_{user.id}')
-                ]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
-            bot.send_message(
-                chat_id=ADMIN_GROUP_ID,
-                text=admin_message,
-                parse_mode='Markdown',
-                reply_markup=reply_markup
-            )
-            
-            update.message.reply_text(
-                success_messages.get(lang, success_messages['he']),
-                reply_markup=get_main_keyboard(user.id),
-                parse_mode='Markdown'
-            )
-
-        else:
-            # אם זו פקודה או סוג תוכן אחר
-            instruction_messages = {
-                'he': "📸 **נא שלח צילום מסך של ההעברה או פרטי התשלום בטקסט.**",
-                'en': "📸 **Please send a screenshot of the transfer or payment details in text.**"
-            }
-            update.message.reply_text(
-                instruction_messages.get(lang, instruction_messages['he']),
-                reply_markup=get_payment_keyboard(user.id),
-                parse_mode='Markdown'
-            )
-            
-    except Exception as e:
-        logger.error(f"Error in handle_payment_proof: {e}")
-        lang = get_user_language(update.effective_user.id)
-        error_messages = {
-            'he': "❌ אירעה שגיאה בעיבוד האישור. אנא נסה שוב או צור קשר.",
-            'en': "❌ An error occurred processing the confirmation. Please try again or contact us."
-        }
-        update.message.reply_text(
-            error_messages.get(lang, error_messages['he']),
-            reply_markup=get_main_keyboard(update.effective_user.id),
-            parse_mode='Markdown'
-        )
-
-def handle_group_add(update: Update, context: CallbackContext) -> None:
-    """מטפל כאשר הבוט מתווסף לקבוצה"""
-    try:
-        chat = update.effective_chat
-        new_members = update.message.new_chat_members
-        
-        # בדיקה אם הבוט הוא אחד מה-new members
-        bot_id = context.bot.id
-        if any(member.id == bot_id for member in new_members):
-            # רישום הקבוצה במסד הנתונים
-            update_group_info_in_db(chat.id, chat.title, chat.type)
-            
-            # שליחת הודעה לקבוצה
-            update.message.reply_text(
-                "🤖 תודה שהוספתם אותי לקבוצה! אני כאן כדי לסייע.\n"
-                "להפעלתי, שלחו /start בפרטי.\n\n"
-                f"🆔 **ID הקבוצה:** `{chat.id}`\n"
-                "👑 **לאדמין:** השתמש ב-`/groupid` או `/chaid` כדי לראות את כל הקבוצות."
-            )
-            
-            # שליחת התראה לאדמין
-            try:
-                bot.send_message(
-                    chat_id=ADMIN_GROUP_ID,
-                    text=f"🚀 הבוט נוסף לקבוצה חדשה: {chat.title} (ID: `{chat.id}`, Type: {chat.type})",
-                    parse_mode='Markdown'
-                )
-            except:
-                pass
-    except Exception as e:
-        logger.error(f"Error in handle_group_add: {e}")
-
-def handle_group_activity(update: Update, context: CallbackContext) -> None:
-    """מטפל בכל פעילות בקבוצות ורושם את הקבוצה"""
-    try:
-        if update.message and update.message.chat.type in ['group', 'supergroup']:
-            chat = update.message.chat
-            # רישום/עדכון הקבוצה במסד הנתונים עם פרטים מעודכנים
-            update_group_info_in_db(chat.id, chat.title, chat.type)
-            
-    except Exception as e:
-        logger.error(f"Error in handle_group_activity: {e}")
-
-def chatid(update: Update, context: CallbackContext) -> None:
-    """שולח את ה-ID של הקבוצה הנוכחית או רשימת כל הקבוצות"""
+def refresh_all_groups(update: Update, context: CallbackContext):
+    """פונקציה לרענון כל הקבוצות מהטלגרם"""
     try:
         user = update.effective_user
         
         # בדיקה אם המשתמש הוא אדמין
         if str(user.id) != ADMIN_USER_ID:
-            update.message.reply_text("❌ אתה לא מורשה להשתמש בפקודה זו.")
+            if update.message:
+                update.message.reply_text("❌ אתה לא מורשה להשתמש בפקודה זו.")
             return
 
-        # אם הפקודה נשלחה בקבוצה, שלח את ה-ID של הקבוצה הנוכחית
-        if update.message.chat.type in ['group', 'supergroup']:
-            chat_id = update.message.chat.id
-            chat_title = update.message.chat.title
-            message = f"🆔 **קבוצה:** {chat_title}\n**ID:** `{chat_id}`\n**סוג:** {update.message.chat.type}"
-            
-            # שמירת/עדכון הקבוצה במסד הנתונים
-            update_group_info_in_db(chat_id, chat_title, update.message.chat.type)
-            message += f"\n\n✅ **הקבוצה נשמרה/עודכנה במסד הנתונים!**"
-            
-            # הוספת כפתורים לפעולות נוספות
-            keyboard = [
-                [InlineKeyboardButton("📊 הצג כל הקבוצות", callback_data='show_all_groups')],
-                [InlineKeyboardButton("🔄 רענן קבוצות", callback_data='refresh_groups')]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
-            update.message.reply_text(message, parse_mode='Markdown', reply_markup=reply_markup)
-        else:
-            # אם נשלחה בצ'אט פרטי, שלח את רשימת כל הקבוצות
-            show_all_groups_command(update, context)
+        # קבלת כל הקבוצות מהמסד נתונים
+        current_groups = get_all_groups()
+        
+        message = f"🔄 **רענון קבוצות בוצע!**\n\n"
+        message += f"📊 **קבוצות במסד הנתונים:** {len(current_groups)}\n\n"
+        
+        for i, group in enumerate(current_groups, 1):
+            group_id = group[0]
+            group_title = group[1]
+            group_type = group[2] if len(group) > 2 else "unknown"
+            message += f"{i}. **{group_title}**\n   ID: `{group_id}` | Type: {group_type}\n\n"
+        
+        if update.message:
+            update.message.reply_text(message, parse_mode='Markdown')
+        elif update.callback_query:
+            update.callback_query.message.reply_text(message, parse_mode='Markdown')
             
     except Exception as e:
-        logger.error(f"Error in chatid command: {e}")
-        update.message.reply_text("❌ אירעה שגיאה בקבלת ID הקבוצה.")
-
-def groupid(update: Update, context: CallbackContext) -> None:
-    """פקודת groupid - מציגה את כל הקבוצות (alias ל-chatid)"""
-    chatid(update, context)
-
-def chaid(update: Update, context: CallbackContext) -> None:
-    """פקודת chaid - מציגה את כל הקבוצות (alias ל-chatid)"""
-    chatid(update, context)
+        logger.error(f"Error in refresh_all_groups: {e}")
+        error_msg = "❌ אירעה שגיאה ברענון הקבוצות"
+        if update.message:
+            update.message.reply_text(error_msg)
+        elif update.callback_query:
+            update.callback_query.message.reply_text(error_msg)
 
 def show_all_groups_command(update: Update, context: CallbackContext):
-    """מציג את כל הקבוצות"""
+    """מציג את כל הקבוצות - פונקציה נפרדת לשימוש בפקודה ובכפתורים"""
     try:
         # קבלת כל הקבוצות האמיתיות
-        all_chats = get_all_groups()
+        all_chats = get_bot_real_chats()
         
         if all_chats:
             message = f"📊 **כל הצ'אטים שהבוט חבר בהם ({len(all_chats)}):**\n\n"
@@ -2098,41 +700,360 @@ def show_all_groups_command(update: Update, context: CallbackContext):
         elif update.callback_query:
             safe_edit_message(update.callback_query, error_msg)
 
-def refresh_all_groups(update: Update, context: CallbackContext):
-    """פונקציה לרענון כל הקבוצות מהטלגרם"""
+# אתחול הבוט וה-dispatcher
+try:
+    bot = Bot(token=BOT_TOKEN)
+    dispatcher = Dispatcher(bot, None, workers=4)
+    logger.info("Bot and dispatcher initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize bot: {e}")
+    raise
+
+# --- פונקציות מתקדמות לניהול קבוצות ---
+def get_bot_all_chats():
+    """מחזיר את כל הצ'אטים שהבוט חבר בהם - כולל קבוצות וערוצים"""
+    try:
+        groups_from_db = get_all_groups()
+        return groups_from_db
+    except Exception as e:
+        logger.error(f"Error getting all bot chats: {e}")
+        return []
+
+def send_message_to_group(group_id, message, image_file_id=None):
+    """שולח הודעה לקבוצה לפי ID"""
+    try:
+        if image_file_id:
+            bot.send_photo(
+                chat_id=group_id, 
+                photo=image_file_id, 
+                caption=message,
+                parse_mode='Markdown'
+            )
+        else:
+            bot.send_message(
+                chat_id=group_id, 
+                text=message, 
+                parse_mode='Markdown'
+            )
+        logger.info(f"Message sent to group {group_id}: {message[:50]}...")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send message to group {group_id}: {e}")
+        return False
+
+def send_admin_alert(message, image_file_id=None):
+    """שולח התראה לקבוצת הניהול"""
+    try:
+        if image_file_id:
+            bot.send_photo(
+                chat_id=ADMIN_GROUP_ID, 
+                photo=image_file_id, 
+                caption=message,
+                parse_mode='Markdown'
+            )
+        else:
+            bot.send_message(
+                chat_id=ADMIN_GROUP_ID, 
+                text=message, 
+                parse_mode='Markdown'
+            )
+        logger.info(f"Admin alert sent: {message[:50]}...")
+        return True
+    except Exception as e:
+        logger.warning(f"Admin alert failed: {e} - Message: {message[:100]}")
+        # ננסה לשלוח לאדמין ישירות
+        try:
+            bot.send_message(
+                chat_id=ADMIN_USER_ID,
+                text=f"⚠️ Admin group failed: {e}\n\nMessage: {message}",
+                parse_mode='Markdown'
+            )
+        except:
+            pass
+        return False
+
+def send_payment_confirmation_to_group(user_id, user_name, payment_type, amount, proof_text="", image_file_id=None):
+    """שולח אישור תשלום לקבוצת התשלומים"""
+    try:
+        payment_message = f"💰 **אישור תשלום חדש!**\n👤 ממשתמש: {user_name}\n🆔 ID: `{user_id}`\n💳 סוג: {payment_type}\n💸 סכום: {amount}₪"
+        
+        if proof_text:
+            payment_message += f"\n📝 פרטים: {proof_text}"
+        
+        # שליחה לקבוצת התשלומים
+        success = send_message_to_group(PAYMENT_CONFIRMATION_GROUP, payment_message, image_file_id)
+        
+        if success:
+            logger.info(f"Payment confirmation sent to group for user {user_id}")
+        else:
+            logger.warning(f"Failed to send payment confirmation to group for user {user_id}")
+            
+        return success
+    except Exception as e:
+        logger.error(f"Error in send_payment_confirmation_to_group: {e}")
+        return False
+
+def log_user_interaction(chat_id, first_name, last_name, username, action, details=""):
+    """רושם פעילות משתמש ושולח התראה לקבוצת הניהול"""
+    user_info = f"🆔 ID: `{chat_id}`\n👤 שם: {first_name} {last_name}\n📛 משתמש: @{username if username else 'ללא'}"
+    log_message = f"🔔 **פעילות חדשה בבוט**\n{user_info}\n📝 **פעולה:** {action}"
+    
+    if details:
+        log_message += f"\n📋 **פרטים:** {details}"
+    
+    # רישום במסד הנתונים
+    log_user_activity(chat_id, username, first_name, last_name, action, details)
+    
+    # שליחת התראה לקבוצת הניהול
+    try:
+        send_admin_alert(log_message)
+    except Exception as e:
+        logger.warning(f"Failed to send admin alert: {e}")
+
+def send_payment_confirmation(user_id, user_name, payment_type, amount, proof_text="", image_file_id=None):
+    """שולח אישור תשלום וקובע במסד נתונים"""
+    payment_message = f"💰 **אישור תשלום חדש!**\n👤 ממשתמש: {user_name}\n🆔 ID: `{user_id}`\n💳 סוג: {payment_type}\n💸 סכום: {amount}₪"
+    
+    if proof_text:
+        payment_message += f"\n📝 פרטים: {proof_text}"
+    
+    # רישום במסד הנתונים
+    payment_id = log_payment(user_id, payment_type, amount, proof_text)
+    
+    # שליחת התראה לקבוצת הניהול
+    admin_success = send_admin_alert(payment_message, image_file_id)
+    
+    # שליחה לקבוצת התשלומים
+    group_success = send_payment_confirmation_to_group(user_id, user_name, payment_type, amount, proof_text, image_file_id)
+    
+    return admin_success or group_success
+
+def send_contact_request(chat_id, user_name, contact_type, message):
+    """שולח בקשת קשר לקבוצת הניהול"""
+    contact_message = f"📞 **בקשת קשר חדשה!**\n👤 ממשתמש: {user_name}\n🆔 ID: `{chat_id}`\n📋 נושא: {contact_type}\n💬 הודעה: {message}"
+    
+    # רישום במסד הנתונים
+    log_user_activity(chat_id, "", user_name, "", "contact_request", f"{contact_type}: {message}")
+    
+    # שליחת התראה
+    try:
+        send_admin_alert(contact_message)
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to send contact request: {e}")
+        return False
+
+# --- מקלדות רב-לשוניות ---
+def get_main_keyboard(user_id):
+    """מחזיר את המקלדת הראשית לפי שפת המשתמש"""
+    lang = get_user_language(user_id)
+    keyboard = [
+        [InlineKeyboardButton(get_translation(lang, 'ecosystem'), callback_data='ecosystem_explanation')],
+        [InlineKeyboardButton(get_translation(lang, 'join_community'), callback_data='join_community')],
+        [InlineKeyboardButton(get_translation(lang, 'investment'), callback_data='investment')],
+        [InlineKeyboardButton(get_translation(lang, 'bot_development'), callback_data='bot_development')],
+        [InlineKeyboardButton(get_translation(lang, 'network_marketing'), callback_data='network_marketing')],
+        [InlineKeyboardButton(get_translation(lang, 'our_projects'), callback_data='our_projects')],
+        [InlineKeyboardButton(get_translation(lang, 'contact'), callback_data='contact'), 
+         InlineKeyboardButton(get_translation(lang, 'help'), callback_data='help')],
+        [InlineKeyboardButton(get_translation(lang, 'website'), url='https://slh-nft.com/')],
+        [InlineKeyboardButton("🌐 שפה / Language", callback_data='change_language')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_language_keyboard():
+    """מקלדת בחירת שפה"""
+    keyboard = [
+        [InlineKeyboardButton("🇮🇱 עברית", callback_data='lang_he')],
+        [InlineKeyboardButton("🇺🇸 English", callback_data='lang_en')],
+        [InlineKeyboardButton("🇷🇺 Русский", callback_data='lang_ru')],
+        [InlineKeyboardButton("🇸🇦 العربية", callback_data='lang_ar')],
+        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_payment_keyboard(user_id):
+    """מחזיר את מקלדת אפשרויות התשלום לפי שפה"""
+    lang = get_user_language(user_id)
+    keyboard = [
+        [InlineKeyboardButton(get_translation(lang, 'bank_transfer'), callback_data='payment_bank')],
+        [InlineKeyboardButton(get_translation(lang, 'ton_payment'), callback_data='payment_ton')],
+        [InlineKeyboardButton(get_translation(lang, 'crypto_payment'), callback_data='payment_crypto')],
+        [InlineKeyboardButton(get_translation(lang, 'payment_sent'), callback_data='payment_sent')],
+        [InlineKeyboardButton(get_translation(lang, 'joining_bonuses'), callback_data='joining_bonuses')],
+        [InlineKeyboardButton("↩️ " + ("חזרה" if lang == 'he' else "Back" if lang == 'en' else "Назад" if lang == 'ru' else "رجوع"), callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_back_keyboard(user_id):
+    """מקלדת חזרה בלבד"""
+    lang = get_user_language(user_id)
+    back_text = "חזרה" if lang == 'he' else "Back" if lang == 'en' else "Назад" if lang == 'ru' else "رجوع"
+    keyboard = [
+        [InlineKeyboardButton(f"↩️ {back_text}", callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_network_marketing_keyboard(user_id):
+    """מקלדת שיווק רשתי"""
+    lang = get_user_language(user_id)
+    keyboard = [
+        [InlineKeyboardButton("💰 מודל 5 הדורות", callback_data='five_generations')],
+        [InlineKeyboardButton("🎯 איך מתחילים להרוויח?", callback_data='how_to_earn')],
+        [InlineKeyboardButton("📊 הלינק האישי שלי", callback_data='personal_link')],
+        [InlineKeyboardButton("💎 הצטרפות עכשיו", callback_data='join_community')],
+        [InlineKeyboardButton("↩️ " + ("חזרה" if lang == 'he' else "Back"), callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_contact_keyboard(user_id):
+    """מקלדת צור קשר"""
+    lang = get_user_language(user_id)
+    keyboard = [
+        [InlineKeyboardButton("💼 עסקים ושותפויות", callback_data='contact_business')],
+        [InlineKeyboardButton("🚀 השקעה בפרויקט", callback_data='contact_investment')],
+        [InlineKeyboardButton("🤖 פיתוח בוט", callback_data='contact_bot')],
+        [InlineKeyboardButton("📞 תמיכה טכנית", callback_data='contact_support')],
+        [InlineKeyboardButton("↩️ " + ("חזרה" if lang == 'he' else "Back"), callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_slh_balance_keyboard(user_id):
+    """מקלדת עם יתרת SLH"""
+    lang = get_user_language(user_id)
+    slh_balance = get_user_slh_balance(user_id)
+    keyboard = [
+        [InlineKeyboardButton(f"💎 יתרת SLH: {slh_balance}", callback_data='slh_balance')],
+        [InlineKeyboardButton("↩️ חזרה", callback_data='back_to_main')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_admin_groups_keyboard():
+    """מקלדת ניהול קבוצות לאדמין"""
+    keyboard = [
+        [InlineKeyboardButton("📊 הצג כל הקבוצות", callback_data='show_all_groups')],
+        [InlineKeyboardButton("🔄 רענן קבוצות", callback_data='refresh_groups')],
+        [InlineKeyboardButton("📤 שידור לקבוצות", callback_data='broadcast_groups')],
+        [InlineKeyboardButton("💎 חזרה לפאנל", callback_data='back_to_admin')]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+# --- מטבעות הטלגרם רב-לשוניים ---
+def start(update: Update, context: CallbackContext) -> None:
+    """מטפל בפקודה /start - רב-לשוני"""
+    try:
+        user = update.effective_user
+        chat_id = update.effective_chat.id
+
+        # רישום מפורט של המשתמש ושליחת לוג
+        log_user_interaction(
+            chat_id=chat_id,
+            first_name=user.first_name or "לא צוין",
+            last_name=user.last_name or "",
+            username=user.username or "לא צוין",
+            action="התחיל שיחה עם הבוט (/start)",
+            details=f"User ID: {user.id}, Language: {user.language_code}, Chat Type: {update.message.chat.type if update.message else 'callback'}"
+        )
+
+        # אם זו קבוצה, נשמור את הקבוצה במסד הנתונים
+        if update.message and update.message.chat.type in ['group', 'supergroup']:
+            chat = update.message.chat
+            update_group_info_in_db(chat.id, chat.title, chat.type)
+            
+            # הודעה מותאמת לקבוצה - רק אם זו פקודת start מפורשת
+            if update.message.text and '/start' in update.message.text:
+                update.message.reply_text(
+                    "🤖 הבוט פעיל בקבוצה זו!\n\n"
+                    f"🆔 **ID הקבוצה:** `{chat.id}`\n"
+                    "👑 **לאדמין:** השתמש ב-`/groupid` או `/chaid` כדי לראות את כל הקבוצות.\n"
+                    "👤 **למשתמשים:** שלחו /start בפרטי כדי להתחיל."
+                )
+            return
+
+        # שליחת תמונה עם הודעת ברוך הבא
+        welcome_image_url = "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2032&q=80"
+        
+        try:
+            if update.message:
+                update.message.reply_photo(
+                    photo=welcome_image_url,
+                    caption=get_translation(get_user_language(user.id), 'welcome', name=user.first_name),
+                    parse_mode='Markdown',
+                    reply_markup=get_main_keyboard(user.id)
+                )
+            else:
+                update.callback_query.message.reply_photo(
+                    photo=welcome_image_url,
+                    caption=get_translation(get_user_language(user.id), 'welcome', name=user.first_name),
+                    parse_mode='Markdown',
+                    reply_markup=get_main_keyboard(user.id)
+                )
+            return
+        except Exception as e:
+            logger.warning(f"Could not send welcome image: {e}")
+
+        # אם לא הצליחה התמונה, שולח טקסט בלבד
+        if update.message:
+            update.message.reply_text(
+                get_translation(get_user_language(user.id), 'welcome', name=user.first_name),
+                reply_markup=get_main_keyboard(user.id),
+                parse_mode='Markdown'
+            )
+        else:
+            update.callback_query.message.reply_text(
+                get_translation(get_user_language(user.id), 'welcome', name=user.first_name),
+                reply_markup=get_main_keyboard(user.id),
+                parse_mode='Markdown'
+            )
+        
+    except Exception as e:
+        logger.error(f"Error in start command: {e}")
+        if update.message:
+            update.message.reply_text("❌ אירעה שגיאה. אנא נסה שוב.")
+
+def groupid(update: Update, context: CallbackContext) -> None:
+    """פקודת groupid - מציגה את כל הקבוצות (alias ל-chatid)"""
+    chatid(update, context)
+
+def chaid(update: Update, context: CallbackContext) -> None:
+    """פקודת chaid - מציגה את כל הקבוצות (alias ל-chatid)"""
+    chatid(update, context)
+
+def chatid(update: Update, context: CallbackContext) -> None:
+    """שולח את ה-ID של הקבוצה הנוכחית או רשימת כל הקבוצות - משופר"""
     try:
         user = update.effective_user
         
         # בדיקה אם המשתמש הוא אדמין
         if str(user.id) != ADMIN_USER_ID:
-            if update.message:
-                update.message.reply_text("❌ אתה לא מורשה להשתמש בפקודה זו.")
+            update.message.reply_text("❌ אתה לא מורשה להשתמש בפקודה זו.")
             return
 
-        # קבלת כל הקבוצות מהמסד נתונים
-        current_groups = get_all_groups()
-        
-        message = f"🔄 **רענון קבוצות בוצע!**\n\n"
-        message += f"📊 **קבוצות במסד הנתונים:** {len(current_groups)}\n\n"
-        
-        for i, group in enumerate(current_groups, 1):
-            group_id = group[0]
-            group_title = group[1]
-            group_type = group[2] if len(group) > 2 else "unknown"
-            message += f"{i}. **{group_title}**\n   ID: `{group_id}` | Type: {group_type}\n\n"
-        
-        if update.message:
-            update.message.reply_text(message, parse_mode='Markdown')
-        elif update.callback_query:
-            update.callback_query.message.reply_text(message, parse_mode='Markdown')
+        # אם הפקודה נשלחה בקבוצה, שלח את ה-ID של הקבוצה הנוכחית
+        if update.message.chat.type in ['group', 'supergroup']:
+            chat_id = update.message.chat.id
+            chat_title = update.message.chat.title
+            message = f"🆔 **קבוצה:** {chat_title}\n**ID:** `{chat_id}`\n**סוג:** {update.message.chat.type}"
+            
+            # שמירת/עדכון הקבוצה במסד הנתונים
+            update_group_info_in_db(chat_id, chat_title, update.message.chat.type)
+            message += f"\n\n✅ **הקבוצה נשמרה/עודכנה במסד הנתונים!**"
+            
+            # הוספת כפתורים לפעולות נוספות
+            keyboard = [
+                [InlineKeyboardButton("📊 הצג כל הקבוצות", callback_data='show_all_groups')],
+                [InlineKeyboardButton("🔄 רענן קבוצות", callback_data='refresh_groups')]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            update.message.reply_text(message, parse_mode='Markdown', reply_markup=reply_markup)
+        else:
+            # אם נשלחה בצ'אט פרטי, שלח את רשימת כל הקבוצות
+            show_all_groups_command(update, context)
             
     except Exception as e:
-        logger.error(f"Error in refresh_all_groups: {e}")
-        error_msg = "❌ אירעה שגיאה ברענון הקבוצות"
-        if update.message:
-            update.message.reply_text(error_msg)
-        elif update.callback_query:
-            update.callback_query.message.reply_text(error_msg)
+        logger.error(f"Error in chatid command: {e}")
+        update.message.reply_text("❌ אירעה שגיאה בקבלת ID הקבוצה.")
 
 def admin(update: Update, context: CallbackContext) -> None:
     """פקודת אדמין - מציגה סטטיסטיקות וניהול"""
@@ -2145,7 +1066,7 @@ def admin(update: Update, context: CallbackContext) -> None:
             return
 
         stats = get_user_stats()
-        groups = get_all_groups()
+        groups = get_bot_real_chats()
         pending_payments = get_pending_payments()
         
         message = "👑 **פאנל ניהול - SLH Bot**\n\n"
@@ -2181,24 +1102,1040 @@ def admin(update: Update, context: CallbackContext) -> None:
         message += "2. שלח `/start` או `/groupid` בקבוצה\n"
         message += "3. הקבוצה תירשם אוטומטית\n"
         
-        update.message.reply_text(message, parse_mode='Markdown')
+        update.message.reply_text(message, parse_mode='Markdown', reply_markup=get_admin_groups_keyboard())
             
     except Exception as e:
         logger.error(f"Error in admin command: {e}")
         update.message.reply_text("❌ אירעה שגיאה בפקודת האדמין.")
 
+def broadcast(update: Update, context: CallbackContext) -> None:
+    """שליחת הודעה לכל המשתמשים"""
+    try:
+        user = update.effective_user
+        
+        # בדיקה אם המשתמש הוא אדמין
+        if str(user.id) != ADMIN_USER_ID:
+            update.message.reply_text("❌ אתה לא מורשה להשתמש בפקודה זו.")
+            return
+
+        # בדיקה אם יש טקסט להודעה
+        if not context.args:
+            update.message.reply_text("❌ שימוש: /broadcast <הודעה>")
+            return
+
+        message = " ".join(context.args)
+        
+        # קבלת כל המשתמשים
+        conn = sqlite3.connect('bot_data.db', check_same_thread=False)
+        c = conn.cursor()
+        c.execute("SELECT user_id FROM users")
+        users = c.fetchall()
+        conn.close()
+        
+        sent_count = 0
+        failed_count = 0
+        
+        for user_tuple in users:
+            user_id = user_tuple[0]
+            try:
+                bot.send_message(
+                    chat_id=user_id,
+                    text=f"📢 **הודעה מהמערכת:**\n\n{message}",
+                    parse_mode='Markdown'
+                )
+                sent_count += 1
+                time.sleep(0.1)  # מניעת הגבלת שיעור
+            except Exception as e:
+                failed_count += 1
+                logger.error(f"Failed to send broadcast to {user_id}: {e}")
+        
+        update.message.reply_text(
+            f"✅ **שידור הושלם!**\n\n"
+            f"✅ נשלח בהצלחה: {sent_count}\n"
+            f"❌ נכשל: {failed_count}\n"
+            f"📊 סה\"כ: {len(users)}"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in broadcast command: {e}")
+        update.message.reply_text("❌ אירעה שגיאה בשליחת השידור.")
+
+def group_broadcast(update: Update, context: CallbackContext) -> None:
+    """שליחת הודעה לכל הקבוצות"""
+    try:
+        user = update.effective_user
+        
+        # בדיקה אם המשתמש הוא אדמין
+        if str(user.id) != ADMIN_USER_ID:
+            update.message.reply_text("❌ אתה לא מורשה להשתמש בפקודה זו.")
+            return
+
+        # בדיקה אם יש טקסט להודעה
+        if not context.args:
+            update.message.reply_text("❌ שימוש: /group_broadcast <הודעה>")
+            return
+
+        message = " ".join(context.args)
+        
+        # קבלת כל הקבוצות
+        groups = get_all_groups()
+        
+        sent_count = 0
+        failed_count = 0
+        
+        for group in groups:
+            group_id = group[0]
+            group_name = group[1]
+            try:
+                bot.send_message(
+                    chat_id=group_id,
+                    text=f"📢 **הודעה מהמערכת:**\n\n{message}",
+                    parse_mode='Markdown'
+                )
+                sent_count += 1
+                time.sleep(0.1)  # מניעת הגבלת שיעור
+            except Exception as e:
+                failed_count += 1
+                logger.error(f"Failed to send group broadcast to {group_name} ({group_id}): {e}")
+        
+        update.message.reply_text(
+            f"✅ **שידור לקבוצות הושלם!**\n\n"
+            f"✅ נשלח בהצלחה: {sent_count}\n"
+            f"❌ נכשל: {failed_count}\n"
+            f"📊 סה\"כ קבוצות: {len(groups)}"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in group_broadcast command: {e}")
+        update.message.reply_text("❌ אירעה שגיאה בשליחת השידור לקבוצות.")
+
+def handle_group_add(update: Update, context: CallbackContext) -> None:
+    """מטפל כאשר הבוט מתווסף לקבוצה"""
+    try:
+        chat = update.effective_chat
+        new_members = update.message.new_chat_members
+        
+        # בדיקה אם הבוט הוא אחד מה-new members
+        bot_id = context.bot.id
+        if any(member.id == bot_id for member in new_members):
+            # רישום הקבוצה במסד הנתונים
+            update_group_info_in_db(chat.id, chat.title, chat.type)
+            
+            # שליחת הודעה לקבוצה
+            update.message.reply_text(
+                "🤖 תודה שהוספתם אותי לקבוצה! אני כאן כדי לסייע.\n"
+                "להפעלתי, שלחו /start בפרטי.\n\n"
+                f"🆔 **ID הקבוצה:** `{chat.id}`\n"
+                "👑 **לאדמין:** השתמש ב-`/groupid` או `/chaid` כדי לראות את כל הקבוצות."
+            )
+            
+            # שליחת התראה לאדמין
+            send_admin_alert(f"🚀 הבוט נוסף לקבוצה חדשה: {chat.title} (ID: `{chat.id}`, Type: {chat.type})")
+    except Exception as e:
+        logger.error(f"Error in handle_group_add: {e}")
+
+def handle_group_activity(update: Update, context: CallbackContext) -> None:
+    """מטפל בכל פעילות בקבוצות ורושם את הקבוצה - משופר"""
+    try:
+        if update.message and update.message.chat.type in ['group', 'supergroup']:
+            chat = update.message.chat
+            # רישום/עדכון הקבוצה במסד הנתונים עם פרטים מעודכנים
+            update_group_info_in_db(chat.id, chat.title, chat.type)
+            
+            # לוג לצורך ניפוי באגים
+            logger.info(f"Group activity detected and updated: {chat.title} (ID: {chat.id}, Type: {chat.type})")
+            
+    except Exception as e:
+        logger.error(f"Error in handle_group_activity: {e}")
+
+def language_handler(update: Update, context: CallbackContext) -> None:
+    """מטפל בבחירת שפה"""
+    query = update.callback_query
+    query.answer()
+    
+    user_id = query.from_user.id
+    lang_code = query.data.replace('lang_', '')
+    
+    # שמירת השפה במסד נתונים
+    set_user_language(user_id, lang_code)
+    
+    # הודעת אישור לפי שפה
+    confirmation_messages = {
+        'he': "✅ שפת הממשק שונתה לעברית",
+        'en': "✅ Interface language changed to English", 
+        'ru': "✅ Язык интерфейса изменен на русский",
+        'ar': "✅ تم تغيير لغة الواجهة إلى العربية"
+    }
+    
+    query.edit_message_text(
+        text=confirmation_messages.get(lang_code, "Language changed"),
+        reply_markup=get_main_keyboard(user_id)
+    )
+
+def safe_edit_message(query, text, reply_markup=None, parse_mode='Markdown'):
+    """פונקציה בטוחה לעריכת הודעה עם טיפול בשגיאות"""
+    try:
+        # בדיקה אם יש טקסט להודעה
+        if not query.message.text and not query.message.caption:
+            # אם אין טקסט, שולח הודעה חדשה
+            return query.message.reply_text(
+                text=text,
+                reply_markup=reply_markup,
+                parse_mode=parse_mode
+            )
+        
+        query.edit_message_text(
+            text=text,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode
+        )
+        return True
+    except Exception as e:
+        if "Message is not modified" in str(e):
+            logger.debug("Message not modified - same content")
+            return True
+        else:
+            logger.error(f"Error editing message: {e}")
+            # ננסה לשלוח הודעה חדשה במקום
+            try:
+                query.message.reply_text(
+                    text=text,
+                    reply_markup=reply_markup,
+                    parse_mode=parse_mode
+                )
+                return True
+            except Exception as e2:
+                logger.error(f"Failed to send new message: {e2}")
+                return False
+
+def button_handler(update: Update, context: CallbackContext) -> None:
+    """מטפל בלחיצות על כפתורים - רב-לשוני - משופר"""
+    query = update.callback_query
+    
+    try:
+        query.answer()
+    except Exception as e:
+        logger.warning(f"Could not answer callback query: {e}")
+
+    try:
+        user = query.from_user
+        user_id = user.id
+        lang = get_user_language(user_id)
+        action_details = f"לחץ על: {query.data}"
+        
+        # רישום פעילות מפורט
+        log_user_activity(
+            user.id, 
+            user.username, 
+            user.first_name, 
+            user.last_name or "",
+            "button_click", 
+            action_details
+        )
+
+        if query.data == 'change_language':
+            language_text = "🌐 **בחר שפה / Choose language**\n\nSelect your preferred language:"
+            safe_edit_message(query, language_text, get_language_keyboard())
+            return
+
+        elif query.data.startswith('lang_'):
+            language_handler(update, context)
+            return
+
+        elif query.data == 'show_all_groups':
+            show_all_groups_command(update, context)
+            return
+
+        elif query.data == 'refresh_groups':
+            refresh_all_groups(update, context)
+            return
+
+        elif query.data == 'broadcast_groups':
+            # כפתור לשידור לקבוצות - פותח חלון שידור
+            if str(user.id) == ADMIN_USER_ID:
+                message = "📤 **שידור לקבוצות**\n\nהזן את ההודעה שברצונך לשדר לכל הקבוצות:\n\nהשתמש בפקודה: `/group_broadcast <הודעה>`"
+                keyboard = [[InlineKeyboardButton("↩️ חזרה", callback_data='back_to_admin')]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                safe_edit_message(query, message, reply_markup)
+            else:
+                safe_edit_message(query, "❌ אין לך הרשאות לשידור.", get_back_keyboard(user_id))
+            return
+
+        elif query.data == 'back_to_admin':
+            # חזרה לפאנל אדמין
+            if str(user.id) == ADMIN_USER_ID:
+                admin(update, context)
+            else:
+                safe_edit_message(query, "❌ אין לך הרשאות ניהול.", get_main_keyboard(user_id))
+            return
+
+        elif query.data == 'ecosystem_explanation':
+            ecosystem_texts = {
+                'he': """
+**🌟 סלה ללא גבולות - האקוסיסטם הטכנולוגי השלם**
+
+**🏗️ המבנה הייחודי שלנו:**
+
+**💎 ליבת המערכת - מטבע SLH**
+אנחנו יצרנו מטבע קריפטו ייחודי **SLH** עם ערך אמיתי וצמיחה מתוכננת:
+• **ערך נוכחי:** 444₪ ל-SLH 1
+• **חלוקה למצטרפים:** כל member מקבל SLH 1 (39₪ מידית + השאר בהדרגה)
+• **utility אמיתי:** משמש לתשלומים בכל הפלטפורמות שלנו
+• **צמיחה אורגנית:** הערך עולה עם גידול הקהילה
+
+**🚀 4 רכיבי הליבה:**
+
+**1. 🤖 Botshop - פלטפורמת הבוטים**
+• בוטים אוטומטיים לניהול קהילות
+• מערכות תשלום ואימות
+• אינטגרציה עם כל המערכות
+
+**2. 💰 SLH Coin - המערכת הפיננסית**
+• מטבע utility עם שימושים אמיתיים
+• חוזים חכמים אוטומטיים
+• מסחר וארנקים דיגיטליים
+
+**3. 🎨 NFT & Digital Assets**
+• שוק NFT לנכסים דיגיטליים
+• פלטפורמת מסחר מתקדמת
+• קהילת יוצרים ומשקיעים
+
+**4. 📈 Network Marketing**
+• שיווק רשתי ל-5 דורות
+• הכנסות פסיביות אוטומטיות
+• מערכת דוחות מתקדמת
+                """,
+                'en': """
+**🌟 Sela Without Borders - The Complete Technological Ecosystem**
+
+**🏗️ Our Unique Structure:**
+
+**💎 System Core - SLH Coin**
+We created a unique cryptocurrency **SLH** with real value and planned growth:
+• **Current value:** 444₪ per SLH 1
+• **Distribution to members:** Every member receives SLH 1 (39₪ immediately + the rest gradually)
+• **Real utility:** Used for payments across all our platforms
+• **Organic growth:** Value increases with community growth
+
+**🚀 4 Core Components:**
+
+**1. 🤖 Botshop - Bot Platform**
+• Automated bots for community management
+• Payment and verification systems
+• Integration with all systems
+
+**2. 💰 SLH Coin - Financial System**
+• Utility coin with real uses
+• Automatic smart contracts
+• Trading and digital wallets
+
+**3. 🎨 NFT & Digital Assets**
+• NFT market for digital assets
+• Advanced trading platform
+• Community of creators and investors
+
+**4. 📈 Network Marketing**
+• 5-generation network marketing
+• Automatic passive income
+• Advanced reporting system
+                """,
+                'ru': """
+**🌟 Села без границ - Полная технологическая экосистема**
+
+**🏗️ Наша уникальная структура:**
+
+**💎 Ядро системы - Монета SLH**
+Мы создали уникальную криптовалюту **SLH** с реальной стоимостью и плановым ростом:
+• **Текущая стоимость:** 444₪ за SLH 1
+• **Распределение участникам:** Каждый участник получает SLH 1 (39₪ сразу + остальное постепенно)
+• **Реальная полезность:** Используется для платежей на всех наших платформах
+• **Органический рост:** Стоимость растет с ростом сообщества
+
+**🚀 4 Основных компонента:**
+
+**1. 🤖 Botshop - Платформа ботов**
+• Автоматизированные боты для управления сообществами
+• Системы платежей и проверки
+• Интеграция со всеми системами
+
+**2. 💰 SLH Coin - Финансовая система**
+• Утилитарная монета с реальным использованием
+• Автоматические смарт-контракты
+• Торговля и цифровые кошельки
+
+**3. 🎨 NFT & Digital Assets**
+• Рынок NFT для цифровых активов
+• Продвинутая торговая платформа
+• Сообщество создателей и инвесторов
+
+**4. 📈 Network Marketing**
+• Сетевой маркетинг 5 поколений
+• Автоматический пассивный доход
+• Продвинутая система отчетности
+                """,
+                'ar': """
+**🌟 سيلا بلا حدود - النظام البيئي التكنولوجي الكامل**
+
+**🏗️ هيكلنا الفريد:**
+
+**💎 نواة النظام - عملة SLH**
+لقد أنشأنا عملة مشفرة فريدة **SLH** بقيمة حقيقية ونمو مخطط:
+• **القيمة الحالية:** 444₪ لكل SLH 1
+• **توزيع للأعضاء:** كل عضو يحصل على SLH 1 (39₪ فورًا والباقي تدريجيًا)
+• **فائدة حقيقية:** تستخدم للدفع عبر جميع منصاتنا
+• **نمو عضوي:** القيمة تزداد مع نمو المجتمع
+
+**🚀 4 مكونات أساسية:**
+
+**1. 🤖 Botshop - منصة البوتات**
+• بوتات آلية لإدارة المجتمعات
+• أنظمة دفع وتحقق
+• تكامل مع جميع الأنظمة
+
+**2. 💰 SLH Coin - النظام المالي**
+• عملة utility ذات استخدامات حقيقية
+• عقود ذكية آلية
+• تداول ومحافظ رقمية
+
+**3. 🎨 NFT & Digital Assets**
+• سوق NFT للأصول الرقمية
+• منصة تداول متقدمة
+• مجتمع المبدعين والمستثمرين
+
+**4. 📈 Network Marketing**
+• تسويق شبكي لـ 5 أجيال
+• دخل سلبي آلي
+• نظام تقارير متقدم
+                """
+            }
+            safe_edit_message(query, ecosystem_texts.get(lang, ecosystem_texts['he']), get_back_keyboard(user_id))
+
+        elif query.data == 'join_community':
+            join_texts = {
+                'he': """
+**💎 הצטרפות לקהילת סלה ללא גבולות**
+
+**🎯 מה באמת קונה ה-39₪ שלך?**
+
+זו לא "עלות" - זו **השקעה בנכס דיגיטלי** שמניב הכנסות!
+
+**💼 חבילת הערך המלאה:**
+
+**1. 💰 נכס דיגיטלי - SLH Coin**
+• **SLH 1** בשווי 444₪ - 39₪ מידית, השאר בהדרגה
+• מטבע utility עם שימושים אמיתיים
+• פוטנציאל צמיחה עם גידול הקהילה
+
+**2. 🎯 לינק שיתוף אישי**
+• מניב 10% מכל מצטרף חדש דרך הלינק שלך
+• הכנסה פסיבית מ-5 דורות
+• מערכת דוחות ואימות אוטומטית
+
+**3. 🌐 גישה לכל המערכות**
+• פלטפורמת הבוטים המתקדמת
+• קהילת VIP עם אנשי עסקים
+• הדרכות והכשרות מקצועיות
+• תמיכה טכנית 24/7
+
+**4. 🚀 הזדמנויות עסקיות**
+• שירותי פיתוח בוטים (בתשלום נוסף)
+• השקעה בפרויקטים נוספים
+• שותפויות אסטרטגיות
+• נטרוקינג איכותי
+                """,
+                'en': """
+**💎 Joining Sela Without Borders Community**
+
+**🎯 What does your 39₪ actually buy?**
+
+This is not a "cost" - it's an **investment in a digital asset** that generates income!
+
+**💼 Complete Value Package:**
+
+**1. 💰 Digital Asset - SLH Coin**
+• **SLH 1** worth 444₪ - 39₪ immediately, the rest gradually
+• Utility coin with real uses
+• Growth potential with community growth
+
+**2. 🎯 Personal Sharing Link**
+• Generates 10% from every new member
+• Passive income from 5 generations
+• Automated reporting and verification system
+
+**3. 🌐 Access to All Systems**
+• Advanced bot platform
+• VIP community with business people
+• Professional training and guidance
+• 24/7 technical support
+
+**4. 🚀 Business Opportunities**
+• Bot development services (additional payment)
+• Investment in additional projects
+• Strategic partnerships
+• Quality networking
+                """,
+                'ru': """
+**💎 Вступление в сообщество Села без границ**
+
+**🎯 Что на самом деле покупают ваши 39₪?**
+
+Это не "стоимость" - это **инвестиция в цифровой актив**, который приносит доход!
+
+**💼 Полный пакет ценностей:**
+
+**1. 💰 Цифровой актив - Монета SLH**
+• **SLH 1** стоимостью 444₪ - 39₪ сразу, остальное постепенно
+• Утилитарная монета с реальным использованием
+• Потенциал роста с ростом сообщества
+
+**2. 🎯 Персональная ссылка для приглашений**
+• Приносит 10% от каждого нового участника
+• Пассивный доход от 5 поколений
+• Автоматизированная система отчетности и проверки
+
+**3. 🌐 Доступ ко всем системам**
+• Продвинутая платформа ботов
+• VIP сообщество с бизнесменами
+• Профессиональное обучение и руководство
+• Техническая поддержка 24/7
+
+**4. 🚀 Бизнес-возможности**
+• Услуги разработки ботов (дополнительная оплата)
+• Инвестиции в дополнительные проекты
+• Стратегические партнерства
+• Качественный нетворкинг
+                """,
+                'ar': """
+**💎 الانضمام إلى مجتمع سيلا بلا حدود**
+
+**🎯 ما الذي تشتريه 39₪ حقًا؟**
+
+هذا ليس "تكلفة" - إنه **استثمار في أصل رقمي** يدر دخلاً!
+
+**💼 باقة القيمة الكاملة:**
+
+**1. 💰 أصل رقمي - عملة SLH**
+• **SLH 1** بقيمة 444₪ - 39₪ فورًا، الباقي تدريجيًا
+• عملة utility ذات استخدامات حقيقية
+• إمكانية النمو مع نمو المجتمع
+
+**2. 🎯 رابط مشاركة شخصي**
+• يدر 10% من كل عضو جديد
+• دخل سلبي من 5 أجيال
+• نظام تقارير وتحقق آلي
+
+**3. 🌐 الوصول لجميع الأنظمة**
+• منصة بوتات متقدمة
+• مجتمع VIP مع رجال الأعمال
+• تدريبات وإرشادات مهنية
+• دعم فني 24/7
+
+**4. 🚀 فرص أعمال**
+• خدمات تطوير بوتات (دفع إضافي)
+• استثمار في مشاريع إضافية
+• شراكات استراتيجية
+• شبكة علاقات نوعية
+                """
+            }
+            safe_edit_message(query, join_texts.get(lang, join_texts['he']), get_payment_keyboard(user_id))
+
+        elif query.data == 'payment_bank':
+            bank_text = get_translation(lang, 'bank_details')
+            safe_edit_message(query, bank_text, get_payment_keyboard(user_id))
+
+        elif query.data == 'payment_ton':
+            ton_text = get_translation(lang, 'ton_details')
+            safe_edit_message(query, ton_text, get_payment_keyboard(user_id))
+
+        elif query.data == 'payment_crypto':
+            crypto_text = get_translation(lang, 'crypto_details')
+            safe_edit_message(query, crypto_text, get_payment_keyboard(user_id))
+
+        elif query.data == 'payment_sent':
+            payment_instructions = {
+                'he': """
+**✅ שלחתי תשלום - מה עכשיו?**
+
+🚀 **מעולה! עכשיו נשאר רק לשלוח לנו את אישור התשלום:**
+
+1. **אם שילמת בהעברה בנקאית:**
+   • שלח צילום מסך של ההעברה
+   • או הקלד את פרטי ההעברה
+
+2. **אם שילמת בקריפטו:**
+   • שלח צילום מסך של העסקה
+   • או הקלד את hash העסקה
+
+📸 **שלח עכשיו את אישור התשלום כאן בצ'אט**
+ונחזור אליך עם קישור ההצטרפות תוך 24 שעות!
+
+💎 **בונוס מיוחד:** כל תשלום מזכה אותך ב-**SLH 1** בשווי 444₪!
+                """,
+                'en': """
+**✅ I Sent Payment - What Now?**
+
+🚀 **Great! Now just send us the payment confirmation:**
+
+1. **If you paid by bank transfer:**
+   • Send a screenshot of the transfer
+   • Or type the transfer details
+
+2. **If you paid with crypto:**
+   • Send a screenshot of the transaction
+   • Or type the transaction hash
+
+📸 **Send the payment confirmation now in this chat**
+We'll get back to you with the joining link within 24 hours!
+
+💎 **Special bonus:** Every payment earns you **SLH 1** worth 444₪!
+                """,
+                'ru': """
+**✅ Я отправил платеж - что теперь?**
+
+🚀 **Отлично! Теперь просто отправьте нам подтверждение платежа:**
+
+1. **Если вы оплатили банковским переводом:**
+   • Отправьте скриншот перевода
+   • Или введите детали перевода
+
+2. **Если вы оплатили криптовалютой:**
+   • Отправьте скриншот транзакции
+   • Или введите хэш транзакции
+
+📸 **Отправьте подтверждение платежа сейчас в этом чате**
+Мы вернемся к вам со ссылкой для вступления в течение 24 часов!
+
+💎 **Специальный бонус:** Каждый платеж приносит вам **SLH 1** стоимостью 444₪!
+                """,
+                'ar': """
+**✅ قمت بإرسال الدفع - ماذا الآن؟**
+
+🚀 **ممتاز! الآن فقط أرسل لنا تأكيد الدفع:**
+
+1. **إذا دفعت عن طريق التحويل البنكي:**
+   • أرسل لقطة شاشة للتحويل
+   • أو اكتب تفاصيل التحويل
+
+2. **إذا دفعت بعملة مشفرة:**
+   • أرسل لقطة شاشة للمعاملة
+   • أو اكتب hash المعاملة
+
+📸 **أرسل تأكيد الدفع الآن في هذه الدردشة**
+سنتواصل معك برابط الانضمام خلال 24 ساعة!
+
+💎 **مكافأة خاصة:** كل دفعة تمنحك **SLH 1** بقيمة 444₪!
+                """
+            }
+            safe_edit_message(query, payment_instructions.get(lang, payment_instructions['he']), get_payment_keyboard(user_id))
+
+        elif query.data == 'joining_bonuses':
+            bonuses_text = {
+                'he': """
+**🎁 בונוסי הצטרפות - מה תקבל?**
+
+**💎 תגמולי SLH:**
+• **SLH 1** בשווי 444₪ - מיד עם אישור התשלום
+• מטבע utility אמיתי עם שימושים במערכת
+• פוטנציאל צמיחה עם גידול הקהילה
+
+**🚀 גישה מלאה:**
+• קישור להצטרפות לקהילת VIP
+• הלינק האישי שלך לשיתוף והכנסות
+• הדרכה מלאה לשימוש במערכת
+
+**📊 הכנסות פסיביות:**
+• 10% מכל מצטרף חדש דרך הלינק שלך
+• הכנסה מ-5 דורות של רפראלים
+• דוחות מפורטים בזמן אמת
+
+**👑 הטבות נוספות:**
+• שיחת ייעוץ אישית
+• גישה לכל החומרים וההדרכות
+• תמיכה טכנית 24/7
+                """,
+                'en': """
+**🎁 Joining Bonuses - What You'll Get?**
+
+**💎 SLH Rewards:**
+• **SLH 1** worth 444₪ - immediately upon payment confirmation
+• Real utility coin with system uses
+• Growth potential with community growth
+
+**🚀 Full Access:**
+• Link to join VIP community
+• Your personal sharing link for earnings
+• Complete system usage guidance
+
+**📊 Passive Income:**
+• 10% from every new member through your link
+• Income from 5 generations of referrals
+• Detailed real-time reports
+
+**👑 Additional Benefits:**
+• Personal consultation call
+• Access to all materials and trainings
+• 24/7 technical support
+                """
+            }
+            safe_edit_message(query, bonuses_text.get(lang, bonuses_text['he']), get_payment_keyboard(user_id))
+
+        elif query.data == 'slh_balance':
+            slh_balance = get_user_slh_balance(user_id)
+            balance_text = {
+                'he': f"""
+**💎 יתרת SLH שלך**
+
+**🪙 כמות SLH:** {slh_balance}
+**💰 שווי נוכחי:** {slh_balance * 444}₪
+**🚀 סטטוס:** {'פעיל' if slh_balance > 0 else 'ממתין להצטרפות'}
+
+**📈 מה אפשר לעשות עם SLH?**
+• השתתפות בסטייקינג (בקרוב)
+• תשלומים בתוך המערכת
+• מסחר וניתוח (בפיתוח)
+• הצבעות קהילתיות (עתידי)
+
+**💡 טיפ:** כל מצטרף חדש דרך הלינק שלך מזכה אותך בעוד SLH!
+                """,
+                'en': f"""
+**💎 Your SLH Balance**
+
+**🪙 SLH Amount:** {slh_balance}
+**💰 Current Value:** {slh_balance * 444}₪
+**🚀 Status:** {'Active' if slh_balance > 0 else 'Pending joining'}
+
+**📈 What can you do with SLH?**
+• Participate in staking (coming soon)
+• Payments within the system
+• Trading and analysis (in development)
+• Community voting (future)
+
+**💡 Tip:** Every new member through your link earns you more SLH!
+                """
+            }
+            safe_edit_message(query, balance_text.get(lang, balance_text['he']), get_slh_balance_keyboard(user_id))
+
+        elif query.data == 'network_marketing':
+            network_texts = {
+                'he': """
+**📊 שיווק רשתי - 5 דורות**
+
+**💡 איך עובד המודל?**
+
+**🎯 הלינק האישי שלך - מכונת ההכנסות האוטומטית**
+
+לאחר ההצטרפות, תקבל **לינק שיתוף אישי ייחודי** שמזוהה רק איתך. כל פעילות שמתבצעת דרך הלינק הזה - מייצרת לך הכנסה אוטומטית!
+
+**💰 מודל ההכנסות:**
+
+**1. 💰 עמלות ישירות**
+• **10%** מכל רכישה של מצטרף חדש דרך הלינק שלך
+• תשלום אוטומטי ומיידי ב-SLH
+• אין הגבלה על מספר המצטרפים
+
+**2. 📈 עמלות דורות (5 דורות)**
+• **דור 1:** 10% מהמצטרפים הישירים שלך
+• **דור 2:** 5% מהמצטרפים שלהם
+• **דור 3:** 3% מהמצטרפים הבאים
+• **דור 4:** 2% מהדור הרביעי
+• **דור 5:** 1% מהדור החמישי
+
+**3. 🎯 יעד: 39 רפראלים לגישה חינם**
+• לאחר 39 מצטרפים - גישה מלאה בחינם!
+• הכנסה פסיבית לכל החיים
+• צמיחה אקספוננציאלית
+                """,
+                'en': """
+**📊 Network Marketing - 5 Generations**
+
+**💡 How does the model work?**
+
+**🎯 Your Personal Link - Automatic Income Machine**
+
+After joining, you'll receive a **unique personal sharing link** that's identified only with you. Any activity through this link generates automatic income for you!
+
+**💰 Income Model:**
+
+**1. 💰 Direct Commissions**
+• **10%** from every new member purchase through your link
+• Automatic and immediate payment in SLH
+• No limit on number of members
+
+**2. 📈 Generation Commissions (5 Generations)**
+• **Generation 1:** 10% from your direct members
+• **Generation 2:** 5% from their members
+• **Generation 3:** 3% from next members
+• **Generation 4:** 2% from fourth generation
+• **Generation 5:** 1% from fifth generation
+
+**3. 🎯 Goal: 39 Referrals for Free Access**
+• After 39 members - full access for free!
+• Lifetime passive income
+• Exponential growth
+                """
+            }
+            safe_edit_message(query, network_texts.get(lang, network_texts['he']), get_network_marketing_keyboard(user_id))
+
+        elif query.data == 'personal_link':
+            user_ref_count = get_user_referral_count(user_id)
+            personal_link_texts = {
+                'he': f"""
+**🎯 הלינק האישי שלך**
+
+**📊 הסטטוס שלך:**
+• **רפראלים:** {user_ref_count}/39
+• **נותרו:** {39 - user_ref_count} להשלמה
+• **הכנסות מצטברות:** {user_ref_count * 3.9:.2f}₪
+• **SLH שנצבר:** {user_ref_count * 0.1:.1f}
+
+**🔗 הלינק האישי שלך:**
+`https://t.me/Buy_My_Shop_bot?start={user_id}`
+
+**💡 טיפים לשיתוף:**
+• שתף בפייסבוק, אינסטגרם, טיקטוק
+• הסבר על ההזדמנות הכלכלית
+• שתף בקבוצות טלגרם ווואטסאפ
+
+**🎁 לאחר 39 רפראלים תקבל:**
+• גישה מלאה בחינם!
+• מעמד VIP בקהילה
+• הטבות נוספות
+                """,
+                'en': f"""
+**🎯 Your Personal Link**
+
+**📊 Your Status:**
+• **Referrals:** {user_ref_count}/39
+• **Remaining:** {39 - user_ref_count} to complete
+• **Cumulative earnings:** {user_ref_count * 3.9:.2f}₪
+• **Accumulated SLH:** {user_ref_count * 0.1:.1f}
+
+**🔗 Your Personal Link:**
+`https://t.me/Buy_My_Shop_bot?start={user_id}`
+
+**💡 Sharing Tips:**
+• Share on Facebook, Instagram, TikTok
+• Explain the economic opportunity
+• Share in Telegram and WhatsApp groups
+
+**🎁 After 39 referrals you'll get:**
+• Full access for free!
+• VIP status in community
+• Additional benefits
+                """
+            }
+            safe_edit_message(query, personal_link_texts.get(lang, personal_link_texts['he']), get_network_marketing_keyboard(user_id))
+
+        elif query.data == 'back_to_main':
+            welcome_back_text = get_translation(lang, 'welcome_back')
+            safe_edit_message(query, welcome_back_text, get_main_keyboard(user_id))
+
+        elif query.data in ['investment', 'bot_development', 'our_projects', 'contact', 'help']:
+            # הודעות ברירת מחדל לפיצ'רים שעדיין בפיתוח
+            default_messages = {
+                'he': {
+                    'investment': "**🚀 השקעה בפרויקט SLH**\n\nפרטים נוספים על אפשרויות השקעה יישלחו אליך בהמשך.",
+                    'bot_development': "**🤖 פיתוח בוטים לעסקים**\n\nשירותי פיתוח בוטים מותאמים אישית. נא צור קשר לפרטים.",
+                    'our_projects': "**🌐 הפרויקטים שלנו**\n\nכל הפרויקטים שלנו זמינים באתר הראשי.",
+                    'contact': "**📞 צור קשר**\n\nנא שלח לנו הודעה ישירה לפרטים נוספים.",
+                    'help': "**🆘 עזרה ראשונה**\n\nכיצד נוכל לעזור? צור איתנו קשר לפתרון מהיר."
+                },
+                'en': {
+                    'investment': "**🚀 Invest in SLH Project**\n\nMore details about investment opportunities will be sent to you later.",
+                    'bot_development': "**🤖 Bot Development for Businesses**\n\nCustom bot development services. Please contact us for details.",
+                    'our_projects': "**🌐 Our Projects**\n\nAll our projects are available on the main website.",
+                    'contact': "**📞 Contact**\n\nPlease send us a direct message for more details.",
+                    'help': "**🆘 Quick Help**\n\nHow can we help? Contact us for a quick solution."
+                }
+            }
+            message_dict = default_messages.get(lang, default_messages['he'])
+            message = message_dict.get(query.data, "Feature coming soon...")
+            safe_edit_message(query, message, get_back_keyboard(user_id))
+
+    except Exception as e:
+        logger.error(f"Error in button handler: {e}")
+        try:
+            lang = get_user_language(query.from_user.id)
+            error_messages = {
+                'he': "❌ אירעה שגיאה. אנא נסה שוב מהתפריט הראשי.",
+                'en': "❌ An error occurred. Please try again from the main menu.",
+                'ru': "❌ Произошла ошибка. Пожалуйста, попробуйте снова из главного меню.",
+                'ar': "❌ حدث خطأ. يرجى المحاولة مرة أخرى من القائمة الرئيسية."
+            }
+            query.message.reply_text(
+                error_messages.get(lang, "❌ An error occurred."),
+                reply_markup=get_main_keyboard(query.from_user.id)
+            )
+        except:
+            pass
+
+def handle_payment_proof(update: Update, context: CallbackContext) -> None:
+    """מטפל בשליחת אישור תשלום מהמשתמש"""
+    try:
+        user = update.effective_user
+        chat_id = update.effective_chat.id
+        lang = get_user_language(user.id)
+
+        # רישום פעילות מפורט
+        log_user_activity(
+            user.id, 
+            user.username, 
+            user.first_name, 
+            user.last_name or "",
+            "payment_proof_sent", 
+            f"שלח אישור תשלום - שפה: {lang}"
+        )
+
+        # הודעות אישור רב-לשוניות
+        success_messages = {
+            'he': """
+✅ **תודה רבה! אישור התשלום התקבל ונשלח לאימות.**
+
+🚀 **נחזור אליך עם קישור ההצטרפות תוך 24 שעות!**
+
+💎 **בונוס SLH:** קיבלת **SLH 1** בשווי 444₪!
+
+📧 **מה תקבל:**
+• קישור להצטרפות לקהילת VIP
+• הלינק האישי שלך לשיתוף והכנסות  
+• 39₪ ב-SLH (מתוך ה-444₪)
+• שיחת ייעוץ אישית
+• כל הבונוסים
+
+💎 **בינתיים, מוזמן לבדוק את שאר האפשרויות!**
+            """,
+            'en': """
+✅ **Thank you! Payment confirmation received and sent for verification.**
+
+🚀 **We'll get back to you with the joining link within 24 hours!**
+
+💎 **SLH Bonus:** You received **SLH 1** worth 444₪!
+
+📧 **What you'll receive:**
+• Link to join VIP community
+• Your personal sharing link for earnings
+• 39₪ in SLH (out of 444₪)
+• Personal consultation call
+• All bonuses
+
+💎 **Meanwhile, feel free to check out other options!**
+            """,
+            'ru': """
+✅ **Спасибо! Подтверждение платежа получено и отправлено на проверку.**
+
+🚀 **Мы вернемся к вам со ссылкой для вступления в течение 24 часов!**
+
+💎 **Бонус SLH:** Вы получили **SLH 1** стоимостью 444₪!
+
+📧 **Что вы получите:**
+• Ссылку для вступления в VIP сообщество
+• Вашу персональную ссылку для приглашений и заработка
+• 39₪ в SLH (из 444₪)
+• Персональную консультацию
+• Все бонусы
+
+💎 **Тем временем, ознакомьтесь с другими возможностями!**
+            """,
+            'ar': """
+✅ **شكرًا لك! تم استلام تأكيد الدفع وإرساله للتحقق.**
+
+🚀 **سنتواصل معك برابط الانضمام خلال 24 ساعة!**
+
+💎 **مكافأة SLH:** لقد حصلت على **SLH 1** بقيمة 444₪!
+
+📧 **ما الذي ستحصل عليه:**
+• رابط للانضمام لمجتمع VIP
+• رابط المشاركة الشخصي للأرباح
+• 39₪ في SLH (من أصل 444₪)
+• مكالمة استشارية شخصية
+• جميع المكافآت
+
+💎 **في هذه الأثناء، لا تتردد في الاطلاع على الخيارات الأخرى!**
+            """
+        }
+
+        # בדיקה אם המשתמש שלח תמונה (צילום מסך)
+        if update.message.photo:
+            photo_file = update.message.photo[-1].get_file()
+            
+            # שליחת אישור תשלום עם תמונה לקבוצת הניהול
+            success = send_payment_confirmation(
+                user_id=chat_id,
+                user_name=f"{user.first_name} {user.last_name or ''}",
+                payment_type="העברה בנקאית",
+                amount=39,
+                proof_text="אישור תמונה",
+                image_file_id=photo_file.file_id
+            )
+            
+            update.message.reply_text(
+                success_messages.get(lang, success_messages['he']),
+                reply_markup=get_main_keyboard(user.id),
+                parse_mode='Markdown'
+            )
+
+        # בדיקה אם המשתמש שלח טקסט (תמלול ההעברה)
+        elif update.message.text and not update.message.text.startswith('/'):
+            proof_text = update.message.text
+            
+            # שליחת אישור תשלום לקבוצת הניהול
+            success = send_payment_confirmation(
+                user_id=chat_id,
+                user_name=f"{user.first_name} {user.last_name or ''}",
+                payment_type="העברה בנקאית",
+                amount=39,
+                proof_text=proof_text
+            )
+            
+            update.message.reply_text(
+                success_messages.get(lang, success_messages['he']),
+                reply_markup=get_main_keyboard(user.id),
+                parse_mode='Markdown'
+            )
+
+        else:
+            # אם זו פקודה או סוג תוכן אחר
+            instruction_messages = {
+                'he': "📸 **נא שלח צילום מסך של ההעברה או פרטי התשלום בטקסט.**",
+                'en': "📸 **Please send a screenshot of the transfer or payment details in text.**",
+                'ru': "📸 **Пожалуйста, отправьте скриншот перевода или детали платежа текстом.**",
+                'ar': "📸 **يرجى إرسال لقطة شاشة للتحويل أو تفاصيل الدفع نصًا.**"
+            }
+            update.message.reply_text(
+                instruction_messages.get(lang, instruction_messages['he']),
+                reply_markup=get_payment_keyboard(user.id),
+                parse_mode='Markdown'
+            )
+            
+    except Exception as e:
+        logger.error(f"Error in handle_payment_proof: {e}")
+        lang = get_user_language(update.effective_user.id)
+        error_messages = {
+            'he': "❌ אירעה שגיאה בעיבוד האישור. אנא נסה שוב או צור קשר.",
+            'en': "❌ An error occurred processing the confirmation. Please try again or contact us.",
+            'ru': "❌ Произошла ошибка при обработке подтверждения. Пожалуйста, попробуйте снова или свяжитесь с нами.",
+            'ar': "❌ حدث خطأ في معالجة التأكيد. يرجى المحاولة مرة أخرى أو الاتصال بنا."
+        }
+        update.message.reply_text(
+            error_messages.get(lang, error_messages['he']),
+            reply_markup=get_main_keyboard(update.effective_user.id),
+            parse_mode='Markdown'
+        )
+
 # --- הגדרת handlers ---
 def setup_handlers():
-    """מגדיר את ה-handlers עבור הפקודות"""
+    """מגדיר את ה-handlers עבור הפקודות - משופר"""
     # handler לפקודת start - עובד בכל סוגי הצ'אטים
     dispatcher.add_handler(CommandHandler("start", start))
     
     # handlers לפקודות אדמין - עובדים בכל סוגי הצ'אטים
     dispatcher.add_handler(CommandHandler("chatid", chatid))
-    dispatcher.add_handler(CommandHandler("groupid", groupid))
-    dispatcher.add_handler(CommandHandler("chaid", chaid))
+    dispatcher.add_handler(CommandHandler("groupid", groupid))  # הוסף
+    dispatcher.add_handler(CommandHandler("chaid", chaid))      # הוסף
     dispatcher.add_handler(CommandHandler("admin", admin))
-    dispatcher.add_handler(CommandHandler("refresh_groups", refresh_all_groups))
+    dispatcher.add_handler(CommandHandler("broadcast", broadcast))
+    dispatcher.add_handler(CommandHandler("group_broadcast", group_broadcast))
+    dispatcher.add_handler(CommandHandler("refresh_groups", refresh_all_groups))  # הוסף
     
     # handlers לאינטראקציות משתמש - רק בצ'אטים פרטיים
     dispatcher.add_handler(CallbackQueryHandler(button_handler))
@@ -2214,65 +2151,10 @@ def setup_handlers():
         handle_group_activity
     ))
     
-    logger.info("Handlers setup completed with enhanced features")
+    logger.info("Handlers setup completed with enhanced group management")
 
-# --- Flask routes ---
+# --- פאנל ניהול מתקדם ---
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'slh2025')
-
-@app.route('/')
-def home():
-    return jsonify({
-        "status": "active",
-        "service": "SLH Community Gateway Bot - Premium Edition v7.0",
-        "version": "7.0",
-        "timestamp": datetime.now().isoformat(),
-        "features": [
-            "SLH Coin cryptocurrency ecosystem",
-            "Advanced community gateway with smart payments", 
-            "Elite bot development services",
-            "5-generation network marketing",
-            "NFT marketplace integration",
-            "Multi-language support (HE/EN/RU/AR)",
-            "Real-time analytics dashboard",
-            "Advanced admin panel",
-            "Payment tracking system",
-            "User activity monitoring",
-            "Referral tracking system",
-            "Free access after 39 referrals",
-            "Enhanced group management system",
-            "Admin groupid/chaid commands",
-            "Payment confirmation to groups",
-            "SLH Token rewards system",
-            "Automatic group registration",
-            "Group activity tracking",
-            "Personal area management",
-            "Payment approval system",
-            "QR code generation",
-            "Bank account management",
-            "TON wallet integration",
-            "Daily rewards system",
-            "Achievements and gamification",
-            "Leaderboard and rankings",
-            "Success stories showcase",
-            "Advanced profit calculators",
-            "VIP club with exclusive benefits",
-            "Investment projections",
-            "Risk management tools",
-            "Animated welcome messages",
-            "Enhanced user engagement",
-            "Advanced analytics",
-            "Community growth tracking"
-        ],
-        "ecosystem": {
-            "slh_coin_value": "444 ILS",
-            "membership_cost": "39 ILS", 
-            "network_levels": 5,
-            "daily_rewards": "Active",
-            "achievements_system": "Active",
-            "vip_club": "Active",
-            "growth_tracking": "Active"
-        }
-    }), 200
 
 @app.route('/admin')
 def admin_panel():
@@ -2285,7 +2167,6 @@ def admin_panel():
     recent_activity = get_recent_activity(20)
     pending_payments = get_pending_payments()
     groups = get_all_groups()
-    leaderboard = get_leaderboard(5)
     
     admin_html = """
 <!DOCTYPE html>
@@ -2293,19 +2174,8 @@ def admin_panel():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLH - פאנל ניהול מתקדם v7.0</title>
+    <title>SLH - פאנל ניהול מתקדם</title>
     <style>
-        :root {
-            --primary: #667eea;
-            --secondary: #764ba2;
-            --success: #28a745;
-            --danger: #dc3545;
-            --warning: #ffc107;
-            --info: #17a2b8;
-            --dark: #343a40;
-            --light: #f8f9fa;
-        }
-        
         * {
             margin: 0;
             padding: 0;
@@ -2313,304 +2183,164 @@ def admin_panel():
         }
         
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Arial', sans-serif; 
             margin: 0; 
             padding: 20px; 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: #333;
         }
-        
         .container { 
             max-width: 1400px; 
             margin: 0 auto; 
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             overflow: hidden;
         }
-        
         .header { 
             background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
             color: white; 
-            padding: 40px 30px; 
+            padding: 30px; 
             text-align: center;
-            position: relative;
-            overflow: hidden;
         }
-        
         .stats-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-            gap: 25px; 
-            padding: 30px;
-            background: #f8f9fa;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 20px; 
+            padding: 20px;
         }
-        
         .stat-card { 
             background: white; 
-            padding: 30px; 
-            border-radius: 15px; 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1); 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
             text-align: center;
-            border-left: 5px solid var(--primary);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            border-left: 5px solid #3498db;
+            transition: transform 0.3s ease;
         }
-        
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-        }
-        
         .stat-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            transform: translateY(-5px);
         }
-        
         .stat-number { 
-            font-size: 3em; 
+            font-size: 2.5em; 
             font-weight: bold; 
-            color: var(--primary); 
-            margin: 15px 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            color: #2c3e50; 
+            margin: 10px 0;
         }
-        
         .stat-label {
-            color: #6c757d;
+            color: #7f8c8d;
             font-size: 1.1em;
-            font-weight: 500;
         }
-        
         .section {
-            padding: 30px;
+            padding: 20px;
             margin: 20px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            border: 1px solid #e9ecef;
+            background: #f8f9fa;
+            border-radius: 12px;
         }
-        
         .section-title {
             color: #2c3e50;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 3px solid var(--primary);
-            font-size: 1.5em;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
         }
-        
         .activity-item, .payment-item, .group-item {
-            padding: 20px;
+            padding: 15px;
             border-bottom: 1px solid #e9ecef;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: background 0.3s ease;
         }
-        
-        .activity-item:hover, .payment-item:hover, .group-item:hover {
-            background: #f8f9fa;
-        }
-        
         .activity-item:last-child, .payment-item:last-child, .group-item:last-child {
             border-bottom: none;
         }
-        
         .user-info {
             font-weight: bold;
             color: #2c3e50;
-            font-size: 1.1em;
         }
-        
         .action-info {
-            color: #6c757d;
-            margin-top: 5px;
+            color: #7f8c8d;
         }
-        
         .time-info {
             color: #95a5a6;
             font-size: 0.9em;
         }
-        
         .payment-actions {
             display: flex;
             gap: 10px;
-            flex-wrap: wrap;
         }
-        
         .btn {
-            padding: 10px 20px;
+            padding: 8px 15px;
             border: none;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 0.9em;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
         }
-        
         .btn-approve {
-            background: var(--success);
+            background: #27ae60;
             color: white;
         }
-        
-        .btn-approve:hover {
-            background: #218838;
-            transform: scale(1.05);
-        }
-        
         .btn-reject {
-            background: var(--danger);
+            background: #e74c3c;
             color: white;
         }
-        
-        .btn-reject:hover {
-            background: #c82333;
-            transform: scale(1.05);
-        }
-        
         .btn-refresh {
-            background: var(--info);
+            background: #3498db;
             color: white;
         }
-        
         .btn-export {
-            background: var(--secondary);
+            background: #9b59b6;
             color: white;
         }
-        
         .controls {
             text-align: center;
-            padding: 30px;
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
+            padding: 20px;
         }
-        
         .pending-badge {
-            background: var(--danger);
+            background: #e74c3c;
             color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
+            padding: 3px 8px;
+            border-radius: 12px;
             font-size: 0.8em;
             margin-left: 10px;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        
-        .leaderboard-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            background: #f8f9fa;
-        }
-        
-        .leaderboard-rank {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: var(--primary);
-            min-width: 30px;
-        }
-        
-        .progress-bar {
-            background: #e9ecef;
-            border-radius: 10px;
-            overflow: hidden;
-            height: 8px;
-            margin: 10px 0;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            transition: width 0.3s ease;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 SLH - פאנל ניהול מתקדם v7.0</h1>
-            <p>ניהול וניטור מלא של אקוסיסטם SLH - נתונים בזמן אמת</p>
+            <h1>🚀 SLH - פאנל ניהול מתקדם</h1>
+            <p>ניטור וניהול מלא של פעילות הבוט - נתונים בזמן אמת</p>
         </div>
         
         <div class="controls">
             <button class="btn btn-refresh" onclick="location.reload()">🔄 רענן נתונים</button>
-            <button class="btn btn-export" onclick="exportData()">📊 יצא דוח מלא</button>
+            <button class="btn btn-export" onclick="exportData()">📊 יצא דוח</button>
         </div>
         
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">👥 משתמשים רשומים</div>
+                <div class="stat-label">משתמשים רשומים</div>
                 <div class="stat-number" id="totalUsers">{{ stats.total_users }}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">🔥 משתמשים פעילים היום</div>
+                <div class="stat-label">משתמשים פעילים היום</div>
                 <div class="stat-number" id="activeToday">{{ stats.active_today }}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">✅ תשלומים מאומתים</div>
+                <div class="stat-label">תשלומים מאומתים</div>
                 <div class="stat-number" id="verifiedPayments">{{ stats.verified_payments }}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">⏳ תשלומים ממתינים</div>
+                <div class="stat-label">תשלומים ממתינים</div>
                 <div class="stat-number" id="pendingPayments">{{ stats.pending_payments }}</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: {{ (stats.pending_payments / (stats.verified_payments + stats.pending_payments)) * 100 if (stats.verified_payments + stats.pending_payments) > 0 else 0 }}%"></div>
-                </div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">📈 פעולות היום</div>
+                <div class="stat-label">פעולות היום</div>
                 <div class="stat-number" id="actionsToday">{{ stats.actions_today }}</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">📁 קבוצות רשומות</div>
+                <div class="stat-label">קבוצות רשומות</div>
                 <div class="stat-number" id="totalGroups">{{ groups|length }}</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: {{ (groups|length / 50) * 100 if groups|length <= 50 else 100 }}%"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2 class="section-title">
-                🏆 מובילים שבועיים
-            </h2>
-            <div id="leaderboard">
-                {% if leaderboard %}
-                    {% for user in leaderboard %}
-                    <div class="leaderboard-item">
-                        <div class="leaderboard-rank">{{ loop.index }}</div>
-                        <div style="flex-grow: 1;">
-                            <div class="user-info">{{ user[1] }} (@{{ user[2] or 'ללא' }})</div>
-                            <div class="action-info">📊 {{ user[3] or 0 }} נקודות | 👥 {{ user[4] or 0 }} מצטרפים</div>
-                        </div>
-                        <div class="time-info">💎 {{ user[5] or 0 }} SLH</div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p style="text-align: center; color: #6c757d; padding: 20px;">אין עדיין נתונים למובילים</p>
-                {% endif %}
             </div>
         </div>
 
@@ -2623,22 +2353,24 @@ def admin_panel():
                 {% if pending_payments %}
                     {% for payment in pending_payments %}
                     <div class="payment-item">
-                        <div style="flex-grow: 1;">
+                        <div>
                             <div class="user-info">{{ payment[2] }} (@{{ payment[3] or 'ללא' }})</div>
-                            <div class="action-info">💳 {{ payment[4] }} | 💸 {{ payment[5] }}₪</div>
+                            <div class="action-info">סוג: {{ payment[4] }} | סכום: {{ payment[5] }}₪</div>
                             {% if payment[6] %}
-                            <div class="action-info">📝 {{ payment[6] }}</div>
+                            <div class="action-info">פרטים: {{ payment[6] }}</div>
                             {% endif %}
-                            <div class="time-info">🕒 {{ payment[7] }}</div>
                         </div>
-                        <div class="payment-actions">
-                            <button class="btn btn-approve" onclick="approvePayment({{ payment[0] }}, {{ payment[1] }})">✅ אישור</button>
-                            <button class="btn btn-reject" onclick="rejectPayment({{ payment[0] }})">❌ דחייה</button>
+                        <div>
+                            <div class="time-info">{{ payment[7] }}</div>
+                            <div class="payment-actions">
+                                <button class="btn btn-approve" onclick="approvePayment({{ payment[0] }}, {{ payment[1] }})">✅ אישור</button>
+                                <button class="btn btn-reject" onclick="rejectPayment({{ payment[0] }})">❌ דחייה</button>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p style="text-align: center; color: #6c757d; padding: 20px;">🎉 אין תשלומים ממתינים לאישור!</p>
+                    <p style="text-align: center; color: #7f8c8d; padding: 20px;">אין תשלומים ממתינים לאישור</p>
                 {% endif %}
             </div>
         </div>
@@ -2651,14 +2383,14 @@ def admin_panel():
                 {% if groups %}
                     {% for group in groups %}
                     <div class="group-item">
-                        <div style="flex-grow: 1;">
+                        <div>
                             <div class="user-info">{{ group[1] }}</div>
-                            <div class="action-info">🆔 {{ group[0] }} | 📊 {{ group[2] }}</div>
+                            <div class="action-info">ID: {{ group[0] }} | Type: {{ group[2] }}</div>
                         </div>
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p style="text-align: center; color: #6c757d; padding: 20px;">אין קבוצות רשומות במערכת</p>
+                    <p style="text-align: center; color: #7f8c8d; padding: 20px;">אין קבוצות רשומות במערכת</p>
                 {% endif %}
             </div>
         </div>
@@ -2668,8 +2400,8 @@ def admin_panel():
             <div id="activityList">
                 {% for activity in recent_activity %}
                 <div class="activity-item">
-                    <div style="flex-grow: 1;">
-                        <span class="user-info">{{ activity[0] }} (@{{ activity[1] or 'ללא' }})</span>
+                    <div>
+                        <span class="user-info">{{ activity[0] }} ({{ activity[1] or 'ללא' }})</span>
                         <span class="action-info"> - {{ activity[2] }}</span>
                         {% if activity[3] %}
                         <div class="action-info" style="color: #95a5a6; font-size: 0.9em;">{{ activity[3] }}</div>
@@ -2699,7 +2431,7 @@ def admin_panel():
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('✅ התשלום אושר! המשתמש קיבל הודעה ו-SLH.');
+                        alert('✅ התשלום אושר! המשתמש קיבל הודעה ו-SLH 1.');
                         location.reload();
                     } else {
                         alert('❌ שגיאה באישור התשלום: ' + data.error);
@@ -2713,33 +2445,13 @@ def admin_panel():
         
         function rejectPayment(paymentId) {
             if (confirm('האם לדחות תשלום זה?')) {
-                fetch('/admin/reject_payment', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        payment_id: paymentId,
-                        password: '{{ request.args.get("password") }}'
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('❌ התשלום נדחה!');
-                        location.reload();
-                    } else {
-                        alert('❌ שגיאה בדחיית התשלום: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    alert('❌ שגיאה: ' + error);
-                });
+                // כאן ניתן להוסיף לוגיקת דחייה
+                alert('פיצ'ר דחייה בתהליך פיתוח');
             }
         }
         
         function exportData() {
-            alert('📊 דוח נתונים מלא יוצא...');
+            alert('📊 דוח נתונים יוצא... בפועל כאן תתווסף פונקציית ייצוא');
         }
         
         // עדכון אוטומטי כל 30 שניות
@@ -2751,8 +2463,7 @@ def admin_panel():
 </html>
     """
     
-    return render_template_string(admin_html, stats=stats, recent_activity=recent_activity, 
-                                pending_payments=pending_payments, groups=groups, leaderboard=leaderboard)
+    return render_template_string(admin_html, stats=stats, recent_activity=recent_activity, pending_payments=pending_payments, groups=groups)
 
 @app.route('/admin/approve_payment', methods=['POST'])
 def approve_payment():
@@ -2766,39 +2477,23 @@ def approve_payment():
         if password != ADMIN_PASSWORD:
             return jsonify({'success': False, 'error': 'סיסמה לא תקינה'})
         
-        # אישור התשלום במסד הנתונים
+        # אישור התשלום במסד הנתונים והוספת SLH
         success, slh_reward = approve_user_payment(user_id, 'admin')
         
         if success:
-            # הענקת הישגים
-            award_achievement(user_id, "first_payment", "💳 תשלום ראשון אושר", 15)
-            
             # שליחת הודעה למשתמש
             try:
-                user_info = f"""🎉 **מזל טוב! התשלום שלך אושר!**
-
-💎 **בונוס SLH:** קיבלת **{slh_reward} SLH** בשווי {slh_reward * SLH_TOKEN_VALUE}₪
-
-🚀 **קישור ההצטרפות לקהילה:**
-{MAIN_GROUP_LINK}
-
-🔗 **הלינק האישי שלך לשיתוף:**
-`https://t.me/Buy_My_Shop_bot?start={user_id}`
-
-👑 **כעת יש לך גישה מלאה לאזור האישי!**
-
-🎯 **הישג חדש:** 🔓 "תשלום ראשון אושר"
-
-📊 **מה תוכל לעשות באזור האישי:**
-• ניהול הלינק האישי שלך
-• מעקב אחר מצטרפים  
-• קבלת תשלומים אוטומטית
-• ניהול חשבון בנק וארנק TON
-• צפייה בעץ הרפראלים שלך
-• פרסים יומיים והישגים
-
-💫 **ברוך הבא למהפכה! ההצלחה מתחילה כאן!**
-"""
+                user_info = f"🎉 **מזל טוב! התשלום שלך אושר!**\n\n"
+                user_info += f"**💎 בונוס SLH:** קיבלת **{slh_reward} SLH** בשווי {slh_reward * 444}₪!\n\n"
+                user_info += f"**🚀 קישור ההצטרפות לקהילה:**\n{MAIN_GROUP_LINK}\n\n"
+                user_info += f"**🔗 הלינק האישי שלך לשיתוף:**\n`https://t.me/Buy_My_Shop_bot?start={user_id}`\n\n"
+                user_info += f"**📊 מה תקבל:**\n"
+                user_info += f"• גישה מלאה לקהילת VIP\n"
+                user_info += f"• {slh_reward} SLH בשווי {slh_reward * 444}₪\n"
+                user_info += f"• מערכת הכנסות פסיביות\n"
+                user_info += f"• תמיכה טכנית 24/7\n\n"
+                user_info += f"**💫 ברוך הבא למהפכה!**"
+                
                 bot.send_message(
                     chat_id=user_id,
                     text=user_info,
@@ -2818,29 +2513,168 @@ def approve_payment():
         logger.error(f"Error in approve_payment: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/admin/reject_payment', methods=['POST'])
-def reject_payment():
-    """דוחה תשלום"""
-    try:
-        data = request.get_json()
-        password = data.get('password')
-        payment_id = data.get('payment_id')
+# --- הגדרת Flask routes ---
+@app.route('/')
+def home():
+    return jsonify({
+        "status": "active",
+        "service": "SLH Community Gateway Bot - Premium Edition",
+        "version": "5.6",
+        "timestamp": datetime.now().isoformat(),
+        "features": [
+            "SLH Coin cryptocurrency ecosystem",
+            "Advanced community gateway with smart payments", 
+            "Elite bot development services",
+            "5-generation network marketing",
+            "NFT marketplace integration",
+            "Multi-language support (HE/EN/RU/AR)",
+            "Real-time analytics dashboard",
+            "Advanced admin panel",
+            "Payment tracking system",
+            "User activity monitoring",
+            "Referral tracking system",
+            "Free access after 39 referrals",
+            "Enhanced group management system",
+            "Admin groupid/chaid commands",
+            "Payment confirmation to groups",
+            "SLH Token rewards system",
+            "Automatic group registration",
+            "Group activity tracking"
+        ],
+        "monitoring": {
+            "admin_panel": "/admin?password=slh2025",
+            "real_time_alerts": "Active",
+            "payment_tracking": "Active",
+            "user_analytics": "Active",
+            "referral_tracking": "Active",
+            "group_tracking": "Active",
+            "slh_rewards": "Active"
+        },
+        "ecosystem": {
+            "slh_coin_value": "444 ILS",
+            "membership_cost": "39 ILS", 
+            "network_levels": 5,
+            "active_users": "500+",
+            "monthly_growth": "20%",
+            "free_access_after": "39 referrals",
+            "slh_reward_per_payment": "1 SLH"
+        }
+    }), 200
+
+@app.route('/dashboard')
+def dashboard():
+    """ממשק ניהול בעברית"""
+    return """
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLH - ממשק ניהול</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .stat-number { font-size: 2em; font-weight: bold; color: #667eea; }
+        .projects { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .project-item { padding: 10px; border-bottom: 1px solid #eee; }
+        .project-item:last-child { border-bottom: none; }
+        .status-active { color: green; font-weight: bold; }
+        .status-inactive { color: red; }
+        .ecosystem { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; }
+        .admin-link { background: #ff6b6b; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none; display: inline-block; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 SLH - ממשק ניהול מערכת</h1>
+            <p>ניהול וניטור כל הפרויקטים במערכת אחת</p>
+            <a href="/admin?password=slh2025" class="admin-link">🔐 פאנל ניהול מתקדם</a>
+        </div>
         
-        if password != ADMIN_PASSWORD:
-            return jsonify({'success': False, 'error': 'סיסמה לא תקינה'})
-        
-        # דחיית התשלום במסד הנתונים
-        success = reject_user_payment(payment_id)
-        
-        if success:
-            logger.info(f"Payment {payment_id} rejected by admin")
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'שגיאה בדחיית התשלום'})
-            
-    except Exception as e:
-        logger.error(f"Error in reject_payment: {e}")
-        return jsonify({'success': False, 'error': str(e)})
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="userCount">0</div>
+                <div>משתמשים רשומים</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="projectCount">4</div>
+                <div>פרויקטים פעילים</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="slhValue">444₪</div>
+                <div>ערך SLH Coin</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="responseTime">2.3s</div>
+                <div>זמן תגובה ממוצע</div>
+            </div>
+        </div>
+
+        <div class="ecosystem">
+            <h2>💎 אקוסיסטם סלה ללא גבולות - גרסה 5.6</h2>
+            <p><strong>מערכת ניטור מתקדמת:</strong> ✅ פעיל</p>
+            <p><strong>התראות בזמן אמת:</strong> ✅ פעיל</p>
+            <p><strong>מעקב תשלומים:</strong> ✅ פעיל</p>
+            <p><strong>פאנל ניהול:</strong> ✅ פעיל</p>
+            <p><strong>טיפול בשגיאות:</strong> ✅ משופר</p>
+            <p><strong>מערכת רפראלים:</strong> ✅ פעיל</p>
+            <p><strong>גישה חינם אחרי 39:</strong> ✅ פעיל</p>
+            <p><strong>תמיכה רב-לשונית:</strong> ✅ פעיל</p>
+            <p><strong>מטבע SLH:</strong> 444₪ ליחידה</p>
+            <p><strong>עלות הצטרפות:</strong> 39₪</p>
+            <p><strong>רמות שיווק:</strong> 5 דורות</p>
+            <p><strong>צמיחה חודשית:</strong> 20%</p>
+            <p><strong>ניהול קבוצות מתקדם:</strong> ✅ פעיל</p>
+            <p><strong>פקודות /groupid ו-/chaid:</strong> ✅ פעיל</p>
+            <p><strong>פקודת /admin:</strong> ✅ פעיל</p>
+            <p><strong>אישורי תשלום לקבוצה:</strong> ✅ פעיל</p>
+            <p><strong>תגמולי SLH:</strong> ✅ פעיל (1 SLH לכל תשלום)</p>
+            <p><strong>שידור לקבוצות:</strong> ✅ פעיל</p>
+            <p><strong>רישום קבוצות אוטומטי:</strong> ✅ פעיל</p>
+            <p><strong>מעקב פעילות קבוצות:</strong> ✅ פעיל</p>
+        </div>
+
+        <div class="projects">
+            <h2>🌐 הפרויקטים שלנו</h2>
+            <div class="project-item">
+                <strong>🤖 Bot Development Platform</strong>
+                <span class="status-active">פעיל</span>
+                <br><small>https://web-production-b425.up.railway.app</small>
+            </div>
+            <div class="project-item">
+                <strong>🎨 SLH NFT Marketplace</strong>
+                <span class="status-active">פעיל</span>
+                <br><small>https://slh-nft.com/</small>
+            </div>
+            <div class="project-item">
+                <strong>💼 Facebook Business Page</strong>
+                <span class="status-active">פעיל</span>
+                <br><small>https://www.facebook.com/OMG.adv/</small>
+            </div>
+            <div class="project-item">
+                <strong>📚 Landing Page</strong>
+                <span class="status-active">בפיתוח</span>
+                <br><small>https://osifeu-prog.github.io/GATE_BOTSHOP/</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // הדמיית נתונים דינמיים
+        setInterval(() => {
+            document.getElementById('userCount').textContent = 
+                Math.floor(500 + Math.random() * 100);
+            document.getElementById('responseTime').textContent = 
+                (1.5 + Math.random() * 1).toFixed(1) + 's';
+        }, 3000);
+    </script>
+</body>
+</html>
+"""
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -2860,16 +2694,26 @@ def set_webhook():
     try:
         success = bot.set_webhook(WEBHOOK_URL)
         if success:
-            logger.info(f"✅ Webhook set successfully to: {WEBHOOK_URL}")
+            logger.info(f"Webhook set successfully to: {WEBHOOK_URL}")
             return jsonify({
                 "status": "Webhook set successfully", 
                 "url": WEBHOOK_URL,
                 "timestamp": datetime.now().isoformat(),
-                "version": "7.0",
-                "features": "Advanced ecosystem with gamification"
+                "bot_info": {
+                    "service": "SLH Community & Ecosystem Gateway",
+                    "version": "5.6",
+                    "ecosystem": {
+                        "slh_coin": "444 ILS per coin",
+                        "network_marketing": "5 generations", 
+                        "membership": "39 ILS",
+                        "free_access_after": "39 referrals",
+                        "slh_rewards": "1 SLH per payment",
+                        "features": ["Bot development", "NFT marketplace", "Crypto ecosystem", "Advanced monitoring", "Enhanced group management", "Referral system", "Multi-language support", "Admin commands", "Payment confirmations", "SLH token rewards"]
+                    }
+                }
             }), 200
         else:
-            logger.error("❌ Failed to set webhook")
+            logger.error("Failed to set webhook")
             return jsonify({"status": "Failed to set webhook"}), 500
     except Exception as e:
         logger.error(f"Error setting webhook: {e}")
@@ -2880,29 +2724,25 @@ def health_check():
     """בדיקת בריאות של האפליקציה"""
     return jsonify({
         "status": "healthy", 
-        "service": "SLH Community Gateway & Ecosystem v7.0",
-        "version": "7.0",
+        "service": "SLH Community Gateway & Ecosystem",
+        "version": "5.6",
         "timestamp": datetime.now().isoformat(),
-        "advanced_features": {
-            "daily_rewards": "active",
-            "achievements_system": "active", 
-            "leaderboard": "active",
-            "vip_club": "active",
-            "success_stories": "active",
-            "calculators": "active",
-            "growth_projections": "active",
-            "animated_ui": "active",
-            "gamification": "active"
-        },
-        "performance": {
-            "response_time": "0.2s",
-            "uptime": "99.9%",
-            "active_users": "500+",
-            "monthly_growth": "20%"
+        "projects_active": 4,
+        "system_uptime": "99.9%",
+        "slh_coin_value": "444 ILS",
+        "monitoring": {
+            "database": "active",
+            "alerts": "active",
+            "admin_panel": "active",
+            "referral_system": "active",
+            "multi_language": "active",
+            "enhanced_group_management": "active",
+            "payment_confirmation": "active",
+            "slh_rewards": "active"
         }
     }), 200
 
-# --- אתחול הבוט ---
+# --- אתחול ---
 def initialize_bot():
     """אתחול הבוט והגדרות"""
     try:
@@ -2920,35 +2760,12 @@ def initialize_bot():
         bot_info = bot.get_me()
         logger.info(f"✅ Bot initialized: @{bot_info.username}")
         
-        # שליחת הודעת אתחול
+        # שליחת הודעת אתחול לקבוצת הניהול (אם היא קיימת)
         try:
             groups_count = len(get_all_groups())
-            bot.send_message(
-                chat_id=ADMIN_GROUP_ID,
-                text=f"""
-🚀 **בוט SLH הותחל בהצלחה! - גרסה 7.0**
-
-✨ **תכונות מתקדמות פעילות:**
-• 🎯 פרסים יומיים ומערכת הישגים
-• 🏆 טבלת מובילים וגיימיפיקציה  
-• 📈 מחשבונים מתקדמים
-• 🎩 מועדון VIP בלעדי
-• 🏆 סיפורי הצלחה מעוררי השראה
-• 💫 ממשק אנימטיבי ומרהיב
-
-📊 **סטטיסטיקות מערכת:**
-• גרסה: 7.0 - Premium Edition
-• תמיכה ב: 4 שפות
-• תכונות מתקדמות: 35+
-• ביצועים משופרים: 99.9% uptime
-• קבוצות רשומות: {groups_count}
-
-🎉 **המערכת מוכנה לחווית משתמש מדהימה!**
-""",
-                parse_mode='Markdown'
-            )
+            send_admin_alert(f"🚀 **בוט SLH הותחל בהצלחה!**\n\nגרסה: 5.6 - עם מערכת ניהול קבוצות מתקדמת\n📊 קבוצות רשומות: {groups_count}\n🆔 פקודות חדשות: /groupid, /chaid\n🔄 רענון קבוצות: /refresh_groups\nפאנל ניהול: /admin\nמערכת רפראלים: ✅ פעיל\nתמיכה רב-לשונית: ✅ פעיל\nניהול קבוצות: ✅ משופר\nפקודת /groupid: ✅ פעיל\nאישורי תשלום לקבוצה: ✅ פעיל\nתגמולי SLH: ✅ פעיל (1 SLH לכל תשלום)\nשידור לקבוצות: ✅ פעיל")
         except Exception as e:
-            logger.warning(f"Could not send startup message: {e}")
+            logger.warning(f"Could not send startup message to admin group: {e}")
         
     except Exception as e:
         logger.error(f"❌ Failed to initialize bot: {e}")
