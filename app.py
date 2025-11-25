@@ -1935,9 +1935,9 @@ After joining, you'll receive a **unique personal sharing link** that's identifi
             default_messages = {
                 'he': {
                     'investment': "**🚀 השקעה בפרויקט SLH**\n\nפרטים נוספים על אפשרויות השקעה יישלחו אליך בהמשך.",
-                    'bot_development': "**🤖 פיתוח בוטים לעסקים**\n\nשירותי פיתוח בוטים מותאמים אישית. נא צור קשר לפרטים.",
+                    'bot_development': "**🤖 פיתוח בוטים לעסקים**\n\n - 0584203384 שירותי פיתוח בוטים מותאמים אישית. נא צור קשר לפרטים.",
                     'our_projects': "**🌐 הפרויקטים שלנו**\n\nכל הפרויקטים שלנו זמינים באתר הראשי.",
-                    'contact': "**📞 צור קשר**\n\nנא שלח לנו הודעה ישירה לפרטים נוספים.",
+                    'contact': "**📞 צור קשר**\n\n0584203384 - נא שלח לנו הודעה ישירה לפרטים נוספים.",
                     'help': "**🆘 עזרה ראשונה**\n\nכיצד נוכל לעזור? צור איתנו קשר לפתרון מהיר."
                 },
                 'en': {
@@ -2111,7 +2111,7 @@ def handle_payment_proof(update: Update, context: CallbackContext) -> None:
         logger.error(f"Error in handle_payment_proof: {e}")
         lang = get_user_language(update.effective_user.id)
         error_messages = {
-            'he': "❌ אירעה שגיאה בעיבוד האישור. אנא נסה שוב או צור קשר.",
+            'he': "❌ 0584203384 אירעה שגיאה בעיבוד האישור. אנא נסה שוב או צור קשר.",
             'en': "❌ An error occurred processing the confirmation. Please try again or contact us.",
             'ru': "❌ Произошла ошибка при обработке подтверждения. Пожалуйста, попробуйте снова или свяжитесь с нами.",
             'ar': "❌ حدث خطأ في معالجة التأكيد. يرجى المحاولة مرة أخرى أو الاتصال بنا."
