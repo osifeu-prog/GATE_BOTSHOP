@@ -1,6 +1,6 @@
 import os
 
-# הגדרות סביבה - עם ערכי ברירת מחדל לבדיקה
+# הגדרות סביבה
 BOT_TOKEN = os.environ.get('BOT_TOKEN', 'your_bot_token_here')
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://web-production-b425.up.railway.app') + '/webhook'
 MAIN_GROUP_LINK = os.environ.get('MAIN_GROUP_LINK', 'https://t.me/your_main_group')
