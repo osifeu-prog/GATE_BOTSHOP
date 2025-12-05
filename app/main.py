@@ -43,7 +43,10 @@ async def on_startup() -> None:
     await telegram_app.initialize()
     await telegram_app.start()
 
-    webhook_url = settings.WEBHOOK_URL.rstrip("/") + settings.TELEGRAM_WEBHOOK_PATH
+    # כאן התיקון – המרה ל-string לפני rstrip
+    base_url = str(settings.WEBHOOK_URL).rstrip("/")
+    webhook_url = base_url + settings.TELEGRAM_WEBHOOK_PATH
+
     await telegram_app.bot.set_webhook(webhook_url)
     logger.info("Telegram webhook set to %s", webhook_url)
 
