@@ -1,24 +1,26 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, DateTime, func, Boolean
+from __future__ import annotations
+
+from datetime import datetime
+from decimal import Decimal
+
+from sqlalchemy import Integer, String, DateTime, Numeric, ForeignKey, Boolean
+from sqlalchemy.orm import Mapped, mapped_column
+
 from ..database import Base
 
 
 class StakingPosition(Base):
     __tablename__ = "staking_positions"
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    wallet_id: Mapped[int] = mapped_column(ForeignKey("wallets.id"), index=True)
 
-    network = Column(String(16), default="mainnet")
-    currency = Column(String(16), default="TON")
-    amount = Column(Numeric(36, 9), nullable=False)
+    currency: Mapped[str] = mapped_column(String(16), default="TON")
+    amount: Mapped[Decimal] = mapped_column(Numeric(38, 9))
+    lock_days: Mapped[int] = mapped_column(Integer, default=30)
+    apy: Mapped[Decimal] = mapped_column(Numeric(10, 4), default=Decimal("0.12"))
 
-    lock_days = Column(Integer, default=30)
-    apy_percent = Column(Numeric(10, 4), default=10.0)
-
-    started_at = Column(DateTime(timezone=True), server_default=func.now())
-    unlock_at = Column(DateTime(timezone=True), nullable=True)
-
-    is_closed = Column(Boolean, default=False)
-    closed_at = Column(DateTime(timezone=True), nullable=True)
-
-    auto_redeem = Column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    unlock_at: Mapped[datetime] = mapped_column(DateTime)
+    redeemed: Mapped[bool] = mapped_column(Boolean, default=False)

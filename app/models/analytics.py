@@ -1,19 +1,21 @@
-from datetime import datetime
+from __future__ import annotations
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, JSON
+from datetime import date
+from decimal import Decimal
+
+from sqlalchemy import Integer, String, Date, Numeric
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
 
 
-class AnalyticsEvent(Base):
-    __tablename__ = "analytics_events"
+class DailyStats(Base):
+    __tablename__ = "daily_stats"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
-    )
-    event_type: Mapped[str] = mapped_column(String(64))
-    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    day: Mapped[date] = mapped_column(Date, unique=True, index=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    active_users: Mapped[int] = mapped_column(Integer, default=0)
+    trades_count: Mapped[int] = mapped_column(Integer, default=0)
+    p2p_orders_count: Mapped[int] = mapped_column(Integer, default=0)
+    volume_ton: Mapped[Decimal] = mapped_column(Numeric(38, 9), default=Decimal("0"))

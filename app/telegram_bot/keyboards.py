@@ -1,10 +1,16 @@
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def trade_mode_keyboard(current: str | None = None) -> InlineKeyboardMarkup:
+def trade_mode_keyboard() -> InlineKeyboardMarkup:
     buttons = [
-        [InlineKeyboardButton("🟦 מסחר אמיתי (DEX)", callback_data="mode_real")],
-        [InlineKeyboardButton("🟩 סימולציה (Futures SIM)", callback_data="mode_sim")],
-        [InlineKeyboardButton("🟨 היברידי (Hybrid)", callback_data="mode_hybrid")],
+        [
+            InlineKeyboardButton("🟦 A. מסחר אמיתי", callback_data="trade_mode:real"),
+        ],
+        [
+            InlineKeyboardButton("🟩 B. סימולציה", callback_data="trade_mode:sim"),
+        ],
+        [
+            InlineKeyboardButton("🟨 C. מצב היברידי", callback_data="trade_mode:hybrid"),
+        ],
     ]
     return InlineKeyboardMarkup(buttons)

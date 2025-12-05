@@ -1,1 +1,1 @@
-# GATE BOTSHOP AI - full trading stack
+"""GATE BOTSHOP AI – FastAPI + Telegram bot application package."""

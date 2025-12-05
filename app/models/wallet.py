@@ -14,34 +14,17 @@ class Wallet(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
 
-    # רשת: testnet / mainnet
+    # testnet / mainnet
     network: Mapped[str] = mapped_column(String(16), default="testnet")
 
-    # סוג הארנק: real / demo
+    # real / demo
     kind: Mapped[str] = mapped_column(String(8), default="real")
 
-    # כתובת ארנק TON (לא חובה, ניתן להגדיר בהמשך עם /link_ton)
     address: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    encrypted_private_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
-    # מפתח מוצפן (אם נרצה Custodial אמיתי בהמשך)
-    encrypted_private_key: Mapped[str | None] = mapped_column(
-        String(512),
-        nullable=True,
-    )
+    balance_ton: Mapped[Decimal] = mapped_column(Numeric(38, 9), default=Decimal("0"))
+    balance_usdt: Mapped[Decimal] = mapped_column(Numeric(38, 9), default=Decimal("0"))
+    balance_slh: Mapped[Decimal] = mapped_column(Numeric(38, 9), default=Decimal("0"))
 
-    # יתרות פנימיות (Ledger) – לא על השרשרת
-    balance_ton: Mapped[Decimal] = mapped_column(
-        Numeric(38, 9),
-        default=Decimal("0"),
-    )
-    balance_usdt: Mapped[Decimal] = mapped_column(
-        Numeric(38, 9),
-        default=Decimal("0"),
-    )
-    balance_slh: Mapped[Decimal] = mapped_column(
-        Numeric(38, 9),
-        default=Decimal("0"),
-    )
-
-    # האם זה הארנק הראשי של המשתמש (למצב real)
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False)

@@ -14,11 +14,8 @@ def build_telegram_app() -> Application:
         .build()
     )
 
-    # פקודות התחלה והגדרות
     register_start_handlers(app)
     register_settings_handlers(app)
-
-    # ארנק
     register_wallet_handlers(app)
 
     return app

@@ -1,26 +1,23 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func
-from sqlalchemy.orm import relationship
+from __future__ import annotations
+
+from sqlalchemy import Integer, String, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from ..database import Base
 
 
 class UserSettings(Base):
     __tablename__ = "user_settings"
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
 
-    trade_mode = Column(String(16), default="sim")      # real | sim | hybrid
-    network = Column(String(16), default="testnet")     # testnet | mainnet
-    base_currency = Column(String(16), default="TON")   # TON | USDT | SLH
+    # real | sim | hybrid
+    trade_mode: Mapped[str] = mapped_column(String(16), default="sim")
 
-    hybrid_mode = Column(String(16), default="ratio")   # ratio | smart | simple
-    hybrid_ratio_real_percent = Column(Integer, default=50)
+    # mainnet | testnet
+    network: Mapped[str] = mapped_column(String(16), default="testnet")
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-    )
+    base_currency: Mapped[str] = mapped_column(String(16), default="TON")
 
-    user = relationship("User", backref="settings", uselist=False)
+    user = relationship("User")

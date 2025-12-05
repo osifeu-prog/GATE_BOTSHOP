@@ -10,9 +10,7 @@ from ...services.trade_mode_service import (
     get_or_create_user,
     get_or_create_settings,
 )
-from ...services.wallet_service import (
-    get_or_create_default_wallets,
-)
+from ...services.wallet_service import get_or_create_default_wallets
 from ...services.ton_client import get_account_balance_ton
 
 
@@ -32,28 +30,22 @@ async def wallet_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             wallets = await get_or_create_default_wallets(session, user.id)
             await session.commit()
     except Exception:
-        # כאן אפשר בעתיד להוסיף לוג מפורט, כרגע נשלח הודעה גנרית
         await update.effective_message.reply_text("❗ אירעה שגיאה בטעינת הארנק. נסה שוב עוד רגע.")
         return
 
     user_net = settings_row.network
-
     relevant = [w for w in wallets if w.network == user_net]
     if not relevant:
         await update.effective_message.reply_text("אין לך עדיין ארנקים פעילים במערכת.")
         return
 
-    # ננסה לקרוא balance אמיתי אם יש כתובת ארנק Real
     real_wallets = [w for w in relevant if w.kind == "real"]
     onchain_text = "לא הוגדרה עדיין כתובת TON אישית.\n"
     onchain_balance = Decimal("0")
 
     if real_wallets and real_wallets[0].address:
         address = real_wallets[0].address
-        onchain_balance = await get_account_balance_ton(
-            address=address,
-            network=user_net,  # "testnet" / "mainnet"
-        )
+        onchain_balance = await get_account_balance_ton(address=address, network=user_net)  # type: ignore[arg-type]
         onchain_text = (
             f"כתובת TON ({user_net}):\n"
             f"`{address}`\n\n"
@@ -70,7 +62,6 @@ async def wallet_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     for w in relevant:
         kind_label = "Real" if w.kind == "real" else "Demo"
-        # שים לב: השדות האלה עכשיו קיימים במודל wallet
         lines.append(
             f"• {kind_label} – TON={w.balance_ton}  USDT={w.balance_usdt}  SLH={w.balance_slh}"
         )

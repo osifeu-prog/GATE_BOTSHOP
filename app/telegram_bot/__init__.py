@@ -1,1 +1,1 @@
-from .bot_app import build_telegram_app
+"""Telegram bot integration for GATE BOTSHOP AI."""

@@ -11,15 +11,7 @@ class Base(DeclarativeBase):
 
 
 def _normalize_db_url(raw: str) -> str:
-    """
-    Railway נותן בדרך כלל:
-    postgres://user:pass@host:port/db
-    או postgresql://...
-
-    אנחנו ממירים את זה ל:
-    postgresql+asyncpg://user:pass@host:port/db
-    כדי להשתמש ב-asyncpg ולא ב-psycopg2.
-    """
+    # Railway gives postgres://... – convert to asyncpg url
     if raw.startswith("postgres://"):
         raw = "postgresql://" + raw[len("postgres://"):]
     if raw.startswith("postgresql://") and "+asyncpg" not in raw:
@@ -34,15 +26,8 @@ AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=As
 
 
 async def init_db() -> None:
-    """
-    מחבר למסד, יוצר טבלאות אם צריך, ומוודא שהחיבור חי.
-    """
+    """Create tables if needed and ensure DB connection is alive."""
     async with engine.begin() as conn:
-        # לוודא שכל המודלים נרשמים לפני create_all
         from . import models  # noqa: F401
-
-        # יצירת טבלאות אם לא קיימות
         await conn.run_sync(Base.metadata.create_all)
-
-        # בדיקת חיבור בסיסית
         await conn.execute(text("SELECT 1"))
