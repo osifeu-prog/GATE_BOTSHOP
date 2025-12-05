@@ -7,7 +7,6 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.templating import Jinja2Templates
 
 from telegram import Update
 from telegram.ext import Application
@@ -21,15 +20,16 @@ from .telegram_bot.handlers import (
 )
 
 logger = logging.getLogger("gate_botshop_ai")
-logging.basicConfig(level=getattr(logging, settings.__dict__.get("LOG_LEVEL", "INFO"), logging.INFO))
+logging.basicConfig(
+    level=getattr(logging, getattr(settings, "LOG_LEVEL", "INFO"), logging.INFO)
+)
 
 app = FastAPI(title="Gate Botshop AI")
 
-# Static + templates (basic)
+# מאפשרים סטטיים (לא חובה כרגע אבל שימושי לדשבורד עתידי)
 app.mount("/static", StaticFiles(directory="app/web"), name="static")
-templates = Jinja2Templates(directory="app/web")
 
-# Allow CORS for future dashboards
+# CORS בשביל דשבורד עתידי
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -82,7 +82,22 @@ async def health() -> dict[str, Any]:
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request) -> Any:
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    # דף בסיסי בלי Jinja2
+    html = """
+    <!DOCTYPE html>
+    <html lang="he">
+      <head>
+        <meta charset="UTF-8" />
+        <title>Gate Botshop AI</title>
+      </head>
+      <body>
+        <h1>Gate Botshop AI – Online</h1>
+        <p>אם אתה רואה את הדף הזה, השרת רץ תקין על Railway.</p>
+        <p>את הבוט מנהל הטלגרם דרך webhook בנתיב /webhook/telegram.</p>
+      </body>
+    </html>
+    """
+    return HTMLResponse(content=html)
 
 
 @app.post(settings.TELEGRAM_WEBHOOK_PATH)
