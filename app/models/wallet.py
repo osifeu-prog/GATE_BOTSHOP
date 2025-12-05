@@ -1,23 +1,47 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, DateTime, func, Boolean
+from __future__ import annotations
+
+from decimal import Decimal
+
+from sqlalchemy import Integer, String, Boolean, Numeric, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column
+
 from ..database import Base
 
 
 class Wallet(Base):
     __tablename__ = "wallets"
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
 
-    network = Column(String(16), default="testnet")  # mainnet / testnet
-    kind = Column(String(16), default="real")        # real | demo
+    # רשת: testnet / mainnet
+    network: Mapped[str] = mapped_column(String(16), default="testnet")
 
-    address = Column(String(128), nullable=True)
-    encrypted_private_key = Column(String(512), nullable=True)
+    # סוג הארנק: real / demo
+    kind: Mapped[str] = mapped_column(String(8), default="real")
 
-    balance_ton = Column(Numeric(36, 9), default=0)
-    balance_usdt = Column(Numeric(36, 9), default=0)
-    balance_slh = Column(Numeric(36, 9), default=0)
+    # כתובת ארנק TON (לא חובה, ניתן להגדיר בהמשך עם /link_ton)
+    address: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
-    is_primary = Column(Boolean, default=False)
+    # מפתח מוצפן (אם נרצה Custodial אמיתי בהמשך)
+    encrypted_private_key: Mapped[str | None] = mapped_column(
+        String(512),
+        nullable=True,
+    )
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    # יתרות פנימיות (Ledger) – לא על השרשרת
+    balance_ton: Mapped[Decimal] = mapped_column(
+        Numeric(38, 9),
+        default=Decimal("0"),
+    )
+    balance_usdt: Mapped[Decimal] = mapped_column(
+        Numeric(38, 9),
+        default=Decimal("0"),
+    )
+    balance_slh: Mapped[Decimal] = mapped_column(
+        Numeric(38, 9),
+        default=Decimal("0"),
+    )
+
+    # האם זה הארנק הראשי של המשתמש (למצב real)
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
