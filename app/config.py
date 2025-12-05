@@ -4,7 +4,6 @@ from typing import List, Optional
 from pydantic_settings import BaseSettings
 from pydantic import Field
 
-
 class Settings(BaseSettings):
     # Telegram
     BOT_TOKEN: str = Field(..., description="Telegram Bot token from BotFather")
