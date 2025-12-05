@@ -1,24 +1,23 @@
-from datetime import datetime
-
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, DateTime, func, Boolean
 from ..database import Base
 
 
 class Wallet(Base):
     __tablename__ = "wallets"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    is_demo: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
 
-    balance_slh: Mapped[float] = mapped_column(Float, default=0.0)
-    balance_usdt: Mapped[float] = mapped_column(Float, default=0.0)
+    network = Column(String(16), default="testnet")  # mainnet / testnet
+    kind = Column(String(16), default="real")        # real | demo
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    address = Column(String(128), nullable=True)
+    encrypted_private_key = Column(String(512), nullable=True)
 
-    user = relationship("User", back_populates="wallets")
+    balance_ton = Column(Numeric(36, 9), default=0)
+    balance_usdt = Column(Numeric(36, 9), default=0)
+    balance_slh = Column(Numeric(36, 9), default=0)
+
+    is_primary = Column(Boolean, default=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

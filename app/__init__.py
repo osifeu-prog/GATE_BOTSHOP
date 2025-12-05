@@ -1,1 +1,1 @@
-from .config import settings
+# GATE BOTSHOP AI - full trading stack

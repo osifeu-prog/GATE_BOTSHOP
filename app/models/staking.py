@@ -1,28 +1,24 @@
-from datetime import datetime
-
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, DateTime, func, Boolean
 from ..database import Base
 
 
-class StakePosition(Base):
-    __tablename__ = "stakes"
+class StakingPosition(Base):
+    __tablename__ = "staking_positions"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    is_demo: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
 
-    amount_slh: Mapped[float] = mapped_column(Float)
-    lock_days: Mapped[int] = mapped_column(Integer)
-    apy: Mapped[float] = mapped_column(Float)
+    network = Column(String(16), default="mainnet")
+    currency = Column(String(16), default="TON")
+    amount = Column(Numeric(36, 9), nullable=False)
 
-    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    lock_days = Column(Integer, default=30)
+    apy_percent = Column(Numeric(10, 4), default=10.0)
 
-    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    ends_at: Mapped[datetime] = mapped_column(DateTime)
-    last_yield_calculated_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True
-    )
+    started_at = Column(DateTime(timezone=True), server_default=func.now())
+    unlock_at = Column(DateTime(timezone=True), nullable=True)
 
-    user = relationship("User", back_populates="stakes")
+    is_closed = Column(Boolean, default=False)
+    closed_at = Column(DateTime(timezone=True), nullable=True)
+
+    auto_redeem = Column(Boolean, default=True)

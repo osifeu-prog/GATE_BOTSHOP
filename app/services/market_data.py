@@ -1,21 +1,18 @@
-import httpx
-from typing import Dict, Any, List
+from typing import Any
 
 
-async def fetch_binance_klines(symbol: str, interval: str = "15m", limit: int = 200) -> List[List[Any]]:
-    url = "https://api.binance.com/api/v3/klines"
-    params = {"symbol": symbol, "interval": interval, "limit": limit}
-    async with httpx.AsyncClient(timeout=10) as client:
-        r = await client.get(url, params=params)
-        r.raise_for_status()
-        return r.json()
+async def get_price(symbol: str) -> float:
+    """Placeholder only – integrate real market APIs later."""
+    symbol = symbol.upper()
+    if symbol.endswith("USDT"):
+        return 100.0
+    return 1.0
 
 
-async def fetch_binance_price(symbol: str) -> float:
-    url = "https://api.binance.com/api/v3/ticker/price"
-    params = {"symbol": symbol}
-    async with httpx.AsyncClient(timeout=10) as client:
-        r = await client.get(url, params=params)
-        r.raise_for_status()
-        data = r.json()
-        return float(data["price"])
+async def get_full_ticker(symbol: str) -> dict[str, Any]:
+    price = await get_price(symbol)
+    return {
+        "symbol": symbol.upper(),
+        "price": price,
+        "source": "placeholder",
+    }

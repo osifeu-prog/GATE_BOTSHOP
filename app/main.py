@@ -13,23 +13,15 @@ from telegram.ext import Application
 
 from .config import settings
 from .database import init_db
-from .telegram_bot.handlers import (
-    register_user_handlers,
-    register_callback_handlers,
-    register_admin_handlers,
-)
+from .telegram_bot.bot_app import build_telegram_app
 
 logger = logging.getLogger("gate_botshop_ai")
-logging.basicConfig(
-    level=getattr(logging, getattr(settings, "LOG_LEVEL", "INFO"), logging.INFO)
-)
+logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL, logging.INFO))
 
-app = FastAPI(title="Gate Botshop AI")
+app = FastAPI(title="Gate Botshop AI - Full Trading Stack")
 
-# מאפשרים סטטיים (לא חובה כרגע אבל שימושי לדשבורד עתידי)
 app.mount("/static", StaticFiles(directory="app/web"), name="static")
 
-# CORS בשביל דשבורד עתידי
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -43,27 +35,17 @@ telegram_app: Application | None = None
 @app.on_event("startup")
 async def on_startup() -> None:
     global telegram_app
-    logger.info("Initializing DB...")
+    logger.info("Initializing DB connectivity...")
     await init_db()
 
-    logger.info("Initializing Telegram Application...")
-    telegram_app = (
-        Application.builder()
-        .token(settings.BOT_TOKEN)
-        .concurrent_updates(True)
-        .build()
-    )
-
-    register_user_handlers(telegram_app)
-    register_callback_handlers(telegram_app)
-    register_admin_handlers(telegram_app)
-
+    logger.info("Building Telegram Application...")
+    telegram_app = build_telegram_app()
     await telegram_app.initialize()
     await telegram_app.start()
 
     webhook_url = settings.WEBHOOK_URL.rstrip("/") + settings.TELEGRAM_WEBHOOK_PATH
     await telegram_app.bot.set_webhook(webhook_url)
-    logger.info("Telegram Application ready with webhook %s", webhook_url)
+    logger.info("Telegram webhook set to %s", webhook_url)
 
 
 @app.on_event("shutdown")
@@ -82,8 +64,7 @@ async def health() -> dict[str, Any]:
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request) -> Any:
-    # דף בסיסי בלי Jinja2
-    html = """
+    html = '''
     <!DOCTYPE html>
     <html lang="he">
       <head>
@@ -92,11 +73,10 @@ async def root(request: Request) -> Any:
       </head>
       <body>
         <h1>Gate Botshop AI – Online</h1>
-        <p>אם אתה רואה את הדף הזה, השרת רץ תקין על Railway.</p>
-        <p>את הבוט מנהל הטלגרם דרך webhook בנתיב /webhook/telegram.</p>
+        <p>הבוט פועל. רוב הפונקציונליות זמינה דרך טלגרם.</p>
       </body>
     </html>
-    """
+    '''
     return HTMLResponse(content=html)
 
 
