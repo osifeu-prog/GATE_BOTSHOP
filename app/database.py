@@ -21,9 +21,33 @@ class Base(DeclarativeBase):
     pass
 
 
+def _build_async_db_url(raw: str) -> str:
+    """
+    Railway נותן בדרך כלל כתובות בסגנון:
+    - postgres://...
+    - postgresql://...
+
+    אנחנו ממירים ל:
+    - postgresql+asyncpg://...
+
+    כדי ש-SQLAlchemy ישתמש בדרייבר asyncpg (ולא psycopg2).
+    """
+    if raw.startswith("postgres://"):
+        return raw.replace("postgres://", "postgresql+asyncpg://", 1)
+
+    if raw.startswith("postgresql://") and "+asyncpg" not in raw:
+        return raw.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    return raw
+
+
+RAW_DB_URL = str(settings.DATABASE_URL)
+ASYNC_DB_URL = _build_async_db_url(RAW_DB_URL)
+
+
 # === יצירת מנוע אסינכרוני ===
 engine: AsyncEngine = create_async_engine(
-    settings.DATABASE_URL,
+    ASYNC_DB_URL,
     echo=False,
     future=True,
 )
@@ -43,8 +67,8 @@ async_session = async_session_maker
 
 async def get_session() -> AsyncIterator[AsyncSession]:
     """
-    תלוי שימוש ב-FastAPI (Depends) אם נרצה בהמשך.
-    כרגע זה שירות עזר – נשאיר מוכן.
+    פונקציית עזר (לשימוש עתידי עם Depends ב-FastAPI אם נרצה).
+    כרגע לא חובה – אבל משאירים מוכנה.
     """
     async with async_session_maker() as session:
         yield session
@@ -52,7 +76,7 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 
 async def init_db() -> None:
     """
-    הפעלת המיגרציה הבסיסית – יצירת הטבלאות לפי Base.metadata.
+    יצירת הטבלאות בבסיס הנתונים לפי Base.metadata.
     נקרא מתוך main.py בזמן on_startup.
     """
     async with engine.begin() as conn:
