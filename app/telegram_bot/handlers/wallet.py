@@ -1,93 +1,135 @@
 from __future__ import annotations
 
 from decimal import Decimal
-import logging
 
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+)
 
-from ...database import AsyncSessionLocal
+from ...database import async_session_maker
+from ...models.user import User
+from ...models.wallet import Wallet
 from ...services.trade_mode_service import (
     get_or_create_user,
     get_or_create_settings,
+    get_trade_mode_label,
 )
-from ...services.wallet_service import get_or_create_default_wallets
-from ...services.ton_client import get_account_balance_ton
 
-logger = logging.getLogger("gate_botshop_ai")
+
+async def _get_or_create_wallet_for_user(session, user: User) -> Wallet:
+    """
+    מביא או יוצר רשומת ארנק בסיסית עבור המשתמש.
+    השדות כאן מניחים מודל גמיש עם ברירות מחדל,
+    ואם נוסיף עמודות בהמשך – נרחיב בהתאם.
+    """
+    from sqlalchemy import select
+
+    stmt = select(Wallet).where(Wallet.user_id == user.id)
+    result = await session.execute(stmt)
+    wallet = result.scalar_one_or_none()
+
+    if wallet:
+        return wallet
+
+    # יצירת ארנק בסיסי חדש
+    wallet = Wallet(
+        user_id=user.id,
+    )
+    session.add(wallet)
+    await session.flush()
+    return wallet
+
+
+def _safe_decimal(value, default: str = "0") -> Decimal:
+    try:
+        if value is None:
+            return Decimal(default)
+        if isinstance(value, Decimal):
+            return value
+        return Decimal(str(value))
+    except Exception:
+        return Decimal(default)
 
 
 async def wallet_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    פקודת /wallet – מציגה סטטוס ארנק פנימי + מצב מסחר.
+    בשלב זה זו תצוגה "עדינה" כדי לא לשבור אם חסרות עמודות.
+    """
+    if update.effective_user is None:
+        return
+
     tg_user = update.effective_user
-    if tg_user is None:
-        return
+    chat_id = tg_user.id
 
-    try:
-        async with AsyncSessionLocal() as session:
-            user = await get_or_create_user(
-                session=session,
-                telegram_id=tg_user.id,
-                username=tg_user.username,
-                first_name=tg_user.first_name,
-            )
-            settings_row = await get_or_create_settings(session, user)
-            wallets = await get_or_create_default_wallets(session, user, settings_row)
-            await session.commit()
-    except Exception as e:
-        # לוג מלא כדי שנוכל לראות מה נשבר ב־Railway
-        logger.exception("Error while loading wallet for user %s", tg_user.id)
-        await update.effective_message.reply_text(
-            "❗ אירעה שגיאה בטעינת הארנק. נסה שוב עוד רגע."
+    async with async_session_maker() as session:
+        # משתמש + הגדרות מסחר
+        user = await get_or_create_user(
+            session=session,
+            telegram_id=tg_user.id,
+            username=tg_user.username,
+            first_name=tg_user.first_name,
         )
-        return
+        settings = await get_or_create_settings(session, user)
+        wallet = await _get_or_create_wallet_for_user(session, user)
 
-    # --- עיבוד ארנקים ---
-    user_net = settings_row.network or "ton_testnet"
+        # ננסה לשלוף שדות סטנדרטיים אם קיימים במודל
+        trade_mode = getattr(settings, "trade_mode", "sim")
+        trade_mode_label = get_trade_mode_label(trade_mode)
 
-    relevant = [w for w in wallets if w.network in ("testnet", "ton_testnet", "ton_mainnet")]
-    if not relevant:
-        await update.effective_message.reply_text("לא נמצאו ארנקים פעילים עבור המשתמש.")
-        return
+        internal_slh = _safe_decimal(getattr(wallet, "internal_slh_balance", Decimal("0")))
+        sim_usd = _safe_decimal(getattr(wallet, "sim_usd_balance", Decimal("0")))
+        real_usd = _safe_decimal(getattr(wallet, "real_usd_balance", Decimal("0")))
 
-    demo_wallets = [w for w in relevant if w.kind == "demo"]
-    real_wallets = [w for w in relevant if w.kind == "real"]
+        ton_addr_testnet = getattr(wallet, "ton_address_testnet", None)
+        ton_addr_mainnet = getattr(wallet, "ton_address_mainnet", None)
 
-    # חישוב יתרות דמו
-    demo_text = "— ארנק סימולציה —\n"
-    if demo_wallets:
-        d = demo_wallets[0]
-        demo_text += (
-            f"TON (SIM): {d.balance_ton:.4f}\n"
-            f"USDT (SIM): {d.balance_usdt:.2f}\n"
-            f"SLH (SIM): {d.balance_slh:.4f}\n"
-        )
-    else:
-        demo_text += "לא קיים עדיין ארנק סימולציה.\n"
+        # טקסט ידידותי
+        lines: list[str] = []
 
-    # חישוב יתרות ריאליות (על TON)
-    onchain_text = "— ארנק TON אמיתי —\n"
-    if real_wallets and real_wallets[0].address:
-        address = real_wallets[0].address
-        try:
-            onchain_balance = await get_account_balance_ton(address=address, network=user_net)
-        except Exception:
-            logger.exception("Error while fetching TON balance for %s", address)
-            onchain_balance = Decimal("0")
-        w = real_wallets[0]
-        onchain_text += (
-            f"כתובת: `{address}`\n"
-            f"TON (on-chain): {onchain_balance:.4f}\n"
-            f"USDT (ledger): {w.balance_usdt:.2f}\n"
-            f"SLH (ledger): {w.balance_slh:.4f}\n"
-        )
-    else:
-        onchain_text += "לא הוגדרה עדיין כתובת TON אישית.\n"
+        lines.append("📊 *ארנק GATE BOTSHOP שלך*")
+        lines.append("")
+        lines.append(f"מצב מסחר נוכחי: {trade_mode_label}")
+        lines.append("")
 
-    text = (
-        "💼 *מצב הארנק שלך*\n\n"
-        f"{demo_text}\n"
-        f"{onchain_text}\n"
-        "_בהמשך נוסיף הפקדות/משיכות אמיתיות על TON + סטייקינג._"
+        lines.append("💰 *יתרות פנים־מערכת*")
+        lines.append(f"• סימולציה (USD): `{sim_usd}`")
+        lines.append(f"• מסחר אמיתי (USD): `{real_usd}`")
+        lines.append(f"• SLH פנימי: `{internal_slh}`")
+        lines.append("")
+
+        lines.append("🔗 *כתובות TON*")
+        if ton_addr_testnet:
+            lines.append(f"• Testnet: `{ton_addr_testnet}`")
+        else:
+            lines.append("• Testnet: _(טרם חובר – יתווסף בשלבי TON)_")
+
+        if ton_addr_mainnet:
+            lines.append(f"• Mainnet: `{ton_addr_mainnet}`")
+        else:
+            lines.append("• Mainnet: _(טרם חובר – יתווסף בשלבי TON)_")
+
+        lines.append("")
+        lines.append("בהמשך נוסיף כאן גם:")
+        lines.append("• סטייקינג אמיתי על TON/SLH")
+        lines.append("• מצב P2P מלא")
+        lines.append("• חיבור ישיר לבורסות (DEX/Hybrid)")
+
+        text = "\n".join(lines)
+
+    await context.bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        parse_mode="Markdown",
     )
 
-    await update.effective_message.reply_markdown(text)
+
+def register_wallet_handlers(app: Application) -> None:
+    """
+    פונקציה שה-bot_app.py מייבא.
+    כאן אנחנו רושמים את כל הפקודות הקשורות לארנק.
+    """
+    app.add_handler(CommandHandler("wallet", wallet_command))
