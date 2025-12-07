@@ -35,7 +35,7 @@ async def on_startup() -> None:
 
     await telegram_app.bot.set_webhook(
         url=f"{settings.WEBHOOK_URL}{settings.TELEGRAM_WEBHOOK_PATH}",
-        allowed_updates=Update.ALL_UPDATES,
+        allowed_updates=Update.ALL_TYPES,
     )
 
     logger.info(
