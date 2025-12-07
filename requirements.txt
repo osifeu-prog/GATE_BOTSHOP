@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-telegram-bot==20.8
+sqlalchemy
+asyncpg
+httpx
+pydantic
+reportlab
+pydantic-settings

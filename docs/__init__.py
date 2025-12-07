@@ -1,0 +1,1 @@
+"""Project documentation package (for future expansion)."""
