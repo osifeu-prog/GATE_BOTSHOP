@@ -24,3 +24,26 @@ Health check:
 Telegram webhook (Railway):
 - `WEBHOOK_URL` must be your public base URL, e.g. `https://gatebotshop-production.up.railway.app`
 - The app config will set the webhook to `/webhook/telegram` automatically.
+
+
+📌 "אני ממשיך מ-GATE BOTSHOP. הדאטאבייס כבר סונכרן (human_score תוקן). אני רוצה שנמשיך לפתח את המערכת: סטייקינג אמיתי, מסכי Wallet, AI Trade Assistant, חיבור BSC/TON און-צ'יין, ודשבורד אדמין מלא. תדריך אותי מה השלב הבא."
+
+או אם תרצה פשוט:
+
+📌 "המשך מפה: GATE BOTSHOP רץ, ה-DB תוקן. בוא נמשיך לבנות את הפיצ’רים המלאים."
+🎁 מה אתה יכול לעשות בשיחה הבאה
+
+בדיוק מפה אפשר:
+
+✔ לבנות staking מלא עם APR משתנה
+✔ לחבר NFT / TON / BSC wallets
+✔ להוסיף AI במסכי הסבר עסקה
+✔ לבנות /portfolio שמחזיר גרף תשואות
+✔ לייצר Admin Dashboard עם PDF / CSV
+✔ לייצר מערכת earnings מלאה
+✔ לעשות Real-Time on-chain deposits
+✔ לבנות מערכת referral חדשה עם QR
+
+כל זה על בסיס המנוע שכבר בנינו.
+
+אם תרצה – אפשר גם להתחיל ליצור ALEMBIC Migrations כדי שכל שינוי DB יקרה אוטומטית בלי SQL ידני.
