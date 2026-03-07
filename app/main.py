@@ -1,4 +1,4 @@
-﻿ן»¿from __future__ import annotations
+from __future__ import annotations
 
 import logging
 from typing import Any, Optional
@@ -66,7 +66,7 @@ async def health() -> dict[str, Any]:
 async def root() -> HTMLResponse:
     return HTMLResponse(
         "<h1>GATE BOTSHOP  Dashboard</h1>"
-        "<p>׳©׳¨׳× ׳₪׳¢׳™׳. ׳›׳׳ ׳‘׳¢׳×׳™׳“ ׳™׳•׳¦׳’׳• ׳’׳¨׳₪׳™׳, ׳¡׳˜׳˜׳™׳¡׳˜׳™׳§׳•׳× ׳•׳ ׳×׳•׳ ׳™ ׳׳¡׳—׳¨.</p>"
+        "<p>×³آ©×³آ¨×³أ— ×³â‚ھ×³آ¢×³â„¢×³آœ. ×³â€؛×³آگ×³آں ×³â€ک×³آ¢×³أ—×³â„¢×³â€œ ×³â„¢×³â€¢×³آ¦×³â€™×³â€¢ ×³â€™×³آ¨×³â‚ھ×³â„¢×³آ‌, ×³آ،×³ثœ×³ثœ×³â„¢×³آ،×³ثœ×³â„¢×³آ§×³â€¢×³أ— ×³â€¢×³آ ×³أ—×³â€¢×³آ ×³â„¢ ×³آ‍×³آ،×³â€”×³آ¨.</p>"
     )
 
 
@@ -84,4 +84,5 @@ async def telegram_webhook(request: Request) -> JSONResponse:
     update = Update.de_json(data=data, bot=telegram_app.bot)
     await telegram_app.process_update(update)
     return JSONResponse({"ok": True})
+
 
