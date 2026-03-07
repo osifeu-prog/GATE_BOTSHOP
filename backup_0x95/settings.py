@@ -1,4 +1,4 @@
-﻿ן»¿from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+﻿from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ContextTypes
 from sqlalchemy import select
 
@@ -9,9 +9,9 @@ from app.models.users import User
 def _settings_keyboard() -> ReplyKeyboardMarkup:
     keyboard = [
         [
-            KeyboardButton("נ”’ Non-Custodial"),
-            KeyboardButton("נ¦ Custodial"),
-            KeyboardButton("נ¨ Hybrid"),
+            KeyboardButton("🔒 Non-Custodial"),
+            KeyboardButton("🏦 Custodial"),
+            KeyboardButton("🟨 Hybrid"),
         ]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -19,9 +19,9 @@ def _settings_keyboard() -> ReplyKeyboardMarkup:
 
 def _mode_from_text(text: str) -> str | None:
     mapping = {
-        "נ”’ Non-Custodial": "noncustodial",
-        "נ¦ Custodial": "custodial",
-        "נ¨ Hybrid": "hybrid",
+        "🔒 Non-Custodial": "noncustodial",
+        "🏦 Custodial": "custodial",
+        "🟨 Hybrid": "hybrid",
     }
     return mapping.get(text.strip())
 
@@ -42,15 +42,15 @@ async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     current_mode = user.investment_mode if user else "noncustodial"
 
     mode_label = {
-        "noncustodial": "נ”’ Non-Custodial",
-        "custodial": "נ¦ Custodial",
-        "hybrid": "נ¨ Hybrid",
-    }.get(current_mode, "נ”’ Non-Custodial")
+        "noncustodial": "🔒 Non-Custodial",
+        "custodial": "🏦 Custodial",
+        "hybrid": "🟨 Hybrid",
+    }.get(current_mode, "🔒 Non-Custodial")
 
     text = (
-        "ג™ן¸ ׳”׳’׳“׳¨׳•׳× ׳׳¡׳—׳¨\n\n"
-        f"׳׳¦׳‘ ׳ ׳•׳›׳—׳™: {mode_label}\n\n"
-        "׳‘׳—׳¨ ׳׳¦׳‘ ׳—׳“׳© ׳‘׳¢׳–׳¨׳× ׳”׳›׳₪׳×׳•׳¨׳™׳ ׳׳׳˜׳”."
+        "⚙️ הגדרות מסחר\n\n"
+        f"מצב נוכחי: {mode_label}\n\n"
+        "בחר מצב חדש בעזרת הכפתורים למטה."
     )
 
     await update.effective_message.reply_text(
@@ -65,7 +65,7 @@ async def set_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     choice = update.effective_message.text or ""
     new_mode = _mode_from_text(choice)
     if new_mode is None:
-        # ׳˜׳§׳¡׳˜ ׳©׳׳ ׳§׳©׳•׳¨ ׳׳׳¦׳‘׳™ ׳”׳׳¡׳—׳¨  ׳׳×׳¢׳׳׳™׳
+        # טקסט שלא קשור למצבי המסחר  מתעלמים
         return
 
     telegram_id = update.effective_user.id
@@ -85,7 +85,6 @@ async def set_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await session.commit()
 
     await update.effective_message.reply_text(
-        f"׳׳¦׳‘ ׳”׳׳¡׳—׳¨ ׳©׳׳ ׳¢׳•׳“׳›׳ ׳{choice}.",
+        f"מצב המסחר שלך עודכן ל{choice}.",
         reply_markup=_settings_keyboard(),
     )
-

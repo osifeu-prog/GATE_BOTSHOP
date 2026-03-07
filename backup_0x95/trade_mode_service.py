@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import logging
 from typing import Any, Tuple
@@ -24,11 +24,11 @@ def normalize_trade_mode(value: str | None) -> str:
 def get_trade_mode_label(value: str | None) -> str:
     mode = normalize_trade_mode(value)
     if mode == "real":
-        return "נ¦ ׳׳¡׳—׳¨ ׳׳׳™׳×׳™ (On-Chain / DEX)"
+        return "🟦 מסחר אמיתי (On-Chain / DEX)"
     if mode == "hybrid":
-        return "נ¨ ׳׳¦׳‘ ׳”׳™׳‘׳¨׳™׳“׳™ (Hybrid: ׳¡׳™׳׳•׳׳¦׳™׳” + ׳׳¡׳—׳¨ ׳׳׳™׳×׳™)"
+        return "🟨 מצב היברידי (Hybrid: סימולציה + מסחר אמיתי)"
     # sim
-    return "נ© ׳¡׳™׳׳•׳׳¦׳™׳™׳× ׳׳¡׳—׳¨ (׳׳׳ ׳¡׳™׳›׳•׳ ׳׳׳™׳×׳™)"
+    return "🟩 סימולציית מסחר (ללא סיכון אמיתי)"
 
 
 async def get_or_create_user(
@@ -36,7 +36,7 @@ async def get_or_create_user(
     tg_user: Any,
 ) -> User:
     """
-    ׳“׳•׳׳’ ׳©׳×׳”׳™׳” ׳¨׳©׳•׳׳× User ׳׳›׳ ׳׳©׳×׳׳© ׳˜׳׳’׳¨׳.
+    דואג שתהיה רשומת User לכל משתמש טלגרם.
     """
     stmt = select(User).where(User.telegram_id == tg_user.id)
     result = await session.execute(stmt)
@@ -54,7 +54,7 @@ async def get_or_create_user(
         await session.refresh(user)
         logger.info("Created new user %s (%s)", tg_user.id, tg_user.username)
     else:
-        # ׳¢׳“׳›׳•׳ ׳§׳ ׳׳ ׳”׳©׳/׳™׳•׳–׳¨ ׳”׳©׳×׳ ׳•
+        # עדכון קל אם השם/יוזר השתנו
         changed = False
         if user.username != tg_user.username:
             user.username = tg_user.username
@@ -77,7 +77,7 @@ async def get_or_create_settings(
     user: User,
 ) -> UserSettings:
     """
-    ׳”׳’׳“׳¨׳•׳× ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳ ׳׳›׳ ׳׳©׳×׳׳© ג€“ ׳׳¦׳‘ ׳׳¡׳—׳¨, ׳׳˜׳‘׳¢ ׳‘׳¡׳™׳¡ ׳•׳›׳•'.
+    הגדרות ברירת מחדל לכל משתמש – מצב מסחר, מטבע בסיס וכו'.
     """
     stmt = select(UserSettings).where(UserSettings.user_id == user.id)
     result = await session.execute(stmt)
@@ -95,7 +95,7 @@ async def get_or_create_settings(
         await session.refresh(settings)
         logger.info("Created default settings for user_id=%s", user.id)
 
-    # ׳•׳“׳ ׳©׳׳¦׳‘ ׳”׳׳¡׳—׳¨ ׳—׳•׳§׳™
+    # ודא שמצב המסחר חוקי
     settings.trade_mode = normalize_trade_mode(settings.trade_mode)
     return settings
 
@@ -106,7 +106,7 @@ async def update_trade_mode(
     new_mode: str,
 ) -> UserSettings:
     """
-    ׳¢׳“׳›׳•׳ ׳׳¦׳‘ ׳”׳׳¡׳—׳¨ ׳©׳ ׳”׳׳©׳×׳׳© (sim / hybrid / real).
+    עדכון מצב המסחר של המשתמש (sim / hybrid / real).
     """
     new_mode = normalize_trade_mode(new_mode)
 
@@ -127,7 +127,7 @@ async def update_trade_mode(
 
 def next_trade_mode(current: str | None) -> str:
     """
-    ׳׳•׳’׳™׳§׳” ׳׳—׳–׳•׳¨׳™׳×: sim ג†’ hybrid ג†’ real ג†’ sim
+    לוגיקה מחזורית: sim → hybrid → real → sim
     """
     mode = normalize_trade_mode(current)
     if mode == "sim":
@@ -135,4 +135,3 @@ def next_trade_mode(current: str | None) -> str:
     if mode == "hybrid":
         return "real"
     return "sim"
-

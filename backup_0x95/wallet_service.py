@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import logging
 from decimal import Decimal
@@ -30,13 +30,13 @@ async def get_or_create_default_wallets(
     user: User,
 ) -> List[Wallet]:
     """
-    ׳“׳•׳׳’ ׳©׳׳›׳ ׳׳©׳×׳׳© ׳™׳”׳™׳• ׳׳₪׳—׳•׳× 3 ׳׳¨׳ ׳§׳™׳ ׳₪׳ ׳™׳׳™׳™׳:
+    דואג שלכל משתמש יהיו לפחות 3 ארנקים פנימיים:
 
-    - internal_sim_usd  (׳¡׳™׳׳•׳׳¦׳™׳”)
-    - internal_real_usd (׳׳¡׳—׳¨ ׳׳׳™׳×׳™ off-chain / future mapping)
-    - internal_slh      (׳˜׳•׳§׳ SLH ׳₪׳ ׳™׳׳™)
+    - internal_sim_usd  (סימולציה)
+    - internal_real_usd (מסחר אמיתי off-chain / future mapping)
+    - internal_slh      (טוקן SLH פנימי)
 
-    ׳‘׳”׳׳©׳ ׳ ׳•׳›׳ ׳׳”׳•׳¡׳™׳£ ׳׳¨׳ ׳§׳™ TON per-user.
+    בהמשך נוכל להוסיף ארנקי TON per-user.
     """
     wallets = await get_user_wallets(session, user)
     kinds = {w.kind for w in wallets}
@@ -96,7 +96,7 @@ async def get_or_create_default_wallets(
             len(missing),
             user.id,
         )
-        # ׳˜׳•׳¢׳ ׳™׳ ׳׳—׳“׳© ׳›׳•׳׳ ׳”׳—׳“׳©׳™׳
+        # טוענים מחדש כולל החדשים
         wallets = await get_user_wallets(session, user)
 
     return wallets
@@ -110,4 +110,3 @@ def pick_wallet_by_kind(
         if w.kind == kind:
             return w
     return None
-

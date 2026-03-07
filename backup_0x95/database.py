@@ -1,4 +1,4 @@
-﻿ן»¿from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+﻿from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from app.config import settings
@@ -7,7 +7,7 @@ Base = declarative_base()
 
 
 def _build_async_db_url(raw: str) -> str:
-    # ׳׳×׳§׳ ׳’׳ postgres:// ׳•׳’׳ postgresql://
+    # מתקן גם postgres:// וגם postgresql://
     url = raw.replace("postgres://", "postgresql://")
     if url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
@@ -24,9 +24,8 @@ async_session_maker = sessionmaker(
 
 
 async def init_db() -> None:
-    # ׳׳•׳•׳“׳ ׳©׳›׳ ׳”׳׳•׳“׳׳™׳ ׳ ׳˜׳¢׳ ׳™׳ ׳׳₪׳ ׳™ ׳™׳¦׳™׳¨׳× ׳”׳˜׳‘׳׳׳•׳×
+    # לוודא שכל המודלים נטענים לפני יצירת הטבלאות
     import app.models  # noqa: F401
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-

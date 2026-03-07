@@ -1,8 +1,8 @@
-﻿from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # ׳”׳’׳“׳¨׳” ׳‘׳¡׳’׳ ׳•׳ Pydantic v2 ג€“ ׳§׳¨׳™׳׳× ׳׳©׳×׳ ׳™׳ ׳׳×׳•׳ .env
+    # הגדרה בסגנון Pydantic v2 – קריאת משתנים מתוך .env
     model_config = SettingsConfigDict(env_file=".env")
 
     PROJECT_NAME: str = "GATE BOTSHOP  TON Bank"
@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
 
     # TON endpoints + API keys
-    # ׳‘׳¨׳™׳¨׳•׳× ׳׳—׳“׳ ׳‘׳˜׳•׳—׳•׳× ׳›׳“׳™ ׳©׳”׳©׳¨׳× ׳™׳¢׳׳” ׳’׳ ׳‘׳׳™ ׳§׳•׳ ׳₪׳™׳’ ׳׳׳
+    # ברירות מחדל בטוחות כדי שהשרת יעלה גם בלי קונפיג מלא
     TON_MAINNET_API_ENDPOINT: str = "https://toncenter.com/api/v2/jsonRPC"
     TON_TESTNET_API_ENDPOINT: str = "https://testnet.toncenter.com/api/v2/jsonRPC"
 
@@ -49,4 +49,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

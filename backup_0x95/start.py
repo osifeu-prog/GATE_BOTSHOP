@@ -1,4 +1,4 @@
-﻿ן»¿from typing import Tuple
+﻿from typing import Tuple
 
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ContextTypes
@@ -54,14 +54,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         user, wallet = await _get_or_create_user_and_wallet(session, telegram_id)
 
     text = (
-        "׳‘׳¨׳•׳ ׳”׳‘׳ ׳GATE BOTSHOP AI נ€\n\n"
-        "׳›׳׳ ׳×׳§׳‘׳:\n"
-        "ג€¢ ׳ ׳™׳×׳•׳—׳™ ׳©׳•׳§ ׳—׳›׳׳™׳\n"
-        "ג€¢ ׳¡׳™׳׳•׳׳¦׳™׳™׳× ׳׳¡׳—׳¨ ׳‘׳˜׳•׳—׳”\n"
-        "ג€¢ ׳•׳‘׳”׳׳©׳  ׳׳¡׳—׳¨ ׳׳׳™׳×׳™ ׳¢׳ TON/DEX, ׳¡׳˜׳™׳™׳§׳™׳ ׳’ ׳•-P2P.\n\n"
-        "׳”׳×׳—׳ ׳׳¢׳§׳‘ ׳“׳¨׳ /wallet ׳׳• ׳¢׳“׳›׳ ׳”׳’׳“׳¨׳•׳× ׳“׳¨׳ /settings."
+        "ברוך הבא לGATE BOTSHOP AI 🚀\n\n"
+        "כאן תקבל:\n"
+        "• ניתוחי שוק חכמים\n"
+        "• סימולציית מסחר בטוחה\n"
+        "• ובהמשך  מסחר אמיתי על TON/DEX, סטייקינג ו-P2P.\n\n"
+        "התחל מעקב דרך /wallet או עדכן הגדרות דרך /settings."
     )
 
     kb = _build_keyboard(user.investment_mode or "noncustodial")
     await update.effective_message.reply_text(text, reply_markup=kb)
-

@@ -1,4 +1,4 @@
-﻿ן»¿from telegram import Update
+﻿from telegram import Update
 from telegram.ext import ContextTypes
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import async_session_maker
@@ -13,6 +13,5 @@ async def referrals(update: Update, context: ContextTypes.DEFAULT_TYPE):
     link = f"https://t.me/{context.bot.username}?start={code}"
 
     await update.message.reply_text(
-        f"נ ׳§׳™׳©׳•׳¨ ׳”׳”׳₪׳ ׳™׳” ׳©׳׳:\n{link}"
+        f"🎁 קישור ההפניה שלך:\n{link}"
     )
-

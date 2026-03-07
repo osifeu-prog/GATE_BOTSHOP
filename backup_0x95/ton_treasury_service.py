@@ -1,4 +1,4 @@
-﻿ן»¿from decimal import Decimal
+﻿from decimal import Decimal
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,14 +11,14 @@ TON_DECIMALS = Decimal("1000000000")  # 1e9 nanoton per TON
 
 async def get_treasury_balance_ton() -> Decimal:
     """
-    ׳§׳¨׳™׳׳× ׳™׳×׳¨׳× ׳”׳§׳•׳₪׳” ׳”׳¨׳׳©׳™׳× ׳-TonCenter (׳§׳¨׳™׳׳” ׳‘׳׳‘׳“).
-    ׳׳ ׳׳™׳ ׳§׳•׳ ׳₪׳™׳’ ׳׳׳  ׳׳—׳–׳™׳¨ 0 ׳‘׳׳§׳•׳ ׳׳”׳₪׳™׳ ׳׳× ׳”׳©׳¨׳×.
+    קריאת יתרת הקופה הראשית מ-TonCenter (קריאה בלבד).
+    אם אין קונפיג מלא  מחזיר 0 במקום להפיל את השרת.
     """
     address = settings.TON_TREASURY_ADDRESS
     endpoint = settings.TON_MAINNET_API_ENDPOINT
     api_key = settings.TON_MAINNET_API_KEY
 
-    # ׳׳ ׳׳™׳ ׳›׳×׳•׳‘׳×  ׳—׳•׳–׳¨׳™׳ 0 ׳›׳“׳™ ׳©׳”׳׳¢׳¨׳›׳× ׳×׳™׳©׳׳¨ ׳™׳¦׳™׳‘׳”
+    # אם אין כתובת  חוזרים 0 כדי שהמערכת תישאר יציבה
     if not address:
         return Decimal("0")
 
@@ -47,8 +47,8 @@ async def get_treasury_balance_ton() -> Decimal:
 
 async def update_daily_tvl(session: AsyncSession) -> DailyStats:
     """
-    ׳™׳•׳¦׳¨ ׳¨׳©׳•׳׳× DailyStats ׳׳₪׳™ ׳™׳×׳¨׳× ׳”-TON ׳‘׳§׳•׳₪׳” (TVL).
-    ׳›׳¨׳’׳¢: TVL = ׳™׳×׳¨׳× TON ׳‘׳׳‘׳“.
+    יוצר רשומת DailyStats לפי יתרת ה-TON בקופה (TVL).
+    כרגע: TVL = יתרת TON בלבד.
     """
     balance_ton = await get_treasury_balance_ton()
 
@@ -63,4 +63,3 @@ async def update_daily_tvl(session: AsyncSession) -> DailyStats:
     await session.commit()
     await session.refresh(stats)
     return stats
-
