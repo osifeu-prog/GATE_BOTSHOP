@@ -21,3 +21,4 @@ def build_telegram_application() -> Application:
     return app
 
 
+

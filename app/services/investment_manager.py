@@ -1,4 +1,4 @@
-﻿أ—ع؛ط¢آ»ط¢طںfrom sqlalchemy.ext.asyncio import AsyncSession
+﻿from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.users import User
 
@@ -33,6 +33,7 @@ async def enforce_or_reject(session: AsyncSession, user_id: int, action: str) ->
         raise Exception("أ—آ³أ¢â‚¬â€Œأ—آ³أ¢â€ڑع¾أ—آ³ط¢آ¢أ—آ³أ¢â‚¬آ¢أ—آ³ط¢إ“أ—آ³أ¢â‚¬â€Œ أ—آ³ط¢ع¯أ—آ³أ¢â€‍آ¢أ—آ³ط¢آ أ—آ³أ¢â‚¬â€Œ أ—آ³ط¢â€چأ—آ³أ¢â‚¬آ¢أ—آ³ط£â€”أ—آ³ط¢آ¨أ—آ³ط£â€” أ—آ³ط¢إ“أ—آ³أ¢â€ڑع¾أ—آ³أ¢â€‍آ¢ أ—آ³ط¢â€چأ—آ³ط¢آ¦أ—آ³أ¢â‚¬ع© أ—آ³أ¢â‚¬â€Œأ—آ³أ¢â‚¬â€‌أ—آ³ط¢آ©أ—آ³أ¢â‚¬ع©أ—آ³أ¢â‚¬آ¢أ—آ³ط¢ع؛.")
 
     return True
+
 
 
 

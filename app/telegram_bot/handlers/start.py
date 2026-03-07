@@ -1,4 +1,4 @@
-﻿أ—ع؛ط¢آ»ط¢طںfrom typing import Tuple
+﻿from typing import Tuple
 
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ContextTypes
@@ -64,6 +64,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     kb = _build_keyboard(user.investment_mode or "noncustodial")
     await update.effective_message.reply_text(text, reply_markup=kb)
+
 
 
 

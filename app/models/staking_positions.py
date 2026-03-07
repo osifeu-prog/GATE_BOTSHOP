@@ -20,3 +20,4 @@ class StakingPosition(Base):
     status = Column(String, default="active")  # active / closed
 
 
+

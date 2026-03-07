@@ -163,3 +163,4 @@ async def staking_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Amount selected: {amount} SLH\nNow choose duration:",
             reply_markup=_days_keyboard
 
+

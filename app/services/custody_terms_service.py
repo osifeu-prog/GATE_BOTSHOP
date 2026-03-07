@@ -1,4 +1,4 @@
-﻿أ—ع؛ط¢آ»ط¢طںimport os
+﻿import os
 from datetime import datetime
 
 from reportlab.pdfgen import canvas
@@ -63,6 +63,7 @@ async def register_user_agreement(session: AsyncSession, user_id: int) -> None:
     if user:
         user.custody_agreed = True
         await session.commit()
+
 
 
 

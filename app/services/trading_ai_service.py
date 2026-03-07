@@ -1,4 +1,4 @@
-﻿أ—ع؛ط¢آ»ط¢طںimport random
+﻿import random
 
 
 async def market_recommendation() -> str:
@@ -7,6 +7,7 @@ async def market_recommendation() -> str:
     """
     sentiments = ["bullish", "bearish", "neutral"]
     return random.choice(sentiments)
+
 
 
 

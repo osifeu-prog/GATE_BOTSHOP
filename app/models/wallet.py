@@ -30,3 +30,4 @@ class Wallet(Base):
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+

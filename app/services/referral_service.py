@@ -18,3 +18,4 @@ async def log_event(session: AsyncSession, user_id: int, event: str):
     await session.commit()
 
 
+

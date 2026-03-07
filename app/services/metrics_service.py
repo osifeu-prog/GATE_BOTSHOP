@@ -54,3 +54,4 @@ async def global_tvl_and_users(session: AsyncSession) -> dict:
     }
 
 
+

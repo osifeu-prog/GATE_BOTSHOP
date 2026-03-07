@@ -114,3 +114,4 @@ async def get_ton_price_usd() -> Decimal:
         return Decimal("2")
 
 
+

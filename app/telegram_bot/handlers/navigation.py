@@ -1,4 +1,4 @@
-﻿أ—ع؛ط¢آ»ط¢طںfrom telegram import ReplyKeyboardMarkup
+﻿from telegram import ReplyKeyboardMarkup
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.users import User
 from app.models.staking_positions import StakingPosition
@@ -30,6 +30,7 @@ async def build_dynamic_keyboard(session: AsyncSession, user_id: int):
     ]
 
     return header, ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
 
 
 

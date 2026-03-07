@@ -28,3 +28,4 @@ def register_all_handlers(app: Application) -> None:
     app.add_handler(MessageHandler(mode_filter, set_mode))
 
 
+

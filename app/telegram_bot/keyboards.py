@@ -17,3 +17,4 @@ def trade_mode_keyboard() -> InlineKeyboardMarkup:
 
 
 
+

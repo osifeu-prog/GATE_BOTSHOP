@@ -21,3 +21,4 @@ class DailyStats(Base):
     volume_ton: Mapped[Decimal] = mapped_column(Numeric(38, 9), default=Decimal("0"))
 
 
+

@@ -1,4 +1,4 @@
-﻿أ—ع؛ط¢آ»ط¢طںfrom decimal import Decimal
+﻿from decimal import Decimal
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -63,6 +63,7 @@ async def update_daily_tvl(session: AsyncSession) -> DailyStats:
     await session.commit()
     await session.refresh(stats)
     return stats
+
 
 
 

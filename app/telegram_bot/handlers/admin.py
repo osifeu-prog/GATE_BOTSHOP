@@ -1,4 +1,4 @@
-﻿أ—ع؛ط¢آ»ط¢طںfrom decimal import Decimal
+﻿from decimal import Decimal
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -54,6 +54,7 @@ async def admin_tvl(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.effective_message.reply_text("أ—آ ط¢ع؛ط¢عˆط¢آ¦ أ—آ³ط¢آ§أ—آ³أ¢â‚¬آ¢أ—آ³أ¢â€ڑع¾أ—آ³ط£â€” TON أ—آ³ط¢إ“أ—آ³ط¢ع¯ أ—آ³ط¢â€چأ—آ³أ¢â‚¬آ¢أ—آ³أ¢â‚¬â„¢أ—آ³أ¢â‚¬إ“أ—آ³ط¢آ¨أ—آ³ط£â€” أ—آ³ط¢آ¢أ—آ³أ¢â‚¬إ“أ—آ³أ¢â€‍آ¢أ—آ³أ¢â€‍آ¢أ—آ³ط¢ع؛.")
     else:
         await update.effective_message.reply_text(f"أ—آ ط¢ع؛ط¢عˆط¢آ¦ أ—آ³أ¢â€‍آ¢أ—آ³ط£â€”أ—آ³ط¢آ¨أ—آ³ط£â€” أ—آ³ط¢آ§أ—آ³أ¢â‚¬آ¢أ—آ³أ¢â€ڑع¾أ—آ³أ¢â‚¬â€Œ: {balance_ton} TON")
+
 
 
 

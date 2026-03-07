@@ -23,3 +23,4 @@ class UserSettings(Base):
     user = relationship("User")
 
 
+

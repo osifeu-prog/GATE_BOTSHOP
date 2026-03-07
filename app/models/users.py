@@ -22,3 +22,4 @@ class User(Base):
     user_tier = Column(Integer, default=1)
 
 
+

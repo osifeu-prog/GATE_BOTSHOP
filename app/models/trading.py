@@ -29,3 +29,4 @@ class Trade(Base):
     closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+

@@ -12,3 +12,4 @@ from app.config import settings
 from app.database import init_db
 from app.telegram_bot.bot_app import build_telegram_application
 
+

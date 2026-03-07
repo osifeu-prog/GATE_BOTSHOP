@@ -1,4 +1,4 @@
-﻿أ—ع؛ط¢آ»ط¢طںfrom telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+﻿from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ContextTypes
 from sqlalchemy import select
 
@@ -88,6 +88,7 @@ async def set_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         f"أ—آ³ط¢â€چأ—آ³ط¢آ¦أ—آ³أ¢â‚¬ع© أ—آ³أ¢â‚¬â€Œأ—آ³ط¢â€چأ—آ³ط¢طŒأ—آ³أ¢â‚¬â€‌أ—آ³ط¢آ¨ أ—آ³ط¢آ©أ—آ³ط¢إ“أ—آ³ط¢ع‘ أ—آ³ط¢آ¢أ—آ³أ¢â‚¬آ¢أ—آ³أ¢â‚¬إ“أ—آ³أ¢â‚¬ط›أ—آ³ط¢ع؛ أ—آ³ط¢إ“{choice}.",
         reply_markup=_settings_keyboard(),
     )
+
 
 
 
