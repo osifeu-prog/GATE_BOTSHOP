@@ -7,7 +7,8 @@ from typing import Sequence
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.staking import StakingPosition
+from app.models.users import User
+from app.models.staking_positions import StakingPosition
 
 # תשואה שנתית ברירת מחדל (APY) – אפשר לשנות בהמשך / להעביר ל-ENV
 DEFAULT_APY_PERCENT = Decimal("12")  # 12% לשנה
@@ -22,35 +23,39 @@ async def create_admin_stake(
 ) -> StakingPosition:
     """
     יצירת חיסכון חדש למשתמש ע"י אדמין.
-    אין כאן עדיין חיבור on-chain – רק לוגיקת בנק פנימי.
+    לוגיקה פנימית בלבד – נשמרת בטבלת staking_positions.
     """
+
+    # למצוא את המשתמש לפי telegram_id
+    user = (
+        await session.execute(
+            select(User).where(User.telegram_id == telegram_user_id)
+        )
+    ).scalar_one_or_none()
+
+    if user is None:
+        raise ValueError(f"User with telegram_id={telegram_user_id} not found")
 
     if apy_percent is None:
         apy_percent = DEFAULT_APY_PERCENT
 
     opened_at = datetime.utcnow()
-    closes_at = opened_at + timedelta(days=duration_days)
+    unlock_at = opened_at + timedelta(days=duration_days)
 
-    # תשואה לינארית פשוטה לפי APY
-    reward = (
-        principal_slh
-        * apy_percent
-        * Decimal(duration_days)
-        / Decimal(36500)  # /100 בשביל אחוז ו-365 ימים
-    ).quantize(Decimal("0.0001"))
-
-    position = StakingPosition(
-        telegram_user_id=telegram_user_id,
-        principal_slh=principal_slh,
-        expected_reward_slh=reward,
-        duration_days=duration_days,
-        status="open",
-        opened_at=opened_at,
-        closes_at=closes_at,
+    # המודל הקיים עובד עם amount / days / apy
+    pos = StakingPosition(
+        user_id=user.id,
+        amount=float(principal_slh),
+        days=duration_days,
+        apy=float(apy_percent),
+        unlock_at=unlock_at,
+        status="active",
     )
-    session.add(position)
-    await session.flush()  # כדי לקבל id
-    return position
+
+    session.add(pos)
+    await session.commit()
+    await session.refresh(pos)
+    return pos
 
 
 async def get_user_stakes(
@@ -60,10 +65,19 @@ async def get_user_stakes(
     """
     כל החיסכונות של משתמש (פתוחים וסגורים) מהחדש לישן.
     """
+    user = (
+        await session.execute(
+            select(User).where(User.telegram_id == telegram_user_id)
+        )
+    ).scalar_one_or_none()
+
+    if user is None:
+        return []
+
     stmt = (
         select(StakingPosition)
-        .where(StakingPosition.telegram_user_id == telegram_user_id)
-        .order_by(StakingPosition.opened_at.desc())
+        .where(StakingPosition.user_id == user.id)
+        .order_by(StakingPosition.created_at.desc())
     )
     result = await session.execute(stmt)
     return result.scalars().all()
