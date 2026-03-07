@@ -1,4 +1,4 @@
-﻿from telegram import Update
+from telegram import Update
 from telegram.ext import ContextTypes
 from sqlalchemy import select
 
@@ -10,11 +10,11 @@ from app.blockchain.bsc_client import get_slh_balance
 
 def _mode_label(mode: str | None) -> str:
     mapping = {
-        "noncustodial": "?? Non-Custodial (Self-Custody)",
-        "custodial": "?? Custodial (Bank-Mode)",
-        "hybrid": "?? Hybrid (Mix)",
+        "noncustodial": "🟩 Non‑Custodial (Self‑Custody)",
+        "custodial": "🏦 Custodial (Bank‑Mode)",
+        "hybrid": "🟨 Hybrid (Mix)",
     }
-    return mapping.get(mode or "noncustodial", "?? Non-Custodial (Self-Custody)")
+    return mapping.get(mode or "noncustodial", "🟩 Non‑Custodial (Self‑Custody)")
 
 
 async def wallet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -55,26 +55,25 @@ async def wallet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     slh_internal = wallet.balance_slh
 
     text = (
-        "?? ???? GATE BOTSHOP ???\n\n"
-        f"??? ???? ?????: {mode_text}\n\n"
-        "?? ????? ?????????\n"
-        f"• ???????? (USD): {wallet.balance_sim:.2f}\n"
-        f"• ???? ????? (USD): {wallet.balance_real:.2f}\n"
-        f"• SLH ?????: {slh_internal:.4f}\n"
-        f"• MNH (???? ?-SLH): {wallet.balance_mnh:.4f}\n"
-        f"• MNH ????: {wallet.locked_mnh:.4f}\n"
-        f"• ZUZ (??????): {wallet.balance_zuz:.2f}\n\n"
-        "?? SLH ?? ????\n"
-        f"• ????? BSC: {wallet.bsc_address or '(??? ??????)'}\n"
-        f"• SLH on-chain: {slh_onchain:.4f}\n\n"
-        "?? ?????? TON\n"
-        f"• Mainnet: {wallet.ton_mainnet or '(??? ?????)'}\n"
-        f"• Testnet: {wallet.ton_testnet or '(??? ?????)'}\n\n"
-        "?????:\n"
-        "• ???? SLH ? MNH\n"
-        "• ????? ?????? ???????\n"
-        "• ?????? ?????? ?-ZUZ\n"
+        "📊 ארנק GATE BOTSHOP שלך\n\n"
+        f"מצב מסחר נוכחי: {mode_text}\n\n"
+        "💰 יתרות פנים‑מערכת\n"
+        f"• סימולציה (USD): {wallet.balance_sim:.2f}\n"
+        f"• מסחר אמיתי (USD): {wallet.balance_real:.2f}\n"
+        f"• SLH פנימי: {slh_internal:.4f}\n"
+        f"• MNH (מומר מ‑SLH): {wallet.balance_mnh:.4f}\n"
+        f"• MNH נעול: {wallet.locked_mnh:.4f}\n"
+        f"• ZUZ (נקודות): {wallet.balance_zuz:.2f}\n\n"
+        "🔗 SLH על הרשת\n"
+        f"• כתובת BSC: {wallet.bsc_address or '(טרם הוגדרה)'}\n"
+        f"• SLH on‑chain: {slh_onchain:.4f}\n\n"
+        "🔗 כתובות TON\n"
+        f"• Mainnet: {wallet.ton_mainnet or '(טרם הוגדר)'}\n"
+        f"• Testnet: {wallet.ton_testnet or '(טרם הוגדר)'}\n\n"
+        "בקרוב:\n"
+        "• המרת SLH → MNH\n"
+        "• משחקי חיסכון למשפחות\n"
+        "• משימות ופרסים ב‑ZUZ\n"
     )
 
     await update.effective_message.reply_text(text)
-
