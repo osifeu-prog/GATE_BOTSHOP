@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
@@ -19,3 +19,5 @@ class DailyStats(Base):
     trades_count: Mapped[int] = mapped_column(Integer, default=0)
     p2p_orders_count: Mapped[int] = mapped_column(Integer, default=0)
     volume_ton: Mapped[Decimal] = mapped_column(Numeric(38, 9), default=Decimal("0"))
+
+

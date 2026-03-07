@@ -46,3 +46,5 @@ class TonDeposit(Base):
     raw_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     user = relationship("User", backref="ton_deposits")
+
+

@@ -16,3 +16,5 @@ async def log_event(session: AsyncSession, user_id: int, event: str):
     ev = ReferralEvent(user_id=user_id, event_type=event)
     session.add(ev)
     await session.commit()
+
+

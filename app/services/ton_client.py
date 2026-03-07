@@ -112,3 +112,5 @@ async def get_ton_price_usd() -> Decimal:
     except Exception as exc:  # noqa: BLE001
         logger.warning("Failed to fetch TON price from CoinGecko: %s", exc)
         return Decimal("2")
+
+

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, String, DateTime
+﻿from sqlalchemy import Column, Integer, Float, String, DateTime
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -29,3 +29,5 @@ class Wallet(Base):
         onupdate=func.now(),
         server_default=func.now(),
     )
+
+

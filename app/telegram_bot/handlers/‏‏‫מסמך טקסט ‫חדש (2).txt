@@ -1,0 +1,41 @@
+
+
+def _mode_label(mode: str | None) -> str:
+    mapping = {
+        "noncustodial": "?? Non-Custodial (Self-Custody)",
+        "custodial": "?? Custodial (Bank-Mode)",
+        "hybrid": "?? Hybrid (Mix)",
+    }
+    return mapping.get(mode or "noncustodial", "?? Non-Custodial (Self-Custody)")
+
+
+    telegram_id = update.effective_user.id
+
+    async with async_session_maker() as session:
+        user = (
+            await session.execute(
+                select(UserModel).where(UserModel.telegram_id == telegram_id)
+            )
+        ).scalar_one_or_none()
+
+        wallet = None
+                await session.execute(
+                    select(Wallet).where(Wallet.user_id == user.id)
+                )
+            ).scalar_one_or_none()
+
+        if not user:
+            user = UserModel(telegram_id=telegram_id)
+            session.add(user)
+            await session.flush()
+
+        if not wallet:
+            wallet = Wallet(user_id=user.id)
+            session.add(wallet)
+            await session.commit()
+            await session.refresh(wallet)
+
+    mode_text = _mode_label(getattr(user, "investment_mode", "noncustodial"))
+
+    slh_onchain = get_slh_balance(wallet.bsc_address)
+    slh_internal = wallet.balance_slh

@@ -17,3 +17,5 @@ class DailyStats(Base):
     trades_today = Column(Integer, default=0)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+

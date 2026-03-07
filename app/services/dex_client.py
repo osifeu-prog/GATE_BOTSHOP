@@ -34,3 +34,5 @@ async def get_stonfi_quote(
     except Exception as exc:
         logger.warning("STON.fi quote failed: %s", exc)
         return None
+
+

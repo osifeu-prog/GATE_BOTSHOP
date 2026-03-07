@@ -52,3 +52,5 @@ async def global_tvl_and_users(session: AsyncSession) -> dict:
         "tvl": total_tvl,
         "wallets": int(users_with_wallets),
     }
+
+

@@ -1,0 +1,13 @@
+
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> Format-Hex "app/telegram_bot/handlers/wallet.py" > wallet_hex.txt
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> notepad wallet_hex.txt
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> Get-Content "app/telegram_bot/handlers/wallet.py" -Encoding Byte > wallet_bytes.txt
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> notepad wallet_bytes.txt
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> Get-Content "app/telegram_bot/handlers/wallet.py" -Encoding UTF8 | Select-Object -First 200 > wallet_head.txt
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> notepad wallet_head.txt
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> Get-ChildItem -Recurse -Include *.py | ForEach-Object {
+>>     $bytes = Get-Content $_.FullName -Encoding Byte -Raw
+>>     if ($bytes -contains 0x95) {
+>>         Write-Host "FOUND 0x95 in $($_.FullName)" -ForegroundColor Red
+>>     }
+>> }

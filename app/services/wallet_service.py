@@ -7,8 +7,8 @@ from typing import Iterable, List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.user import User
-from ..models.wallet import Wallet
+from app.models.user import User
+from app.models.wallet import Wallet
 
 logger = logging.getLogger("gate_botshop_ai.wallet_service")
 
@@ -30,13 +30,13 @@ async def get_or_create_default_wallets(
     user: User,
 ) -> List[Wallet]:
     """
-    ׳“׳•׳׳’ ׳©׳׳›׳ ׳׳©׳×׳׳© ׳™׳”׳™׳• ׳׳₪׳—׳•׳× 3 ׳׳¨׳ ׳§׳™׳ ׳₪׳ ׳™׳׳™׳™׳:
+    ×“×•×گ×’ ×©×œ×›×œ ×‍×©×ھ×‍×© ×™×”×™×• ×œ×¤×—×•×ھ 3 ×گ×¨× ×§×™×‌ ×¤× ×™×‍×™×™×‌:
 
-    - internal_sim_usd  (׳¡׳™׳׳•׳׳¦׳™׳”)
-    - internal_real_usd (׳׳¡׳—׳¨ ׳׳׳™׳×׳™ off-chain / future mapping)
-    - internal_slh      (׳˜׳•׳§׳ SLH ׳₪׳ ׳™׳׳™)
+    - internal_sim_usd  (×،×™×‍×•×œ×¦×™×”)
+    - internal_real_usd (×‍×،×—×¨ ×گ×‍×™×ھ×™ / offâ€‘chain)
+    - internal_slh      (×™×ھ×¨×ھ SLH ×¤× ×™×‍×™×ھ)
 
-    ׳‘׳”׳׳©׳ ׳ ׳•׳›׳ ׳׳”׳•׳¡׳™׳£ ׳׳¨׳ ׳§׳™ TON per-user.
+    ×‘× ×•×،×£, ×”×‍×¢×¨×›×ھ ×ھ×•×‍×›×ھ ×‘×گ×¨× ×§×™ TON ×œ×¤×™ ×‍×©×ھ×‍×©.
     """
     wallets = await get_user_wallets(session, user)
     kinds = {w.kind for w in wallets}
@@ -96,7 +96,6 @@ async def get_or_create_default_wallets(
             len(missing),
             user.id,
         )
-        # ׳˜׳•׳¢׳ ׳™׳ ׳׳—׳“׳© ׳›׳•׳׳ ׳”׳—׳“׳©׳™׳
         wallets = await get_user_wallets(session, user)
 
     return wallets

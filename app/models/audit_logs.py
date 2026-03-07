@@ -13,3 +13,5 @@ class AuditLog(Base):
     details = Column(String, nullable=True)
     amount = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+

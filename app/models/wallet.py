@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from decimal import Decimal
 
@@ -28,3 +28,5 @@ class Wallet(Base):
     balance_slh: Mapped[Decimal] = mapped_column(Numeric(38, 9), default=Decimal("0"))
 
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
+
+

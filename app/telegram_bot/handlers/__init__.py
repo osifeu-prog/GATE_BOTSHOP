@@ -1,4 +1,4 @@
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
+﻿from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 
 from .start import start
 from .wallet import wallet
@@ -26,3 +26,5 @@ def register_all_handlers(app: Application) -> None:
 
     mode_filter = filters.TEXT & (~filters.COMMAND)
     app.add_handler(MessageHandler(mode_filter, set_mode))
+
+

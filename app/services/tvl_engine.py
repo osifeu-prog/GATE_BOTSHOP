@@ -38,3 +38,5 @@ async def compute_ton_tvl_snapshot(session: AsyncSession) -> Optional[TVLSnapsho
         band = "High"
 
     return TVLSnapshot(tvl_ton=total_ton, tvl_usd=tvl_usd, risk_band=band)
+
+

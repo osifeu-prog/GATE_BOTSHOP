@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -21,3 +21,5 @@ class UserSettings(Base):
     base_currency: Mapped[str] = mapped_column(String(16), default="TON")
 
     user = relationship("User")
+
+

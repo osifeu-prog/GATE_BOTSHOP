@@ -13,7 +13,7 @@ async def create_stake(
     days: int,
     apy: float,
 ) -> StakingPosition:
-    # יאשר רק אם מצב ההשקעה מאפשר סטייקינג
+    # أ—â„¢أ—ع¯أ—آ©أ—آ¨ أ—آ¨أ—آ§ أ—ع¯أ—â€Œ أ—â€چأ—آ¦أ—â€ک أ—â€‌أ—â€‌أ—آ©أ—آ§أ—آ¢أ—â€‌ أ—â€چأ—ع¯أ—آ¤أ—آ©أ—آ¨ أ—طŒأ—ع©أ—â„¢أ—â„¢أ—آ§أ—â„¢أ—آ أ—â€™
     await enforce_or_reject(session, user_id, "stake")
 
     unlock_time = datetime.utcnow() + timedelta(days=days)
@@ -28,3 +28,5 @@ async def create_stake(
     await session.commit()
     await session.refresh(pos)
     return pos
+
+

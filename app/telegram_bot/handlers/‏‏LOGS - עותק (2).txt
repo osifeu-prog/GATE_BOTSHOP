@@ -1,0 +1,1053 @@
+
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\models\staking.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\custody_terms_service.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\investment_manager.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\staking_engine.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\ton_treasury_service.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\trade_mode_service.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\trading_ai_service.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\wallet_service.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\admin.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\ai.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\navigation.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\referrals.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\settings.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\start.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\wallet.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\keyboards.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\config.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\database.py
+FOUND 0x95 in C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\main.py
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> ^C
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+
+
+    text = (
+        "?? ???? GATE BOTSHOP ???\n\n"
+        f"??? ???? ?????: {mode_text}\n\n"
+        "?? ????? ?????????\n"
+        f"• ???????? (USD): {wallet.balance_sim:.2f}\n"
+        f"• ???? ????? (USD): {wallet.balance_real:.2f}\n"
+        f"• SLH ?????: {slh_internal:.4f}\n"
+        f"• MNH (???? ?-SLH): {wallet.balance_mnh:.4f}\n"
+        f"• MNH ????: {wallet.locked_mnh:.4f}\n"
+        f"• ZUZ (??????): {wallet.balance_zuz:.2f}\n\n"
+        "?? SLH ?? ????\n"
+        f"• ????? BSC: {wallet.bsc_address or '(??? ??????)'}\n"
+        f"• SLH on-chain: {slh_onchain:.4f}\n\n"
+        f"• Mainnet: {wallet.ton_mainnet or '(??? ?????)'}\n"
+        f"• Testnet: {wallet.ton_testnet or '(??? ?????)'}\n\n"
+        "?????:\n"
+        "• ???? SLH ? MNH\n"
+        "• ????? ?????? ???????\n"
+        "• ?????? ?????? ?-ZUZ\n"
+    )
+
+    await update.effective_message.reply_text(text)
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> cd "C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP"
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> # ????? ?? ?????? ????????? ??????? backup_0x95
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> $problemFiles = @(
+>>   "app\models\staking.py",
+>>   "app\services\custody_terms_service.py",
+>>   "app\services\investment_manager.py",
+>>   "app\services\staking_engine.py",
+>>   "app\services\ton_treasury_service.py",
+>>   "app\services\trade_mode_service.py",
+>>   "app\services\trading_ai_service.py",
+>>   "app\services\wallet_service.py",
+>>   "app\telegram_bot\handlers\admin.py",
+>>   "app\telegram_bot\handlers\ai.py",
+>>   "app\telegram_bot\handlers\navigation.py",
+>>   "app\telegram_bot\handlers\referrals.py",
+>>   "app\telegram_bot\handlers\settings.py",
+>>   "app\telegram_bot\handlers\start.py",
+>>   "app\telegram_bot\handlers\wallet.py",
+>>   "app\telegram_bot\keyboards.py",
+>>   "app\config.py",
+>>   "app\database.py",
+>>   "app\main.py"
+>> )
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> New-Item -ItemType Directory -Force -Path "backup_0x95" | Out-Null
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> foreach ($f in $problemFiles) {
+>>     Copy-Item $f "backup_0x95" -Force
+>>
+>>     $bytes = Get-Content $f -Encoding Byte -Raw
+>>     # ?????? ?Windows-1255 (?? 1252) ???????
+>>     $text  = [Text.Encoding]::GetEncoding(1255).GetString($bytes)
+>>     # ??????? ?? ??? 0x95 ???? ????
+>>     $clean = $text -replace [char]0x95, '-'
+>>     # ?????? ?UTF?8 ???
+>>     Set-Content $f $clean -Encoding UTF8
+>> }
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> git status
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   app/config.py
+        modified:   app/database.py
+        modified:   app/main.py
+        modified:   app/models/staking.py
+        modified:   app/services/custody_terms_service.py
+        modified:   app/services/investment_manager.py
+        modified:   app/services/staking_engine.py
+        modified:   app/services/ton_treasury_service.py
+        modified:   app/services/trade_mode_service.py
+        modified:   app/services/trading_ai_service.py
+        modified:   app/services/wallet_service.py
+        modified:   app/telegram_bot/handlers/admin.py
+        modified:   app/telegram_bot/handlers/ai.py
+        modified:   app/telegram_bot/handlers/navigation.py
+        modified:   app/telegram_bot/handlers/referrals.py
+        modified:   app/telegram_bot/handlers/settings.py
+        modified:   app/telegram_bot/handlers/start.py
+        modified:   app/telegram_bot/handlers/wallet.py
+        modified:   app/telegram_bot/keyboards.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        backup_0x95/
+        wallet_bytes.txt
+        wallet_head.txt
+        wallet_hex.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> git diff
+diff --git a/app/config.py b/app/config.py
+index b84117a..690a1e5 100644
+--- a/app/config.py
++++ b/app/config.py
+@@ -1,8 +1,8 @@
+-from pydantic_settings import BaseSettings, SettingsConfigDict
++﻿from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+ class Settings(BaseSettings):
+-    # הגדרה בסגנון Pydantic v2 – קריאת משתנים מתוך .env
++    # ׳”׳’׳“׳¨׳” ׳‘׳¡׳’׳ ׳•׳ Pydantic v2 ג€“ ׳§׳¨׳™׳׳× ׳׳©׳×׳ ׳™׳ ׳׳×׳•׳ .env
+     model_config = SettingsConfigDict(env_file=".env")
+
+     PROJECT_NAME: str = "GATE BOTSHOP  TON Bank"
+@@ -14,7 +14,7 @@ class Settings(BaseSettings):
+     DATABASE_URL: str
+
+     # TON endpoints + API keys
+-    # ברירות מחדל בטוחות כדי שהשרת יעלה גם בלי קונפיג מלא
++    # ׳‘׳¨׳™׳¨׳•׳× ׳׳—׳“׳ ׳‘׳˜׳•׳—׳•׳× ׳›׳“׳™ ׳©׳”׳©׳¨׳× ׳™׳¢׳׳” ׳’׳ ׳‘׳׳™ ׳§׳•׳ ׳₪׳™׳’ ׳׳׳
+     TON_MAINNET_API_ENDPOINT: str = "https://toncenter.com/api/v2/jsonRPC"
+     TON_TESTNET_API_ENDPOINT: str = "https://testnet.toncenter.com/api/v2/jsonRPC"
+
+@@ -49,3 +49,4 @@ class Settings(BaseSettings):
+
+
+ settings = Settings()
++
+diff --git a/app/database.py b/app/database.py
+index 0c4641d..476b09b 100644
+--- a/app/database.py
++++ b/app/database.py
+@@ -1,4 +1,4 @@
+-﻿from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
++﻿ן»¿from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+ from sqlalchemy.orm import sessionmaker, declarative_base
+
+ from app.config import settings
+@@ -7,7 +7,7 @@ Base = declarative_base()
+
+
+ def _build_async_db_url(raw: str) -> str:
+-    # מתקן גם postgres:// וגם postgresql://
++    # ׳׳×׳§׳ ׳’׳ postgres:// ׳•׳’׳ postgresql://
+     url = raw.replace("postgres://", "postgresql://")
+     if url.startswith("postgresql://"):
+         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+@@ -24,8 +24,9 @@ async_session_maker = sessionmaker(
+
+
+ async def init_db() -> None:
+-    # לוודא שכל המודלים נטענים לפני יצירת הטבלאות
++    # ׳׳•׳•׳“׳ ׳©׳›׳ ׳”׳׳•׳“׳׳™׳ ׳ ׳˜׳¢׳ ׳™׳ ׳׳₪׳ ׳™ ׳™׳¦׳™׳¨׳× ׳”׳˜׳‘׳׳׳•׳×
+     import app.models  # noqa: F401
+
+     async with engine.begin() as conn:
+         await conn.run_sync(Base.metadata.create_all)
++
+diff --git a/app/main.py b/app/main.py
+index 44ebe1c..37f01d6 100644
+--- a/app/main.py
++++ b/app/main.py
+@@ -1,4 +1,4 @@
+-﻿from __future__ import annotations
++﻿ן»¿from __future__ import annotations
+
+ import logging
+ from typing import Any, Optional
+@@ -66,7 +66,7 @@ async def health() -> dict[str, Any]:
+ async def root() -> HTMLResponse:
+     return HTMLResponse(
+         "<h1>GATE BOTSHOP  Dashboard</h1>"
+-        "<p>שרת פעיל. כאן בעתיד יוצגו גרפים, סטטיסטיקות ונתוני מסחר.</p>"
++        "<p>׳©׳¨׳× ׳₪׳¢׳™׳. ׳›׳׳ ׳‘׳¢׳×׳™׳“ ׳™׳•׳¦׳’׳• ׳’׳¨׳₪׳™׳, ׳¡׳˜׳˜׳™׳¡׳˜׳™׳§׳•׳× ׳•׳ ׳×׳•׳ ׳™ ׳׳¡׳—׳¨.</p>"
+     )
+
+
+@@ -84,3 +84,4 @@ async def telegram_webhook(request: Request) -> JSONResponse:
+     update = Update.de_json(data=data, bot=telegram_app.bot)
+     await telegram_app.process_update(update)
+     return JSONResponse({"ok": True})
++
+diff --git a/app/models/staking.py b/app/models/staking.py
+index 399cdde..c96d5e9 100644
+--- a/app/models/staking.py
++++ b/app/models/staking.py
+@@ -1,4 +1,4 @@
+-from __future__ import annotations
++﻿from __future__ import annotations
+
+ from datetime import datetime
+ from decimal import Decimal
+@@ -12,46 +12,46 @@ from ..database import Base
+
+ class StakingPosition(Base):
+     """
+-    טבלת חיסכון (סטייקינג) ב-SLH.
+-    כל רשומה מייצגת חיסכון אחד למשתמש טלגרם.
++    ׳˜׳‘׳׳× ׳—׳™׳¡׳›׳•׳ (׳¡׳˜׳™׳™׳§׳™׳ ׳’) ׳‘-SLH.
++    ׳›׳ ׳¨׳©׳•׳׳” ׳׳™׳™׳¦׳’׳× ׳—׳™׳¡׳›׳•׳ ׳׳—׳“ ׳׳׳©׳×׳׳© ׳˜׳׳’׳¨׳.
+     """
+
+     __tablename__ = "staking_positions"
+
+-    # מזהה פנימי של החיסכון
++    # ׳׳–׳”׳” ׳₪׳ ׳™׳׳™ ׳©׳ ׳”׳—׳™׳¡׳›׳•׳
+     id: Mapped[int] = mapped_column(
+         Integer,
+         primary_key=True,
+         index=True,
+     )
+
+-    # מזהה המשתמש (Telegram user_id)
++    # ׳׳–׳”׳” ׳”׳׳©׳×׳׳© (Telegram user_id)
+     telegram_user_id: Mapped[int] = mapped_column(
+         Integer,
+         index=True,
+         nullable=False,
+     )
+
+-    # סכום הקרן ב-SLH
++    # ׳¡׳›׳•׳ ׳”׳§׳¨׳ ׳‘-SLH
+     principal_slh: Mapped[Decimal] = mapped_column(
+         Numeric(38, 10),
+         nullable=False,
+     )
+
+-    # תשואה צפויה ב-SLH (מחושבת בזמן פתיחת החיסכון)
++    # ׳×׳©׳•׳׳” ׳¦׳₪׳•׳™׳” ׳‘-SLH (׳׳—׳•׳©׳‘׳× ׳‘׳–׳׳ ׳₪׳×׳™׳—׳× ׳”׳—׳™׳¡׳›׳•׳)
+     expected_reward_slh: Mapped[Decimal] = mapped_column(
+         Numeric(38, 10),
+         nullable=False,
+         default=Decimal("0"),
+     )
+
+-    # משך החיסכון בימים
++    # ׳׳©׳ ׳”׳—׳™׳¡׳›׳•׳ ׳‘׳™׳׳™׳
+     duration_days: Mapped[int] = mapped_column(
+         Integer,
+         nullable=False,
+     )
+
+-    # סטטוס: open / closed / cancelled
++    # ׳¡׳˜׳˜׳•׳¡: open / closed / cancelled
+     status: Mapped[str] = mapped_column(
+         String(16),
+         nullable=False,
+@@ -59,20 +59,20 @@ class StakingPosition(Base):
+         index=True,
+     )
+
+-    # זמן פתיחת החיסכון
++    # ׳–׳׳ ׳₪׳×׳™׳—׳× ׳”׳—׳™׳¡׳›׳•׳
+     opened_at: Mapped[datetime] = mapped_column(
+         DateTime(timezone=True),
+         nullable=False,
+         default=datetime.utcnow,
+     )
+
+-    # זמן סיום מתוכנן
++    # ׳–׳׳ ׳¡׳™׳•׳ ׳׳×׳•׳›׳ ׳
+     closes_at: Mapped[datetime] = mapped_column(
+         DateTime(timezone=True),
+         nullable=False,
+     )
+
+-    # זמן סגירה בפועל (אם נסגר)
++    # ׳–׳׳ ׳¡׳’׳™׳¨׳” ׳‘׳₪׳•׳¢׳ (׳׳ ׳ ׳¡׳’׳¨)
+     closed_at: Mapped[Optional[datetime]] = mapped_column(
+         DateTime(timezone=True),
+         nullable=True,
+@@ -91,3 +91,4 @@ class StakingPosition(Base):
+             f"principal={self.principal_slh} reward={self.expected_reward_slh} "
+             f"status={self.status}>"
+         )
++
+diff --git a/app/services/custody_terms_service.py b/app/services/custody_terms_service.py
+index 8087e0b..b102fb8 100644
+--- a/app/services/custody_terms_service.py
++++ b/app/services/custody_terms_service.py
+@@ -1,4 +1,4 @@
+-﻿import os
++﻿ן»¿import os
+ from datetime import datetime
+
+ from reportlab.pdfgen import canvas
+@@ -9,12 +9,12 @@ from app.models.users import User
+ from app.models.audit_logs import AuditLog
+
+ TERMS_PATH = "docs/custody_terms.pdf"
+-TERMS_URL = "/static/custody_terms.pdf"  # בעתיד אפשר לשרת דרך FastAPI
++TERMS_URL = "/static/custody_terms.pdf"  # ׳‘׳¢׳×׳™׳“ ׳׳₪׳©׳¨ ׳׳©׳¨׳× ׳“׳¨׳ FastAPI
+
+
+ def generate_pdf_terms() -> None:
+     """
+-    מייצר מסמך תנאי Custody בסיסי בפורמט PDF (לצורך MVP).
++    ׳׳™׳™׳¦׳¨ ׳׳¡׳׳ ׳×׳ ׳׳™ Custody ׳‘׳¡׳™׳¡׳™ ׳‘׳₪׳•׳¨׳׳˜ PDF (׳׳¦׳•׳¨׳ MVP).
+     """
+     os.makedirs("docs", exist_ok=True)
+     c = canvas.Canvas(TERMS_PATH, pagesize=A4)
+@@ -24,11 +24,11 @@ def generate_pdf_terms() -> None:
+     content = [
+         "GATE BOTSHOP  Custodial Agreement",
+         "",
+-        "1. כספים המופקדים לכתובת ה-TON הראשית מוחזקים במודל Custodial.",
+-        "2. המפעיל מנהל מאזן פנימי ופעילות בלוקצ'יין בהתאם לתנאים.",
+-        "3. המשתמש נותר הנהנה הכלכלי בהתאם להסכמות החוזיות.",
++        "1. ׳›׳¡׳₪׳™׳ ׳”׳׳•׳₪׳§׳“׳™׳ ׳׳›׳×׳•׳‘׳× ׳”-TON ׳”׳¨׳׳©׳™׳× ׳׳•׳—׳–׳§׳™׳ ׳‘׳׳•׳“׳ Custodial.",
++        "2. ׳”׳׳₪׳¢׳™׳ ׳׳ ׳”׳ ׳׳׳–׳ ׳₪׳ ׳™׳׳™ ׳•׳₪׳¢׳™׳׳•׳× ׳‘׳׳•׳§׳¦'׳™׳™׳ ׳‘׳”׳×׳׳ ׳׳×׳ ׳׳™׳.",
++        "3. ׳”׳׳©׳×׳׳© ׳ ׳•׳×׳¨ ׳”׳ ׳”׳ ׳” ׳”׳›׳׳›׳׳™ ׳‘׳”׳×׳׳ ׳׳”׳¡׳›׳׳•׳× ׳”׳—׳•׳–׳™׳•׳×.",
+         "",
+-        "מסמך זה הינו בסיס ל-MVP וטעון השלמה/עדכון משפטי חיצוני.",
++        "׳׳¡׳׳ ׳–׳” ׳”׳™׳ ׳• ׳‘׳¡׳™׳¡ ׳-MVP ׳•׳˜׳¢׳•׳ ׳”׳©׳׳׳”/׳¢׳“׳›׳•׳ ׳׳©׳₪׳˜׳™ ׳—׳™׳¦׳•׳ ׳™.",
+         "",
+         f"Generated at: {datetime.utcnow().isoformat()}",
+     ]
+@@ -63,3 +63,4 @@ async def register_user_agreement(session: AsyncSession, user_id: int) -> None:
+     if user:
+         user.custody_agreed = True
+         await session.commit()
++
+diff --git a/app/services/investment_manager.py b/app/services/investment_manager.py
+index becfdc3..ad15ba9 100644
+--- a/app/services/investment_manager.py
++++ b/app/services/investment_manager.py
+@@ -1,9 +1,9 @@
+-﻿from sqlalchemy.ext.asyncio import AsyncSession
++﻿ן»¿from sqlalchemy.ext.asyncio import AsyncSession
+
+ from app.models.users import User
+
+ ALLOWED_ACTIONS = {
+-    "noncustodial": [],  # לא מאפשר הפקדות/סטייקינג פנימיים
++    "noncustodial": [],  # ׳׳ ׳׳׳₪׳©׳¨ ׳”׳₪׳§׳“׳•׳×/׳¡׳˜׳™׳™׳§׳™׳ ׳’ ׳₪׳ ׳™׳׳™׳™׳
+     "custodial": ["deposit", "withdraw", "stake", "credit"],
+     "hybrid": ["deposit", "stake"],
+ }
+@@ -27,9 +27,10 @@ async def enforce_or_reject(session: AsyncSession, user_id: int, action: str) ->
+
+     if not allowed:
+         if mode == "noncustodial":
+-            raise Exception("החשבון מוגדר Non-Custodial  אין שינוי ביתרות פנימיות.")
++            raise Exception("׳”׳—׳©׳‘׳•׳ ׳׳•׳’׳“׳¨ Non-Custodial  ׳׳™׳ ׳©׳™׳ ׳•׳™ ׳‘׳™׳×׳¨׳•׳× ׳₪׳ ׳™׳׳™׳•׳×.")
+         if mode == "hybrid":
+-            raise Exception("במצב Hybrid פעולה זו דורשת אישור מפורש או מסלול אחר.")
+-        raise Exception("הפעולה אינה מותרת לפי מצב החשבון.")
++            raise Exception("׳‘׳׳¦׳‘ Hybrid ׳₪׳¢׳•׳׳” ׳–׳• ׳“׳•׳¨׳©׳× ׳׳™׳©׳•׳¨ ׳׳₪׳•׳¨׳© ׳׳• ׳׳¡׳׳•׳ ׳׳—׳¨.")
++        raise Exception("׳”׳₪׳¢׳•׳׳” ׳׳™׳ ׳” ׳׳•׳×׳¨׳× ׳׳₪׳™ ׳׳¦׳‘ ׳”׳—׳©׳‘׳•׳.")
+
+     return True
++
+diff --git a/app/services/staking_engine.py b/app/services/staking_engine.py
+index 02e2419..bda1d26 100644
+--- a/app/services/staking_engine.py
++++ b/app/services/staking_engine.py
+@@ -1,4 +1,4 @@
+-from __future__ import annotations
++﻿from __future__ import annotations
+
+ from datetime import datetime, timedelta
+ from decimal import Decimal
+@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
+ from app.models.users import User
+ from app.models.staking_positions import StakingPosition
+
+-DEFAULT_APY_PERCENT = Decimal("12")  # APY ברירת מחדל
++DEFAULT_APY_PERCENT = Decimal("12")  # APY ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳
+
+
+ async def create_admin_stake(
+@@ -21,8 +21,8 @@ async def create_admin_stake(
+     apy_percent: Decimal | None = None,
+ ) -> StakingPosition:
+     """
+-    יצירת חיסכון חדש למשתמש ע"י אדמין.
+-    נשמר בטבלת staking_positions לפי המודל הקיים.
++    ׳™׳¦׳™׳¨׳× ׳—׳™׳¡׳›׳•׳ ׳—׳“׳© ׳׳׳©׳×׳׳© ׳¢"׳™ ׳׳“׳׳™׳.
++    ׳ ׳©׳׳¨ ׳‘׳˜׳‘׳׳× staking_positions ׳׳₪׳™ ׳”׳׳•׳“׳ ׳”׳§׳™׳™׳.
+     """
+
+     user = (
+@@ -60,7 +60,7 @@ async def get_user_stakes(
+     telegram_user_id: int,
+ ) -> Sequence[StakingPosition]:
+     """
+-    כל החיסכונות של משתמש לפי סדר כרונולוגי.
++    ׳›׳ ׳”׳—׳™׳¡׳›׳•׳ ׳•׳× ׳©׳ ׳׳©׳×׳׳© ׳׳₪׳™ ׳¡׳“׳¨ ׳›׳¨׳•׳ ׳•׳׳•׳’׳™.
+     """
+
+     user = (
+@@ -79,3 +79,4 @@ async def get_user_stakes(
+     )
+     result = await session.execute(stmt)
+     return result.scalars().all()
++
+diff --git a/app/services/ton_treasury_service.py b/app/services/ton_treasury_service.py
+index e1c13e5..fac9eda 100644
+--- a/app/services/ton_treasury_service.py
++++ b/app/services/ton_treasury_service.py
+@@ -1,4 +1,4 @@
+-﻿from decimal import Decimal
++﻿ן»¿from decimal import Decimal
+
+ import httpx
+ from sqlalchemy.ext.asyncio import AsyncSession
+@@ -11,14 +11,14 @@ TON_DECIMALS = Decimal("1000000000")  # 1e9 nanoton per TON
+
+ async def get_treasury_balance_ton() -> Decimal:
+     """
+-    קריאת יתרת הקופה הראשית מ-TonCenter (קריאה בלבד).
+-    אם אין קונפיג מלא  מחזיר 0 במקום להפיל את השרת.
++    ׳§׳¨׳™׳׳× ׳™׳×׳¨׳× ׳”׳§׳•׳₪׳” ׳”׳¨׳׳©׳™׳× ׳-TonCenter (׳§׳¨׳™׳׳” ׳‘׳׳‘׳“).
++    ׳׳ ׳׳™׳ ׳§׳•׳ ׳₪׳™׳’ ׳׳׳  ׳׳—׳–׳™׳¨ 0 ׳‘׳׳§׳•׳ ׳׳”׳₪׳™׳ ׳׳× ׳”׳©׳¨׳×.
+     """
+     address = settings.TON_TREASURY_ADDRESS
+     endpoint = settings.TON_MAINNET_API_ENDPOINT
+     api_key = settings.TON_MAINNET_API_KEY
+
+-    # אם אין כתובת  חוזרים 0 כדי שהמערכת תישאר יציבה
++    # ׳׳ ׳׳™׳ ׳›׳×׳•׳‘׳×  ׳—׳•׳–׳¨׳™׳ 0 ׳›׳“׳™ ׳©׳”׳׳¢׳¨׳›׳× ׳×׳™׳©׳׳¨ ׳™׳¦׳™׳‘׳”
+     if not address:
+         return Decimal("0")
+
+@@ -47,8 +47,8 @@ async def get_treasury_balance_ton() -> Decimal:
+
+ async def update_daily_tvl(session: AsyncSession) -> DailyStats:
+     """
+-    יוצר רשומת DailyStats לפי יתרת ה-TON בקופה (TVL).
+-    כרגע: TVL = יתרת TON בלבד.
++    ׳™׳•׳¦׳¨ ׳¨׳©׳•׳׳× DailyStats ׳׳₪׳™ ׳™׳×׳¨׳× ׳”-TON ׳‘׳§׳•׳₪׳” (TVL).
++    ׳›׳¨׳’׳¢: TVL = ׳™׳×׳¨׳× TON ׳‘׳׳‘׳“.
+     """
+     balance_ton = await get_treasury_balance_ton()
+
+@@ -63,3 +63,4 @@ async def update_daily_tvl(session: AsyncSession) -> DailyStats:
+     await session.commit()
+     await session.refresh(stats)
+     return stats
++
+diff --git a/app/services/trade_mode_service.py b/app/services/trade_mode_service.py
+index d7e7cec..9ab1879 100644
+--- a/app/services/trade_mode_service.py
++++ b/app/services/trade_mode_service.py
+@@ -1,4 +1,4 @@
+-from __future__ import annotations
++﻿from __future__ import annotations
+
+ import logging
+ from typing import Any, Tuple
+@@ -24,11 +24,11 @@ def normalize_trade_mode(value: str | None) -> str:
+ def get_trade_mode_label(value: str | None) -> str:
+     mode = normalize_trade_mode(value)
+     if mode == "real":
+-        return "🟦 מסחר אמיתי (On-Chain / DEX)"
++        return "נ¦ ׳׳¡׳—׳¨ ׳׳׳™׳×׳™ (On-Chain / DEX)"
+     if mode == "hybrid":
+-        return "🟨 מצב היברידי (Hybrid: סימולציה + מסחר אמיתי)"
++        return "נ¨ ׳׳¦׳‘ ׳”׳™׳‘׳¨׳™׳“׳™ (Hybrid: ׳¡׳™׳׳•׳׳¦׳™׳” + ׳׳¡׳—׳¨ ׳׳׳™׳×׳™)"
+     # sim
+-    return "🟩 סימולציית מסחר (ללא סיכון אמיתי)"
++    return "נ© ׳¡׳™׳׳•׳׳¦׳™׳™׳× ׳׳¡׳—׳¨ (׳׳׳ ׳¡׳™׳›׳•׳ ׳׳׳™׳×׳™)"
+
+
+ async def get_or_create_user(
+@@ -36,7 +36,7 @@ async def get_or_create_user(
+     tg_user: Any,
+ ) -> User:
+     """
+-    דואג שתהיה רשומת User לכל משתמש טלגרם.
++    ׳“׳•׳׳’ ׳©׳×׳”׳™׳” ׳¨׳©׳•׳׳× User ׳׳›׳ ׳׳©׳×׳׳© ׳˜׳׳’׳¨׳.
+     """
+     stmt = select(User).where(User.telegram_id == tg_user.id)
+     result = await session.execute(stmt)
+@@ -54,7 +54,7 @@ async def get_or_create_user(
+         await session.refresh(user)
+         logger.info("Created new user %s (%s)", tg_user.id, tg_user.username)
+     else:
+-        # עדכון קל אם השם/יוזר השתנו
++        # ׳¢׳“׳›׳•׳ ׳§׳ ׳׳ ׳”׳©׳/׳™׳•׳–׳¨ ׳”׳©׳×׳ ׳•
+         changed = False
+         if user.username != tg_user.username:
+             user.username = tg_user.username
+@@ -77,7 +77,7 @@ async def get_or_create_settings(
+     user: User,
+ ) -> UserSettings:
+     """
+-    הגדרות ברירת מחדל לכל משתמש – מצב מסחר, מטבע בסיס וכו'.
++    ׳”׳’׳“׳¨׳•׳× ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳ ׳׳›׳ ׳׳©׳×׳׳© ג€“ ׳׳¦׳‘ ׳׳¡׳—׳¨, ׳׳˜׳‘׳¢ ׳‘׳¡׳™׳¡ ׳•׳›׳•'.
+     """
+     stmt = select(UserSettings).where(UserSettings.user_id == user.id)
+     result = await session.execute(stmt)
+@@ -95,7 +95,7 @@ async def get_or_create_settings(
+         await session.refresh(settings)
+         logger.info("Created default settings for user_id=%s", user.id)
+
+-    # ודא שמצב המסחר חוקי
++    # ׳•׳“׳ ׳©׳׳¦׳‘ ׳”׳׳¡׳—׳¨ ׳—׳•׳§׳™
+     settings.trade_mode = normalize_trade_mode(settings.trade_mode)
+     return settings
+
+@@ -106,7 +106,7 @@ async def update_trade_mode(
+     new_mode: str,
+ ) -> UserSettings:
+     """
+-    עדכון מצב המסחר של המשתמש (sim / hybrid / real).
++    ׳¢׳“׳›׳•׳ ׳׳¦׳‘ ׳”׳׳¡׳—׳¨ ׳©׳ ׳”׳׳©׳×׳׳© (sim / hybrid / real).
+     """
+     new_mode = normalize_trade_mode(new_mode)
+
+@@ -127,7 +127,7 @@ async def update_trade_mode(
+
+ def next_trade_mode(current: str | None) -> str:
+     """
+-    לוגיקה מחזורית: sim → hybrid → real → sim
++    ׳׳•׳’׳™׳§׳” ׳׳—׳–׳•׳¨׳™׳×: sim ג†’ hybrid ג†’ real ג†’ sim
+     """
+     mode = normalize_trade_mode(current)
+     if mode == "sim":
+@@ -135,3 +135,4 @@ def next_trade_mode(current: str | None) -> str:
+     if mode == "hybrid":
+         return "real"
+     return "sim"
++
+diff --git a/app/services/trading_ai_service.py b/app/services/trading_ai_service.py
+index ccbe1db..0505a92 100644
+--- a/app/services/trading_ai_service.py
++++ b/app/services/trading_ai_service.py
+@@ -1,9 +1,10 @@
+-﻿import random
++﻿ן»¿import random
+
+
+ async def market_recommendation() -> str:
+     """
+-    Placeholder למודל המלצות מסחר  בשלב הבא אפשר לחבר ל-OpenAI/HF.
++    Placeholder ׳׳׳•׳“׳ ׳”׳׳׳¦׳•׳× ׳׳¡׳—׳¨  ׳‘׳©׳׳‘ ׳”׳‘׳ ׳׳₪׳©׳¨ ׳׳—׳‘׳¨ ׳-OpenAI/HF.
+     """
+     sentiments = ["bullish", "bearish", "neutral"]
+     return random.choice(sentiments)
++
+diff --git a/app/services/wallet_service.py b/app/services/wallet_service.py
+index 4eaf6c8..e738e94 100644
+--- a/app/services/wallet_service.py
++++ b/app/services/wallet_service.py
+@@ -1,4 +1,4 @@
+-from __future__ import annotations
++﻿from __future__ import annotations
+
+ import logging
+ from decimal import Decimal
+@@ -30,13 +30,13 @@ async def get_or_create_default_wallets(
+     user: User,
+ ) -> List[Wallet]:
+     """
+-    דואג שלכל משתמש יהיו לפחות 3 ארנקים פנימיים:
++    ׳“׳•׳׳’ ׳©׳׳›׳ ׳׳©׳×׳׳© ׳™׳”׳™׳• ׳׳₪׳—׳•׳× 3 ׳׳¨׳ ׳§׳™׳ ׳₪׳ ׳™׳׳™׳™׳:
+
+-    - internal_sim_usd  (סימולציה)
+-    - internal_real_usd (מסחר אמיתי off-chain / future mapping)
+-    - internal_slh      (טוקן SLH פנימי)
++    - internal_sim_usd  (׳¡׳™׳׳•׳׳¦׳™׳”)
++    - internal_real_usd (׳׳¡׳—׳¨ ׳׳׳™׳×׳™ off-chain / future mapping)
++    - internal_slh      (׳˜׳•׳§׳ SLH ׳₪׳ ׳™׳׳™)
+
+-    בהמשך נוכל להוסיף ארנקי TON per-user.
++    ׳‘׳”׳׳©׳ ׳ ׳•׳›׳ ׳׳”׳•׳¡׳™׳£ ׳׳¨׳ ׳§׳™ TON per-user.
+     """
+     wallets = await get_user_wallets(session, user)
+     kinds = {w.kind for w in wallets}
+@@ -96,7 +96,7 @@ async def get_or_create_default_wallets(
+             len(missing),
+             user.id,
+         )
+-        # טוענים מחדש כולל החדשים
++        # ׳˜׳•׳¢׳ ׳™׳ ׳׳—׳“׳© ׳›׳•׳׳ ׳”׳—׳“׳©׳™׳
+         wallets = await get_user_wallets(session, user)
+
+     return wallets
+@@ -110,3 +110,4 @@ def pick_wallet_by_kind(
+         if w.kind == kind:
+             return w
+     return None
++
+diff --git a/app/telegram_bot/handlers/admin.py b/app/telegram_bot/handlers/admin.py
+index a56facb..590c096 100644
+--- a/app/telegram_bot/handlers/admin.py
++++ b/app/telegram_bot/handlers/admin.py
+@@ -1,4 +1,4 @@
+-﻿from decimal import Decimal
++﻿ן»¿from decimal import Decimal
+
+ from telegram import Update
+ from telegram.ext import ContextTypes
+@@ -19,7 +19,7 @@ async def _ensure_admin(update: Update) -> bool:
+     user = update.effective_user
+     if not user or user.id != ADMIN_ID:
+         if update.effective_message:
+-            await update.effective_message.reply_text("⛔ הפקודה זמינה רק למנהל המערכת.")
++            await update.effective_message.reply_text("ג›” ׳”׳₪׳§׳•׳“׳” ׳–׳׳™׳ ׳” ׳¨׳§ ׳׳׳ ׳”׳ ׳”׳׳¢׳¨׳›׳×.")
+         return False
+     return True
+
+@@ -34,10 +34,10 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
+         active_stakes = (await session.execute(select(func.count(StakingPosition.id)))).scalar_one()
+
+     await update.effective_message.reply_text(
+-        f"🛠 לוח בקרה  GATE BOTSHOP\n\n"
+-        f"• משתמשים רשומים: {total_users}\n"
+-        f"• ארנקים פעילים: {total_wallets}\n"
+-        f"• תוכניות חיסכון פעילות: {active_stakes}"
++        f"נ›  ׳׳•׳— ׳‘׳§׳¨׳”  GATE BOTSHOP\n\n"
++        f"ג€¢ ׳׳©׳×׳׳©׳™׳ ׳¨׳©׳•׳׳™׳: {total_users}\n"
++        f"ג€¢ ׳׳¨׳ ׳§׳™׳ ׳₪׳¢׳™׳׳™׳: {total_wallets}\n"
++        f"ג€¢ ׳×׳•׳›׳ ׳™׳•׳× ׳—׳™׳¡׳›׳•׳ ׳₪׳¢׳™׳׳•׳×: {active_stakes}"
+     )
+
+
+@@ -51,6 +51,7 @@ async def admin_tvl(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+         balance_ton = None
+
+     if balance_ton is None:
+-        await update.effective_message.reply_text("🏦 קופת TON לא מוגדרת עדיין.")
++        await update.effective_message.reply_text("נ¦ ׳§׳•׳₪׳× TON ׳׳ ׳׳•׳’׳“׳¨׳× ׳¢׳“׳™׳™׳.")
+     else:
+-        await update.effective_message.reply_text(f"🏦 יתרת קופה: {balance_ton} TON")
++        await update.effective_message.reply_text(f"נ¦ ׳™׳×׳¨׳× ׳§׳•׳₪׳”: {balance_ton} TON")
++
+diff --git a/app/telegram_bot/handlers/ai.py b/app/telegram_bot/handlers/ai.py
+index 0b897ef..65e1114 100644
+--- a/app/telegram_bot/handlers/ai.py
++++ b/app/telegram_bot/handlers/ai.py
+@@ -1,4 +1,4 @@
+-﻿from telegram import Update
++﻿ן»¿from telegram import Update
+ from telegram.ext import ContextTypes
+ from app.services.trading_ai_service import market_recommendation
+
+@@ -6,5 +6,6 @@ async def ai_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+     sentiment = await market_recommendation()
+
+     await update.message.reply_text(
+-        f"🤖 ניתוח AI:\n\nשוק נראה: {sentiment}"
++        f"נ₪– ׳ ׳™׳×׳•׳— AI:\n\n׳©׳•׳§ ׳ ׳¨׳׳”: {sentiment}"
+     )
++
+diff --git a/app/telegram_bot/handlers/navigation.py b/app/telegram_bot/handlers/navigation.py
+index bfcfe69..ec5d0a8 100644
+--- a/app/telegram_bot/handlers/navigation.py
++++ b/app/telegram_bot/handlers/navigation.py
+@@ -1,4 +1,4 @@
+-﻿from telegram import ReplyKeyboardMarkup
++﻿ן»¿from telegram import ReplyKeyboardMarkup
+ from sqlalchemy.ext.asyncio import AsyncSession
+ from app.models.users import User
+ from app.models.staking_positions import StakingPosition
+@@ -11,7 +11,7 @@ async def build_dynamic_keyboard(session: AsyncSession, user_id: int):
+     mode = user.investment_mode if user else "noncustodial"
+
+     # AI STATUS (placeholder)
+-    ai_status = "פעיל" if tier >= 2 else "כבוי"
++    ai_status = "׳₪׳¢׳™׳" if tier >= 2 else "׳›׳‘׳•׳™"
+
+     # staking count
+     stakes = (
+@@ -21,12 +21,13 @@ async def build_dynamic_keyboard(session: AsyncSession, user_id: int):
+     ).fetchall()
+     stake_count = len(stakes)
+
+-    header = f"🏦 מצב: {mode} | 🎖 Tier {tier} | 🤖 AI: {ai_status} | 📊 סטייקים: {stake_count}"
++    header = f"נ¦ ׳׳¦׳‘: {mode} | נ– Tier {tier} | נ₪– AI: {ai_status} | נ“ ׳¡׳˜׳™׳™׳§׳™׳: {stake_count}"
+
+     keyboard = [
+-        ["💼 ארנק", "🤖 AI מסחר"],
+-        ["📊 סטייקים", "🎁 הפניות"],
+-        ["💱 P2P", "⚙ הגדרות"]
++        ["נ’¼ ׳׳¨׳ ׳§", "נ₪– AI ׳׳¡׳—׳¨"],
++        ["נ“ ׳¡׳˜׳™׳™׳§׳™׳", "נ ׳”׳₪׳ ׳™׳•׳×"],
++        ["נ’± P2P", "ג™ ׳”׳’׳“׳¨׳•׳×"]
+     ]
+
+     return header, ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
++
+diff --git a/app/telegram_bot/handlers/referrals.py b/app/telegram_bot/handlers/referrals.py
+index d8c2e0c..d6bb359 100644
+--- a/app/telegram_bot/handlers/referrals.py
++++ b/app/telegram_bot/handlers/referrals.py
+@@ -1,4 +1,4 @@
+-﻿from telegram import Update
++﻿ן»¿from telegram import Update
+ from telegram.ext import ContextTypes
+ from sqlalchemy.ext.asyncio import AsyncSession
+ from app.database import async_session_maker
+@@ -13,5 +13,6 @@ async def referrals(update: Update, context: ContextTypes.DEFAULT_TYPE):
+     link = f"https://t.me/{context.bot.username}?start={code}"
+
+     await update.message.reply_text(
+-        f"🎁 קישור ההפניה שלך:\n{link}"
++        f"נ ׳§׳™׳©׳•׳¨ ׳”׳”׳₪׳ ׳™׳” ׳©׳׳:\n{link}"
+     )
++
+diff --git a/app/telegram_bot/handlers/settings.py b/app/telegram_bot/handlers/settings.py
+index 969b133..b2a8f54 100644
+--- a/app/telegram_bot/handlers/settings.py
++++ b/app/telegram_bot/handlers/settings.py
+@@ -1,4 +1,4 @@
+-﻿from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
++﻿ן»¿from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+ from telegram.ext import ContextTypes
+ from sqlalchemy import select
+
+@@ -9,9 +9,9 @@ from app.models.users import User
+ def _settings_keyboard() -> ReplyKeyboardMarkup:
+     keyboard = [
+         [
+-            KeyboardButton("🔒 Non-Custodial"),
+-            KeyboardButton("🏦 Custodial"),
+-            KeyboardButton("🟨 Hybrid"),
++            KeyboardButton("נ”’ Non-Custodial"),
++            KeyboardButton("נ¦ Custodial"),
++            KeyboardButton("נ¨ Hybrid"),
+         ]
+     ]
+     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+@@ -19,9 +19,9 @@ def _settings_keyboard() -> ReplyKeyboardMarkup:
+
+ def _mode_from_text(text: str) -> str | None:
+     mapping = {
+-        "🔒 Non-Custodial": "noncustodial",
+-        "🏦 Custodial": "custodial",
+-        "🟨 Hybrid": "hybrid",
++        "נ”’ Non-Custodial": "noncustodial",
++        "נ¦ Custodial": "custodial",
++        "נ¨ Hybrid": "hybrid",
+     }
+     return mapping.get(text.strip())
+
+@@ -42,15 +42,15 @@ async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+     current_mode = user.investment_mode if user else "noncustodial"
+
+     mode_label = {
+-        "noncustodial": "🔒 Non-Custodial",
+-        "custodial": "🏦 Custodial",
+-        "hybrid": "🟨 Hybrid",
+-    }.get(current_mode, "🔒 Non-Custodial")
++        "noncustodial": "נ”’ Non-Custodial",
++        "custodial": "נ¦ Custodial",
++        "hybrid": "נ¨ Hybrid",
++    }.get(current_mode, "נ”’ Non-Custodial")
+
+     text = (
+-        "⚙️ הגדרות מסחר\n\n"
+-        f"מצב נוכחי: {mode_label}\n\n"
+-        "בחר מצב חדש בעזרת הכפתורים למטה."
++        "ג™ן¸ ׳”׳’׳“׳¨׳•׳× ׳׳¡׳—׳¨\n\n"
++        f"׳׳¦׳‘ ׳ ׳•׳›׳—׳™: {mode_label}\n\n"
++        "׳‘׳—׳¨ ׳׳¦׳‘ ׳—׳“׳© ׳‘׳¢׳–׳¨׳× ׳”׳›׳₪׳×׳•׳¨׳™׳ ׳׳׳˜׳”."
+     )
+
+     await update.effective_message.reply_text(
+@@ -65,7 +65,7 @@ async def set_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+     choice = update.effective_message.text or ""
+     new_mode = _mode_from_text(choice)
+     if new_mode is None:
+-        # טקסט שלא קשור למצבי המסחר  מתעלמים
++        # ׳˜׳§׳¡׳˜ ׳©׳׳ ׳§׳©׳•׳¨ ׳׳׳¦׳‘׳™ ׳”׳׳¡׳—׳¨  ׳׳×׳¢׳׳׳™׳
+         return
+
+     telegram_id = update.effective_user.id
+@@ -85,6 +85,7 @@ async def set_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+         await session.commit()
+
+     await update.effective_message.reply_text(
+-        f"מצב המסחר שלך עודכן ל{choice}.",
++        f"׳׳¦׳‘ ׳”׳׳¡׳—׳¨ ׳©׳׳ ׳¢׳•׳“׳›׳ ׳{choice}.",
+         reply_markup=_settings_keyboard(),
+     )
++
+diff --git a/app/telegram_bot/handlers/start.py b/app/telegram_bot/handlers/start.py
+index f6e9912..23c987a 100644
+--- a/app/telegram_bot/handlers/start.py
++++ b/app/telegram_bot/handlers/start.py
+@@ -1,4 +1,4 @@
+-﻿from typing import Tuple
++﻿ן»¿from typing import Tuple
+
+ from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+ from telegram.ext import ContextTypes
+@@ -54,13 +54,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+         user, wallet = await _get_or_create_user_and_wallet(session, telegram_id)
+
+     text = (
+-        "ברוך הבא לGATE BOTSHOP AI 🚀\n\n"
+-        "כאן תקבל:\n"
+-        "• ניתוחי שוק חכמים\n"
+-        "• סימולציית מסחר בטוחה\n"
+-        "• ובהמשך  מסחר אמיתי על TON/DEX, סטייקינג ו-P2P.\n\n"
+-        "התחל מעקב דרך /wallet או עדכן הגדרות דרך /settings."
++        "׳‘׳¨׳•׳ ׳”׳‘׳ ׳GATE BOTSHOP AI נ€\n\n"
++        "ג€¢ ׳¡׳™׳׳•׳׳¦׳™׳™׳× ׳׳¡׳—׳¨ ׳‘׳˜׳•׳—׳”\n"
++        "ג€¢ ׳•׳‘׳”׳׳©׳  ׳׳¡׳—׳¨ ׳׳׳™׳×׳™ ׳¢׳ TON/DEX, ׳¡׳˜׳™׳™׳§׳™׳ ׳’ ׳•-P2P.\n\n"
++        "׳”׳×׳—׳ ׳׳¢׳§׳‘ ׳“׳¨׳ /wallet ׳׳• ׳¢׳“׳›׳ ׳”׳’׳“׳¨׳•׳× ׳“׳¨׳ /settings."
+     )
+
+     kb = _build_keyboard(user.investment_mode or "noncustodial")
+     await update.effective_message.reply_text(text, reply_markup=kb)
++
+diff --git a/app/telegram_bot/handlers/wallet.py b/app/telegram_bot/handlers/wallet.py
+index 4723f26..268f3c6 100644
+--- a/app/telegram_bot/handlers/wallet.py
++++ b/app/telegram_bot/handlers/wallet.py
+@@ -1,4 +1,4 @@
+-from telegram import Update
++﻿from telegram import Update
+ from telegram.ext import ContextTypes
+ from sqlalchemy import select
+
+@@ -58,22 +58,23 @@ async def wallet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+         "?? ???? GATE BOTSHOP ???\n\n"
+         f"??? ???? ?????: {mode_text}\n\n"
+         "?? ????? ?????????\n"
+-        f" ???????? (USD): {wallet.balance_sim:.2f}\n"
+-        f" ???? ????? (USD): {wallet.balance_real:.2f}\n"
+-        f" MNH (???? ?-SLH): {wallet.balance_mnh:.4f}\n"
+-        f" MNH ????: {wallet.locked_mnh:.4f}\n"
+-        f" ZUZ (??????): {wallet.balance_zuz:.2f}\n\n"
++        f"• ???????? (USD): {wallet.balance_sim:.2f}\n"
++        f"• ???? ????? (USD): {wallet.balance_real:.2f}\n"
++        f"• SLH ?????: {slh_internal:.4f}\n"
++        f"• MNH (???? ?-SLH): {wallet.balance_mnh:.4f}\n"
++        f"• MNH ????: {wallet.locked_mnh:.4f}\n"
+         [
+-            InlineKeyboardButton("🟩 B. סימולציה", callback_data="trade_mode:sim"),
++            InlineKeyboardButton("נ© B. ׳¡׳™׳׳•׳׳¦׳™׳”", callback_data="trade_mode:sim"),
+         ],
+         [
+-            InlineKeyboardButton("🟨 C. מצב היברידי", callback_data="trade_mode:hybrid"),
++            InlineKeyboardButton("נ¨ C. ׳׳¦׳‘ ׳”׳™׳‘׳¨׳™׳“׳™", callback_data="trade_mode:hybrid"),
+     return InlineKeyboardMarkup(buttons)
++
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> git add .
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> git commit -m "Clean UTF-8 normalization and remove 0x95 bytes"
+[main 9a05306] Clean UTF-8 normalization and remove 0x95 bytes
+ 41 files changed, 1271 insertions(+), 121 deletions(-)
+ create mode 100644 backup_0x95/admin.py
+ create mode 100644 backup_0x95/ai.py
+ create mode 100644 backup_0x95/config.py
+ create mode 100644 backup_0x95/custody_terms_service.py
+ create mode 100644 backup_0x95/database.py
+ create mode 100644 backup_0x95/investment_manager.py
+ create mode 100644 backup_0x95/keyboards.py
+ create mode 100644 backup_0x95/main.py
+ create mode 100644 backup_0x95/navigation.py
+ create mode 100644 backup_0x95/referrals.py
+ create mode 100644 backup_0x95/settings.py
+ create mode 100644 backup_0x95/staking.py
+ create mode 100644 backup_0x95/staking_engine.py
+ create mode 100644 backup_0x95/start.py
+ create mode 100644 backup_0x95/ton_treasury_service.py
+ create mode 100644 backup_0x95/trade_mode_service.py
+ create mode 100644 backup_0x95/trading_ai_service.py
+ create mode 100644 backup_0x95/wallet.py
+ create mode 100644 backup_0x95/wallet_service.py
+ create mode 100644 wallet_bytes.txt
+ create mode 100644 wallet_head.txt
+ create mode 100644 wallet_hex.txt
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> git push
+Enumerating objects: 55, done.
+Counting objects: 100% (55/55), done.
+Compressing objects: 100% (30/30), done.
+Writing objects: 100% (30/30), 61.88 KiB | 5.63 MiB/s, done.
+Total 30 (delta 24), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (24/24), completed with 23 local objects.
+To https://github.com/osifeu-prog/GATE_BOTSHOP.git
+   8e5c85f..9a05306  main -> main
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> python -m py_compile (Get-ChildItem -Recurse -Include *.py).FullName
+python : The term 'python' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ python -m py_compile (Get-ChildItem -Recurse -Include *.py).FullName
++ ~~~~~~
+    + CategoryInfo          : ObjectNotFound: (python:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> Get-Content "app/telegram_bot/handlers/wallet.py" -Encoding UTF8
+from telegram import Update
+from telegram.ext import ContextTypes
+from sqlalchemy import select
+
+from app.database import async_session_maker
+from app.models.users import User as UserModel
+from app.models.wallets import Wallet
+
+
+def _mode_label(mode: str | None) -> str:
+    mapping = {
+        "noncustodial": "?? Non-Custodial (Self-Custody)",
+        "custodial": "?? Custodial (Bank-Mode)",
+        "hybrid": "?? Hybrid (Mix)",
+    }
+    return mapping.get(mode or "noncustodial", "?? Non-Custodial (Self-Custody)")
+
+
+        return
+
+
+    async with async_session_maker() as session:
+        user = (
+            await session.execute(
+                select(UserModel).where(UserModel.telegram_id == telegram_id)
+            )
+        ).scalar_one_or_none()
+
+        if user:
+            wallet = (
+                await session.execute(
+                    select(Wallet).where(Wallet.user_id == user.id)
+                )
+            ).scalar_one_or_none()
+
+        if not user:
+            user = UserModel(telegram_id=telegram_id)
+            session.add(user)
+            await session.flush()
+
+        if not wallet:
+            wallet = Wallet(user_id=user.id)
+            session.add(wallet)
+            await session.commit()
+            await session.refresh(wallet)
+
+    mode_text = _mode_label(getattr(user, "investment_mode", "noncustodial"))
+
+    slh_onchain = get_slh_balance(wallet.bsc_address)
+    slh_internal = wallet.balance_slh
+
+    text = (
+        "?? ???? GATE BOTSHOP ???\n\n"
+        f"??? ???? ?????: {mode_text}\n\n"
+        "?? ????? ?????????\n"
+        f"• ???????? (USD): {wallet.balance_sim:.2f}\n"
+        f"• ???? ????? (USD): {wallet.balance_real:.2f}\n"
+        f"• SLH ?????: {slh_internal:.4f}\n"
+        f"• MNH (???? ?-SLH): {wallet.balance_mnh:.4f}\n"
+        f"• MNH ????: {wallet.locked_mnh:.4f}\n"
+        f"• ZUZ (??????): {wallet.balance_zuz:.2f}\n\n"
+        "?? SLH ?? ????\n"
+        f"• ????? BSC: {wallet.bsc_address or '(??? ??????)'}\n"
+        f"• SLH on-chain: {slh_onchain:.4f}\n\n"
+        "?? ?????? TON\n"
+        f"• Mainnet: {wallet.ton_mainnet or '(??? ?????)'}\n"
+        f"• Testnet: {wallet.ton_testnet or '(??? ?????)'}\n\n"
+        "?????:\n"
+        "• ???? SLH ? MNH\n"
+        "• ????? ?????? ???????\n"
+        "• ?????? ?????? ?-ZUZ\n"
+    )
+
+    await update.effective_message.reply_text(text)
+
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> otepad app/telegram_bot/handlers/wallet.py
+>>
+otepad : The term 'otepad' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ otepad app/telegram_bot/handlers/wallet.py
++ ~~~~~~
+    + CategoryInfo          : ObjectNotFound: (otepad:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> notepad app/telegram_bot/handlers/wallet.py
+>>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+
+
+
+
+
+
+
+
+                                                      ^C
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> ^C
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> git add app/telegram_bot/handlers/wallet.py
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> git commit -m "Fix wallet.py UTF-8 clean"
+[main a76c3fe] Fix wallet.py UTF-8 clean
+ 1 file changed, 25 insertions(+), 26 deletions(-)
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> git push
+Enumerating objects: 11, done.
+Counting objects: 100% (11/11), done.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 1.31 KiB | 1.31 MiB/s, done.
+Total 6 (delta 5), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (5/5), completed with 5 local objects.
+To https://github.com/osifeu-prog/GATE_BOTSHOP.git
+   9a05306..a76c3fe  main -> main
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>

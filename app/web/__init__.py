@@ -1,1 +1,3 @@
-"""Minimal HTML templates for dashboards (can be extended)."""
+﻿"""Minimal HTML templates for dashboards (can be extended)."""
+
+

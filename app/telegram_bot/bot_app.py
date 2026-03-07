@@ -19,3 +19,5 @@ def build_telegram_application() -> Application:
     register_all_handlers(app)
     logger.info("Telegram handlers registered.")
     return app
+
+

@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 from web3 import Web3
 
@@ -24,3 +24,5 @@ def get_slh_balance(address: str) -> float:
         return raw / (10 ** 18)
     except Exception:
         return 0.0
+
+

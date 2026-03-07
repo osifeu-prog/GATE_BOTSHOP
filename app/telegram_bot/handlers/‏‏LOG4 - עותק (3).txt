@@ -1,0 +1,89 @@
+                                                    ^C
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> ^C
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> git add app/telegram_bot/handlers/wallet.py
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> git commit -m "Fix wallet.py UTF-8 clean"
+[main a76c3fe] Fix wallet.py UTF-8 clean
+ 1 file changed, 25 insertions(+), 26 deletions(-)
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> git push
+Enumerating objects: 11, done.
+Counting objects: 100% (11/11), done.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 1.31 KiB | 1.31 MiB/s, done.
+Total 6 (delta 5), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (5/5), completed with 5 local objects.
+To https://github.com/osifeu-prog/GATE_BOTSHOP.git
+   9a05306..a76c3fe  main -> main
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> Get-ChildItem -Recurse -Include *.py | ForEach-Object {
+>>     $raw = Get-Content $_.FullName -Encoding Byte -Raw
+>>
+>>     # ?? ????? ????? ?BOM (EF BB BF)
+>>     if ($raw[0] -eq 0xEF -and $raw[1] -eq 0xBB -and $raw[2] -eq 0xBF) {
+>>         Write-Host "Removing BOM from $($_.FullName)" -ForegroundColor Yellow
+>>         $clean = $raw[3..($raw.Length-1)]
+>>         [System.IO.File]::WriteAllBytes($_.FullName, $clean)
+>>     }
+>> }
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\models\audit_logs.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\models\daily_stats.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\models\p2p_orders.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\models\referral_events.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\models\referral_links.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\models\staking.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\models\staking_positions.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\models\ton_deposits.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\models\trades.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\models\__init__.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\custody_terms_service.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\deposit_watcher.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\dex_client.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\investment_manager.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\metrics_service.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\referral_service.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\staking_engine.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\staking_service.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\ton_client.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\ton_treasury_service.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\trade_mode_service.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\trading_ai_service.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\tvl_engine.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\services\wallet_service.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\admin.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\ai.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\navigation.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\referrals.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\settings.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\handlers\start.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\bot_app.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\telegram_bot\keyboards.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\config.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\database.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\main.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\admin.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\ai.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\custody_terms_service.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\database.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\investment_manager.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\main.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\navigation.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\referrals.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\settings.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\start.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\ton_treasury_service.py
+Removing BOM from C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\backup_0x95\trading_ai_service.py
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> Get-ChildItem -Recurse -Include *.py | ForEach-Object {
+>>     $text = Get-Content $_.FullName -Raw
+>>     Set-Content $_.FullName $text -Encoding UTF8
+>> }
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> Format-Hex app/main.py | Select-Object -First 1
+
+
+           Path: C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP\app\main.py
+
+           00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+
+00000000   EF BB BF C3 97 DA BA D8 A2 C2 BB D8 A2 D8 9F 66  ï»¿ÃÚºØ¢Â»Ø¢Øf
+
+
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP>

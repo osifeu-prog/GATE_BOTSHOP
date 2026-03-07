@@ -1,0 +1,10 @@
+
+PS C:\Users\Giga Store\OneDrive\Desktop\RIPO\BOTSHOP> Get-Content "app\telegram_bot\handlers\wallet.py"
+from telegram import Update
+from telegram.ext import ContextTypes
+from sqlalchemy import select
+
+from app.database import async_session_maker
+from app.models.users import User as UserModel
+from app.models.wallets import Wallet
+from app.blockchain.bsc_client import get_slh_balance

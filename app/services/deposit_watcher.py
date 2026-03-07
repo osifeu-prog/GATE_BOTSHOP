@@ -127,3 +127,5 @@ async def scan_and_credit_ton_deposits(
         logger.info("Recorded %d new TON deposits (%s).", inserted, network)
 
     return inserted
+
+

@@ -1,1 +1,3 @@
-# Legacy handler registry – kept for compatibility.
+﻿# Legacy handler registry أ¢â‚¬â€œ kept for compatibility.
+
+

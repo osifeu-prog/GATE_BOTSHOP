@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, DateTime, Boolean, Float, Integer
+﻿from sqlalchemy import Column, BigInteger, String, DateTime, Boolean, Float, Integer
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -20,3 +20,5 @@ class User(Base):
     custody_agreed = Column(Boolean, default=False)
 
     user_tier = Column(Integer, default=1)
+
+

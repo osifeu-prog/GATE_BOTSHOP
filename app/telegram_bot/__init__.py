@@ -1,1 +1,3 @@
-"""Telegram bot integration for GATE BOTSHOP AI."""
+﻿"""Telegram bot integration for GATE BOTSHOP AI."""
+
+

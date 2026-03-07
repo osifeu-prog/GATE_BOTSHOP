@@ -18,3 +18,5 @@ class Trade(Base):
 
     status = Column(String, default="open")  # open / closed
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+

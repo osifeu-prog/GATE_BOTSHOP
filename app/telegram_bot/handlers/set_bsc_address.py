@@ -1,4 +1,4 @@
-from telegram import Update
+﻿from telegram import Update
 from telegram.ext import ContextTypes
 from sqlalchemy import select
 
@@ -49,3 +49,5 @@ async def set_bsc_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await session.commit()
 
     await update.message.reply_text(f"????? BSC ?????? ??????:\n{address}")
+
+

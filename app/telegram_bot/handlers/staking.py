@@ -1,4 +1,4 @@
-from decimal import Decimal
+﻿from decimal import Decimal
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -162,3 +162,4 @@ async def staking_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             f"Amount selected: {amount} SLH\nNow choose duration:",
             reply_markup=_days_keyboard
+

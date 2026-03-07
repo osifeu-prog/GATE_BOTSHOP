@@ -18,3 +18,5 @@ class StakingPosition(Base):
     unlock_at = Column(DateTime(timezone=True), nullable=False)
 
     status = Column(String, default="active")  # active / closed
+
+

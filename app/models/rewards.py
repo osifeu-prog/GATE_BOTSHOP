@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
@@ -18,3 +18,5 @@ class RewardEvent(Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(38, 9), default=Decimal("0"))
     meta: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
