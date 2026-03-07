@@ -5,7 +5,6 @@ from sqlalchemy import select
 from app.database import async_session_maker
 from app.models.users import User as UserModel
 from app.models.wallets import Wallet
-from app.blockchain.bsc_client import get_slh_balance
 
 
 def _mode_label(mode: str | None) -> str:
@@ -15,6 +14,13 @@ def _mode_label(mode: str | None) -> str:
         "hybrid": "?? Hybrid (Mix)",
     }
     return mapping.get(mode or "noncustodial", "?? Non-Custodial (Self-Custody)")
+
+
+async def get_slh_onchain_balance(address: str | None) -> float:
+    if not address:
+        return 0.0
+    # ??? ????? ????? ????? ?????? ?-BSC
+    return 0.0
 
 
 async def wallet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -51,7 +57,7 @@ async def wallet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     mode_text = _mode_label(getattr(user, "investment_mode", "noncustodial"))
 
-    slh_onchain = get_slh_balance(wallet.bsc_address)
+    slh_onchain = await get_slh_onchain_balance(wallet.bsc_address)
     slh_internal = wallet.balance_slh
 
     text = (

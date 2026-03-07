@@ -123,7 +123,25 @@ async def staking_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         async with async_session_maker() as session:  # type: AsyncSession
             positions = await get_user_stakes(session, telegram_id)
         text = await _build_staking_message(positions)
-        await query.edit_message_text(text, reply_markup=_main_keyboard())
+        try:
+    try:
+    try:
+    await query.edit_message_text()
+except Exception as e:
+    if 'Message is not modified' in str(e):
+        pass
+    else:
+        raise)
+except Exception as e:
+    if 'Message is not modified' in str(e):
+        pass
+    else:
+        raise
+except Exception as e:
+    if 'Message is not modified' in str(e):
+        pass
+    else:
+        raise
         return
 
     # Cancel flow and go back to main
@@ -131,7 +149,25 @@ async def staking_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         async with async_session_maker() as session:  # type: AsyncSession
             positions = await get_user_stakes(session, telegram_id)
         text = await _build_staking_message(positions)
-        await query.edit_message_text(text, reply_markup=_main_keyboard())
+        try:
+    try:
+    try:
+    await query.edit_message_text()
+except Exception as e:
+    if 'Message is not modified' in str(e):
+        pass
+    else:
+        raise)
+except Exception as e:
+    if 'Message is not modified' in str(e):
+        pass
+    else:
+        raise
+except Exception as e:
+    if 'Message is not modified' in str(e):
+        pass
+    else:
+        raise
         context.user_data.pop("stake_amount", None)
         context.user_data.pop("stake_days", None)
         context.user_data.pop("stake_apy", None)
@@ -222,7 +258,13 @@ async def staking_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Press Confirm to create this staking position."
         )
 
-        await query.edit_message_text(summary, reply_markup=_confirm_keyboard())
+        try:
+    await query.edit_message_text()
+except Exception as e:
+    if 'Message is not modified' in str(e):
+        pass
+    else:
+        raise)
         return
 
     # Confirm and create stake

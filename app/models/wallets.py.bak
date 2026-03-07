@@ -10,16 +10,14 @@ class Wallet(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False)
 
-    balance_sim = Column(Float, default=0.0)
-    balance_real = Column(Float, default=0.0)
-    balance_slh = Column(Float, default=0.0)
+    balance_sim = Column(Float, default=0.0)   # ????????
+    balance_real = Column(Float, default=0.0)  # ??? ????? "?????"
+    balance_slh = Column(Float, default=0.0)   # SLH ?????
 
-    balance_mnh = Column(Float, default=0.0)
-    locked_mnh = Column(Float, default=0.0)
+    balance_mnh = Column(Float, default=0.0)   # ???? ????? ?????? ?-SLH (????)
+    locked_mnh = Column(Float, default=0.0)    # MNH ???? ?????? "??????"
 
-    balance_zuz = Column(Float, default=0.0)
-
-    bsc_address = Column(String, nullable=True)  # ????? BSC ?? ??????
+    balance_zuz = Column(Float, default=0.0)   # ?????? ZUZ  ????/?????
 
     ton_mainnet = Column(String, nullable=True)
     ton_testnet = Column(String, nullable=True)
