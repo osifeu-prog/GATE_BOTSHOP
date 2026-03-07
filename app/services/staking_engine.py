@@ -10,8 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.users import User
 from app.models.staking_positions import StakingPosition
 
-# תשואה שנתית ברירת מחדל (APY) – אפשר לשנות בהמשך / להעביר ל-ENV
-DEFAULT_APY_PERCENT = Decimal("12")  # 12% לשנה
+DEFAULT_APY_PERCENT = Decimal("12")  # APY ברירת מחדל
 
 
 async def create_admin_stake(
@@ -23,10 +22,9 @@ async def create_admin_stake(
 ) -> StakingPosition:
     """
     יצירת חיסכון חדש למשתמש ע"י אדמין.
-    לוגיקה פנימית בלבד – נשמרת בטבלת staking_positions.
+    נשמר בטבלת staking_positions לפי המודל הקיים.
     """
 
-    # למצוא את המשתמש לפי telegram_id
     user = (
         await session.execute(
             select(User).where(User.telegram_id == telegram_user_id)
@@ -42,7 +40,6 @@ async def create_admin_stake(
     opened_at = datetime.utcnow()
     unlock_at = opened_at + timedelta(days=duration_days)
 
-    # המודל הקיים עובד עם amount / days / apy
     pos = StakingPosition(
         user_id=user.id,
         amount=float(principal_slh),
@@ -63,8 +60,9 @@ async def get_user_stakes(
     telegram_user_id: int,
 ) -> Sequence[StakingPosition]:
     """
-    כל החיסכונות של משתמש (פתוחים וסגורים) מהחדש לישן.
+    כל החיסכונות של משתמש לפי סדר כרונולוגי.
     """
+
     user = (
         await session.execute(
             select(User).where(User.telegram_id == telegram_user_id)
