@@ -1,0 +1,35 @@
+from telegram import Update
+from telegram.ext import ContextTypes
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import async_session_maker
+from app.services.staking_engine import get_user_stakes
+
+
+async def staking(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    telegram_id = update.effective_user.id
+
+    async with async_session_maker() as session:  # type: AsyncSession
+        positions = await get_user_stakes(session, telegram_id)
+
+    if not positions:
+        await update.message.reply_text(
+            "You have no active staking positions yet.\n"
+            "A staking creation menu will be added soon."
+        )
+        return
+
+    lines = ["?? *Your Staking Positions:*\n"]
+
+    for pos in positions:
+        lines.append(
+            f"• Amount: {pos.amount:.2f} SLH\n"
+            f"• Days: {pos.days}\n"
+            f"• APY: {pos.apy:.1f}%\n"
+            f"• Opened: {pos.created_at.strftime('%Y-%m-%d')}\n"
+            f"• Unlocks: {pos.unlock_at.strftime('%Y-%m-%d')}\n"
+            f"• Status: {'?? Active' if pos.status == 'active' else '? Closed'}\n"
+            "-------------------------"
+        )
+
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")

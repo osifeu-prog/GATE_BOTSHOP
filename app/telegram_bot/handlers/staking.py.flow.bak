@@ -1,0 +1,73 @@
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ContextTypes
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import async_session_maker
+from app.services.staking_engine import get_user_stakes
+
+
+async def _build_staking_message(positions):
+    if not positions:
+        text = (
+            "You have no active staking positions yet.\n"
+            "Use the buttons below to open a new stake (coming soon)."
+        )
+        return text
+
+    lines = ["?? *Your Staking Positions:*\n"]
+    for pos in positions:
+        status = "?? Active" if getattr(pos, "status", "") == "active" else "? Closed"
+        lines.append(
+            f"• Amount: {getattr(pos, 'amount', 0):.2f} SLH\n"
+            f"• Days: {getattr(pos, 'days', 0)}\n"
+            f"• APY: {getattr(pos, 'apy', 0.0):.1f}%\n"
+            f"• Opened: {getattr(pos, 'created_at', '').strftime('%Y-%m-%d') if getattr(pos, 'created_at', None) else '-'}\n"
+            f"• Unlocks: {getattr(pos, 'unlock_at', '').strftime('%Y-%m-%d') if getattr(pos, 'unlock_at', None) else '-'}\n"
+            f"• Status: {status}\n"
+            "-------------------------"
+        )
+    return "\n".join(lines)
+
+
+def _staking_keyboard():
+    keyboard = [
+        [
+            InlineKeyboardButton("?? Refresh", callback_data="stake_refresh"),
+            InlineKeyboardButton("? Open New Stake", callback_data="stake_open"),
+        ]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+async def staking(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    telegram_id = update.effective_user.id
+
+    async with async_session_maker() as session:  # type: AsyncSession
+        positions = await get_user_stakes(session, telegram_id)
+
+    text = await _build_staking_message(positions)
+    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=_staking_keyboard())
+
+
+async def staking_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    telegram_id = query.from_user.id
+
+    if query.data == "stake_refresh":
+        async with async_session_maker() as session:  # type: AsyncSession
+            positions = await get_user_stakes(session, telegram_id)
+        text = await _build_staking_message(positions)
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=_staking_keyboard())
+        return
+
+    if query.data == "stake_open":
+        # Placeholder for real staking creation flow.
+        # Here we will later call staking_engine to create a real position.
+        await query.edit_message_text(
+            "Staking creation flow will be enabled soon.\n"
+            "We will let you choose amount, duration and confirm on-chain.",
+            parse_mode="Markdown",
+            reply_markup=_staking_keyboard(),
+        )
+        return
