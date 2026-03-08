@@ -161,6 +161,51 @@ async def staking_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.edit_message_text(
             f"Amount selected: {amount} SLH\nNow choose duration:",
-            reply_markup=_days_keyboard
+            reply_markup=_days_keyboard()
+        )
+        return
 
+    # Days selected
+    if data.startswith("stake_days_"):
+        days = int(data.split("_")[-1])
+        context.user_data["stake_days"] = days
 
+        await query.edit_message_text(
+            f"Duration selected: {days} days\nNow choose APY:",
+            reply_markup=_apy_keyboard()
+        )
+        return
+
+    # APY selected
+    if data.startswith("stake_apy_"):
+        apy = int(data.split("_")[-1])
+        context.user_data["stake_apy"] = apy
+
+        amount = context.user_data.get("stake_amount")
+        days = context.user_data.get("stake_days")
+
+        await query.edit_message_text(
+            f"Confirm your stake:\n\n"
+            f"Amount: {amount} SLH\n"
+            f"Days: {days}\n"
+            f"APY: {apy}%",
+            reply_markup=_confirm_keyboard()
+        )
+        return
+
+    # Confirm stake
+    if data == "stake_confirm":
+        amount = context.user_data.get("stake_amount")
+        days = context.user_data.get("stake_days")
+        apy = context.user_data.get("stake_apy")
+
+        async with async_session_maker() as session:
+            await create_admin_stake(session, telegram_id, amount, days, apy)
+
+        context.user_data.clear()
+
+        await query.edit_message_text(
+            "Your stake has been created successfully!",
+            reply_markup=_main_keyboard()
+        )
+        return
