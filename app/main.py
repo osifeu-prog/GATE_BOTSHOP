@@ -1,14 +1,12 @@
 ﻿from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Optional
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
-from telegram import Update
 from telegram.ext import Application
 
-from app.config import settings
 from app.database import init_db
 from app.telegram_bot.bot_app import build_telegram_application
 
@@ -20,8 +18,21 @@ telegram_app: Optional[Application] = None
 async def startup_event():
     global telegram_app
     await init_db()
+
     telegram_app = build_telegram_application()
-    telegram_app.run_polling(stop_signals=None)
+
+    # במקום run_polling — הפעלה נכונה בתוך event loop של FastAPI
+    await telegram_app.initialize()
+    await telegram_app.start()
+    await telegram_app.updater.start_polling()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    global telegram_app
+    if telegram_app:
+        await telegram_app.updater.stop()
+        await telegram_app.stop()
+        await telegram_app.shutdown()
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
