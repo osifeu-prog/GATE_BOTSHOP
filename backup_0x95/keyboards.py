@@ -4,13 +4,14 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 def trade_mode_keyboard() -> InlineKeyboardMarkup:
     buttons = [
         [
-            InlineKeyboardButton("🟦 A. מסחר אמיתי", callback_data="trade_mode:real"),
+            InlineKeyboardButton("ًںں¦ A. ×‍×،×—×¨ ×گ×‍×™×ھ×™", callback_data="trade_mode:real"),
         ],
         [
-            InlineKeyboardButton("🟩 B. סימולציה", callback_data="trade_mode:sim"),
+            InlineKeyboardButton("ًںں© B. ×،×™×‍×•×œ×¦×™×”", callback_data="trade_mode:sim"),
         ],
         [
-            InlineKeyboardButton("🟨 C. מצב היברידי", callback_data="trade_mode:hybrid"),
+            InlineKeyboardButton("ًںں¨ C. ×‍×¦×‘ ×”×™×‘×¨×™×“×™", callback_data="trade_mode:hybrid"),
         ],
     ]
     return InlineKeyboardMarkup(buttons)
+

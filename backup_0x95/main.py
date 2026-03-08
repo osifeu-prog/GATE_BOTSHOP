@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import logging
 from typing import Any, Optional
@@ -66,7 +66,7 @@ async def health() -> dict[str, Any]:
 async def root() -> HTMLResponse:
     return HTMLResponse(
         "<h1>GATE BOTSHOP  Dashboard</h1>"
-        "<p>שרת פעיל. כאן בעתיד יוצגו גרפים, סטטיסטיקות ונתוני מסחר.</p>"
+        "<p>×©×¨×ھ ×¤×¢×™×œ. ×›×گ×ں ×‘×¢×ھ×™×“ ×™×•×¦×’×• ×’×¨×¤×™×‌, ×،×ک×ک×™×،×ک×™×§×•×ھ ×•× ×ھ×•× ×™ ×‍×،×—×¨.</p>"
     )
 
 
@@ -84,3 +84,4 @@ async def telegram_webhook(request: Request) -> JSONResponse:
     update = Update.de_json(data=data, bot=telegram_app.bot)
     await telegram_app.process_update(update)
     return JSONResponse({"ok": True})
+

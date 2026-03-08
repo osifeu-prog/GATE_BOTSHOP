@@ -24,11 +24,11 @@ def normalize_trade_mode(value: str | None) -> str:
 def get_trade_mode_label(value: str | None) -> str:
     mode = normalize_trade_mode(value)
     if mode == "real":
-        return "🟦 מסחר אמיתי (On-Chain / DEX)"
+        return "ًںں¦ ×‍×،×—×¨ ×گ×‍×™×ھ×™ (On-Chain / DEX)"
     if mode == "hybrid":
-        return "🟨 מצב היברידי (Hybrid: סימולציה + מסחר אמיתי)"
+        return "ًںں¨ ×‍×¦×‘ ×”×™×‘×¨×™×“×™ (Hybrid: ×،×™×‍×•×œ×¦×™×” + ×‍×،×—×¨ ×گ×‍×™×ھ×™)"
     # sim
-    return "🟩 סימולציית מסחר (ללא סיכון אמיתי)"
+    return "ًںں© ×،×™×‍×•×œ×¦×™×™×ھ ×‍×،×—×¨ (×œ×œ×گ ×،×™×›×•×ں ×گ×‍×™×ھ×™)"
 
 
 async def get_or_create_user(
@@ -36,7 +36,7 @@ async def get_or_create_user(
     tg_user: Any,
 ) -> User:
     """
-    דואג שתהיה רשומת User לכל משתמש טלגרם.
+    ×“×•×گ×’ ×©×ھ×”×™×” ×¨×©×•×‍×ھ User ×œ×›×œ ×‍×©×ھ×‍×© ×ک×œ×’×¨×‌.
     """
     stmt = select(User).where(User.telegram_id == tg_user.id)
     result = await session.execute(stmt)
@@ -54,7 +54,7 @@ async def get_or_create_user(
         await session.refresh(user)
         logger.info("Created new user %s (%s)", tg_user.id, tg_user.username)
     else:
-        # עדכון קל אם השם/יוזר השתנו
+        # ×¢×“×›×•×ں ×§×œ ×گ×‌ ×”×©×‌/×™×•×–×¨ ×”×©×ھ× ×•
         changed = False
         if user.username != tg_user.username:
             user.username = tg_user.username
@@ -77,7 +77,7 @@ async def get_or_create_settings(
     user: User,
 ) -> UserSettings:
     """
-    הגדרות ברירת מחדל לכל משתמש – מצב מסחר, מטבע בסיס וכו'.
+    ×”×’×“×¨×•×ھ ×‘×¨×™×¨×ھ ×‍×—×“×œ ×œ×›×œ ×‍×©×ھ×‍×© â€“ ×‍×¦×‘ ×‍×،×—×¨, ×‍×ک×‘×¢ ×‘×،×™×، ×•×›×•'.
     """
     stmt = select(UserSettings).where(UserSettings.user_id == user.id)
     result = await session.execute(stmt)
@@ -95,7 +95,7 @@ async def get_or_create_settings(
         await session.refresh(settings)
         logger.info("Created default settings for user_id=%s", user.id)
 
-    # ודא שמצב המסחר חוקי
+    # ×•×“×گ ×©×‍×¦×‘ ×”×‍×،×—×¨ ×—×•×§×™
     settings.trade_mode = normalize_trade_mode(settings.trade_mode)
     return settings
 
@@ -106,7 +106,7 @@ async def update_trade_mode(
     new_mode: str,
 ) -> UserSettings:
     """
-    עדכון מצב המסחר של המשתמש (sim / hybrid / real).
+    ×¢×“×›×•×ں ×‍×¦×‘ ×”×‍×،×—×¨ ×©×œ ×”×‍×©×ھ×‍×© (sim / hybrid / real).
     """
     new_mode = normalize_trade_mode(new_mode)
 
@@ -127,7 +127,7 @@ async def update_trade_mode(
 
 def next_trade_mode(current: str | None) -> str:
     """
-    לוגיקה מחזורית: sim → hybrid → real → sim
+    ×œ×•×’×™×§×” ×‍×—×–×•×¨×™×ھ: sim â†’ hybrid â†’ real â†’ sim
     """
     mode = normalize_trade_mode(current)
     if mode == "sim":
@@ -135,3 +135,4 @@ def next_trade_mode(current: str | None) -> str:
     if mode == "hybrid":
         return "real"
     return "sim"
+

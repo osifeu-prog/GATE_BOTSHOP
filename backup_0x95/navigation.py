@@ -1,4 +1,4 @@
-﻿from telegram import ReplyKeyboardMarkup
+from telegram import ReplyKeyboardMarkup
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.users import User
 from app.models.staking_positions import StakingPosition
@@ -11,7 +11,7 @@ async def build_dynamic_keyboard(session: AsyncSession, user_id: int):
     mode = user.investment_mode if user else "noncustodial"
 
     # AI STATUS (placeholder)
-    ai_status = "פעיל" if tier >= 2 else "כבוי"
+    ai_status = "×¤×¢×™×œ" if tier >= 2 else "×›×‘×•×™"
 
     # staking count
     stakes = (
@@ -21,12 +21,13 @@ async def build_dynamic_keyboard(session: AsyncSession, user_id: int):
     ).fetchall()
     stake_count = len(stakes)
 
-    header = f"🏦 מצב: {mode} | 🎖 Tier {tier} | 🤖 AI: {ai_status} | 📊 סטייקים: {stake_count}"
+    header = f"ًںڈ¦ ×‍×¦×‘: {mode} | ًںژ– Tier {tier} | ًں¤– AI: {ai_status} | ًں“ٹ ×،×ک×™×™×§×™×‌: {stake_count}"
 
     keyboard = [
-        ["💼 ארנק", "🤖 AI מסחר"],
-        ["📊 סטייקים", "🎁 הפניות"],
-        ["💱 P2P", "⚙ הגדרות"]
+        ["ًں’¼ ×گ×¨× ×§", "ًں¤– AI ×‍×،×—×¨"],
+        ["ًں“ٹ ×،×ک×™×™×§×™×‌", "ًںژپ ×”×¤× ×™×•×ھ"],
+        ["ًں’± P2P", "âڑ™ ×”×’×“×¨×•×ھ"]
     ]
 
     return header, ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+

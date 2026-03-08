@@ -1,4 +1,4 @@
-﻿import os
+import os
 from datetime import datetime
 
 from reportlab.pdfgen import canvas
@@ -9,12 +9,12 @@ from app.models.users import User
 from app.models.audit_logs import AuditLog
 
 TERMS_PATH = "docs/custody_terms.pdf"
-TERMS_URL = "/static/custody_terms.pdf"  # בעתיד אפשר לשרת דרך FastAPI
+TERMS_URL = "/static/custody_terms.pdf"  # ×‘×¢×ھ×™×“ ×گ×¤×©×¨ ×œ×©×¨×ھ ×“×¨×ڑ FastAPI
 
 
 def generate_pdf_terms() -> None:
     """
-    מייצר מסמך תנאי Custody בסיסי בפורמט PDF (לצורך MVP).
+    ×‍×™×™×¦×¨ ×‍×،×‍×ڑ ×ھ× ×گ×™ Custody ×‘×،×™×،×™ ×‘×¤×•×¨×‍×ک PDF (×œ×¦×•×¨×ڑ MVP).
     """
     os.makedirs("docs", exist_ok=True)
     c = canvas.Canvas(TERMS_PATH, pagesize=A4)
@@ -24,11 +24,11 @@ def generate_pdf_terms() -> None:
     content = [
         "GATE BOTSHOP  Custodial Agreement",
         "",
-        "1. כספים המופקדים לכתובת ה-TON הראשית מוחזקים במודל Custodial.",
-        "2. המפעיל מנהל מאזן פנימי ופעילות בלוקצ'יין בהתאם לתנאים.",
-        "3. המשתמש נותר הנהנה הכלכלי בהתאם להסכמות החוזיות.",
+        "1. ×›×،×¤×™×‌ ×”×‍×•×¤×§×“×™×‌ ×œ×›×ھ×•×‘×ھ ×”-TON ×”×¨×گ×©×™×ھ ×‍×•×—×–×§×™×‌ ×‘×‍×•×“×œ Custodial.",
+        "2. ×”×‍×¤×¢×™×œ ×‍× ×”×œ ×‍×گ×–×ں ×¤× ×™×‍×™ ×•×¤×¢×™×œ×•×ھ ×‘×œ×•×§×¦'×™×™×ں ×‘×”×ھ×گ×‌ ×œ×ھ× ×گ×™×‌.",
+        "3. ×”×‍×©×ھ×‍×© × ×•×ھ×¨ ×”× ×”× ×” ×”×›×œ×›×œ×™ ×‘×”×ھ×گ×‌ ×œ×”×،×›×‍×•×ھ ×”×—×•×–×™×•×ھ.",
         "",
-        "מסמך זה הינו בסיס ל-MVP וטעון השלמה/עדכון משפטי חיצוני.",
+        "×‍×،×‍×ڑ ×–×” ×”×™× ×• ×‘×،×™×، ×œ-MVP ×•×ک×¢×•×ں ×”×©×œ×‍×”/×¢×“×›×•×ں ×‍×©×¤×ک×™ ×—×™×¦×•× ×™.",
         "",
         f"Generated at: {datetime.utcnow().isoformat()}",
     ]
@@ -63,3 +63,4 @@ async def register_user_agreement(session: AsyncSession, user_id: int) -> None:
     if user:
         user.custody_agreed = True
         await session.commit()
+

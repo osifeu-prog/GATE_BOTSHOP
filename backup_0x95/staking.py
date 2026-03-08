@@ -12,46 +12,46 @@ from ..database import Base
 
 class StakingPosition(Base):
     """
-    טבלת חיסכון (סטייקינג) ב-SLH.
-    כל רשומה מייצגת חיסכון אחד למשתמש טלגרם.
+    ×ک×‘×œ×ھ ×—×™×،×›×•×ں (×،×ک×™×™×§×™× ×’) ×‘-SLH.
+    ×›×œ ×¨×©×•×‍×” ×‍×™×™×¦×’×ھ ×—×™×،×›×•×ں ×گ×—×“ ×œ×‍×©×ھ×‍×© ×ک×œ×’×¨×‌.
     """
 
     __tablename__ = "staking_positions"
 
-    # מזהה פנימי של החיסכון
+    # ×‍×–×”×” ×¤× ×™×‍×™ ×©×œ ×”×—×™×،×›×•×ں
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         index=True,
     )
 
-    # מזהה המשתמש (Telegram user_id)
+    # ×‍×–×”×” ×”×‍×©×ھ×‍×© (Telegram user_id)
     telegram_user_id: Mapped[int] = mapped_column(
         Integer,
         index=True,
         nullable=False,
     )
 
-    # סכום הקרן ב-SLH
+    # ×،×›×•×‌ ×”×§×¨×ں ×‘-SLH
     principal_slh: Mapped[Decimal] = mapped_column(
         Numeric(38, 10),
         nullable=False,
     )
 
-    # תשואה צפויה ב-SLH (מחושבת בזמן פתיחת החיסכון)
+    # ×ھ×©×•×گ×” ×¦×¤×•×™×” ×‘-SLH (×‍×—×•×©×‘×ھ ×‘×–×‍×ں ×¤×ھ×™×—×ھ ×”×—×™×،×›×•×ں)
     expected_reward_slh: Mapped[Decimal] = mapped_column(
         Numeric(38, 10),
         nullable=False,
         default=Decimal("0"),
     )
 
-    # משך החיסכון בימים
+    # ×‍×©×ڑ ×”×—×™×،×›×•×ں ×‘×™×‍×™×‌
     duration_days: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
     )
 
-    # סטטוס: open / closed / cancelled
+    # ×،×ک×ک×•×،: open / closed / cancelled
     status: Mapped[str] = mapped_column(
         String(16),
         nullable=False,
@@ -59,20 +59,20 @@ class StakingPosition(Base):
         index=True,
     )
 
-    # זמן פתיחת החיסכון
+    # ×–×‍×ں ×¤×ھ×™×—×ھ ×”×—×™×،×›×•×ں
     opened_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         default=datetime.utcnow,
     )
 
-    # זמן סיום מתוכנן
+    # ×–×‍×ں ×،×™×•×‌ ×‍×ھ×•×›× ×ں
     closes_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
     )
 
-    # זמן סגירה בפועל (אם נסגר)
+    # ×–×‍×ں ×،×’×™×¨×” ×‘×¤×•×¢×œ (×گ×‌ × ×،×’×¨)
     closed_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
@@ -91,3 +91,4 @@ class StakingPosition(Base):
             f"principal={self.principal_slh} reward={self.expected_reward_slh} "
             f"status={self.status}>"
         )
+

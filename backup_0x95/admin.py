@@ -1,4 +1,4 @@
-﻿from decimal import Decimal
+from decimal import Decimal
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -19,7 +19,7 @@ async def _ensure_admin(update: Update) -> bool:
     user = update.effective_user
     if not user or user.id != ADMIN_ID:
         if update.effective_message:
-            await update.effective_message.reply_text("⛔ הפקודה זמינה רק למנהל המערכת.")
+            await update.effective_message.reply_text("â›” ×”×¤×§×•×“×” ×–×‍×™× ×” ×¨×§ ×œ×‍× ×”×œ ×”×‍×¢×¨×›×ھ.")
         return False
     return True
 
@@ -34,10 +34,10 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         active_stakes = (await session.execute(select(func.count(StakingPosition.id)))).scalar_one()
 
     await update.effective_message.reply_text(
-        f"🛠 לוח בקרה  GATE BOTSHOP\n\n"
-        f"• משתמשים רשומים: {total_users}\n"
-        f"• ארנקים פעילים: {total_wallets}\n"
-        f"• תוכניות חיסכון פעילות: {active_stakes}"
+        f"ًں›  ×œ×•×— ×‘×§×¨×”  GATE BOTSHOP\n\n"
+        f"â€¢ ×‍×©×ھ×‍×©×™×‌ ×¨×©×•×‍×™×‌: {total_users}\n"
+        f"â€¢ ×گ×¨× ×§×™×‌ ×¤×¢×™×œ×™×‌: {total_wallets}\n"
+        f"â€¢ ×ھ×•×›× ×™×•×ھ ×—×™×،×›×•×ں ×¤×¢×™×œ×•×ھ: {active_stakes}"
     )
 
 
@@ -51,6 +51,7 @@ async def admin_tvl(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         balance_ton = None
 
     if balance_ton is None:
-        await update.effective_message.reply_text("🏦 קופת TON לא מוגדרת עדיין.")
+        await update.effective_message.reply_text("ًںڈ¦ ×§×•×¤×ھ TON ×œ×گ ×‍×•×’×“×¨×ھ ×¢×“×™×™×ں.")
     else:
-        await update.effective_message.reply_text(f"🏦 יתרת קופה: {balance_ton} TON")
+        await update.effective_message.reply_text(f"ًںڈ¦ ×™×ھ×¨×ھ ×§×•×¤×”: {balance_ton} TON")
+

@@ -30,13 +30,13 @@ async def get_or_create_default_wallets(
     user: User,
 ) -> List[Wallet]:
     """
-    דואג שלכל משתמש יהיו לפחות 3 ארנקים פנימיים:
+    ×“×•×گ×’ ×©×œ×›×œ ×‍×©×ھ×‍×© ×™×”×™×• ×œ×¤×—×•×ھ 3 ×گ×¨× ×§×™×‌ ×¤× ×™×‍×™×™×‌:
 
-    - internal_sim_usd  (סימולציה)
-    - internal_real_usd (מסחר אמיתי off-chain / future mapping)
-    - internal_slh      (טוקן SLH פנימי)
+    - internal_sim_usd  (×،×™×‍×•×œ×¦×™×”)
+    - internal_real_usd (×‍×،×—×¨ ×گ×‍×™×ھ×™ off-chain / future mapping)
+    - internal_slh      (×ک×•×§×ں SLH ×¤× ×™×‍×™)
 
-    בהמשך נוכל להוסיף ארנקי TON per-user.
+    ×‘×”×‍×©×ڑ × ×•×›×œ ×œ×”×•×،×™×£ ×گ×¨× ×§×™ TON per-user.
     """
     wallets = await get_user_wallets(session, user)
     kinds = {w.kind for w in wallets}
@@ -96,7 +96,7 @@ async def get_or_create_default_wallets(
             len(missing),
             user.id,
         )
-        # טוענים מחדש כולל החדשים
+        # ×ک×•×¢× ×™×‌ ×‍×—×“×© ×›×•×œ×œ ×”×—×“×©×™×‌
         wallets = await get_user_wallets(session, user)
 
     return wallets
@@ -110,3 +110,4 @@ def pick_wallet_by_kind(
         if w.kind == kind:
             return w
     return None
+

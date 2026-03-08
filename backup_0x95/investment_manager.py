@@ -1,9 +1,9 @@
-﻿from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.users import User
 
 ALLOWED_ACTIONS = {
-    "noncustodial": [],  # לא מאפשר הפקדות/סטייקינג פנימיים
+    "noncustodial": [],  # ×œ×گ ×‍×گ×¤×©×¨ ×”×¤×§×“×•×ھ/×،×ک×™×™×§×™× ×’ ×¤× ×™×‍×™×™×‌
     "custodial": ["deposit", "withdraw", "stake", "credit"],
     "hybrid": ["deposit", "stake"],
 }
@@ -27,9 +27,10 @@ async def enforce_or_reject(session: AsyncSession, user_id: int, action: str) ->
 
     if not allowed:
         if mode == "noncustodial":
-            raise Exception("החשבון מוגדר Non-Custodial  אין שינוי ביתרות פנימיות.")
+            raise Exception("×”×—×©×‘×•×ں ×‍×•×’×“×¨ Non-Custodial  ×گ×™×ں ×©×™× ×•×™ ×‘×™×ھ×¨×•×ھ ×¤× ×™×‍×™×•×ھ.")
         if mode == "hybrid":
-            raise Exception("במצב Hybrid פעולה זו דורשת אישור מפורש או מסלול אחר.")
-        raise Exception("הפעולה אינה מותרת לפי מצב החשבון.")
+            raise Exception("×‘×‍×¦×‘ Hybrid ×¤×¢×•×œ×” ×–×• ×“×•×¨×©×ھ ×گ×™×©×•×¨ ×‍×¤×•×¨×© ×گ×• ×‍×،×œ×•×œ ×گ×—×¨.")
+        raise Exception("×”×¤×¢×•×œ×” ×گ×™× ×” ×‍×•×ھ×¨×ھ ×œ×¤×™ ×‍×¦×‘ ×”×—×©×‘×•×ں.")
 
     return True
+

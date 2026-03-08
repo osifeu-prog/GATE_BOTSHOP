@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.users import User
 from app.models.staking_positions import StakingPosition
 
-DEFAULT_APY_PERCENT = Decimal("12")  # APY ברירת מחדל
+DEFAULT_APY_PERCENT = Decimal("12")  # APY ×‘×¨×™×¨×ھ ×‍×—×“×œ
 
 
 async def create_admin_stake(
@@ -21,8 +21,8 @@ async def create_admin_stake(
     apy_percent: Decimal | None = None,
 ) -> StakingPosition:
     """
-    יצירת חיסכון חדש למשתמש ע"י אדמין.
-    נשמר בטבלת staking_positions לפי המודל הקיים.
+    ×™×¦×™×¨×ھ ×—×™×،×›×•×ں ×—×“×© ×œ×‍×©×ھ×‍×© ×¢"×™ ×گ×“×‍×™×ں.
+    × ×©×‍×¨ ×‘×ک×‘×œ×ھ staking_positions ×œ×¤×™ ×”×‍×•×“×œ ×”×§×™×™×‌.
     """
 
     user = (
@@ -60,7 +60,7 @@ async def get_user_stakes(
     telegram_user_id: int,
 ) -> Sequence[StakingPosition]:
     """
-    כל החיסכונות של משתמש לפי סדר כרונולוגי.
+    ×›×œ ×”×—×™×،×›×•× ×•×ھ ×©×œ ×‍×©×ھ×‍×© ×œ×¤×™ ×،×“×¨ ×›×¨×•× ×•×œ×•×’×™.
     """
 
     user = (
@@ -79,3 +79,4 @@ async def get_user_stakes(
     )
     result = await session.execute(stmt)
     return result.scalars().all()
+
